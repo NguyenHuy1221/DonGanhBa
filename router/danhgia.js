@@ -1,6 +1,7 @@
 const express = require('express');
 const DanhGiaRouter = express.Router();
 const {
+    getListDanhGiaAdmin,
     getListDanhGiaInSanPhamById,
     createDanhGia,
     updateDanhGia,
@@ -9,6 +10,11 @@ const {
     updatePhanHoi,
     deletePhanHoi,
     updateLike, } = require("../controller/danhgia-controller")
+
+
+DanhGiaRouter.get('/getListDanhGiaAdmin', async function (req, res) {
+    return getListDanhGiaAdmin(req, res);
+})
 
 DanhGiaRouter.get('/getListDanhGiaInSanPhamById/:IDSanPham/:userId', async function (req, res) {
     return getListDanhGiaInSanPhamById(req, res);
@@ -36,7 +42,7 @@ DanhGiaRouter.post('/updatePhanHoi/:danhGiaId/:phanHoiId', async function (req, 
     return updatePhanHoi(req, res);
 })
 
-DanhGiaRouter.delete('/deletePhanHoi/:phanHoiId', async function (req, res) {
+DanhGiaRouter.delete('/deletePhanHoi/:danhGiaId/:phanHoiId', async function (req, res) {
     return deletePhanHoi(req, res);
 })
 DanhGiaRouter.put('/updateLike/:phanHoiId/:userId', async function (req, res) {

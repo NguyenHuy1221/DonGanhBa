@@ -100,16 +100,25 @@ async function updateUserRoleAndPermissions(req, res, next) {
             }
             else if (role === "admin") {
                 user.role = role;
+                if (user.permissions) {
+                    user.permissions = [];
+                }
                 // const updatedUser = await user.save()
                 // res.status(200).json(updatedUser);
             }
             else if (role === "hokinhdoanh") {
                 user.role = role;
+                if (user.permissions) {
+                    user.permissions = [];
+                }
                 // const updatedUser = await user.save()
                 // res.status(200).json(updatedUser);
             }
             else if (role === "khachhang") {
                 user.role = role;
+                if (user.permissions) {
+                    user.permissions = [];
+                }
                 // const updatedUser = await user.save()
                 // res.status(200).json(updatedUser);
             }

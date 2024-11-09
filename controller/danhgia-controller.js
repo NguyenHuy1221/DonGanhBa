@@ -4,16 +4,39 @@ require("dotenv").config();
 const { upload } = require("../untils/index");
 const fs = require('fs');
 //ham lay danh sach thuoc tinh
-// async function getListDanhGiaInSanPhamById(req, res, next) {
-//     const { IDSanPham } = req.params;
-//     try {
-//         const Danhgias = await DanhGiamodel.find({ sanphamId: IDSanPham }).populate("userId");
-//         res.status(200).json(Danhgias);
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Lỗi khi lấy danh sách đánh giá' });
-//     }
-// }
+async function getListDanhGiaAdmin(req, res, next) {
+    const { startDate, endDate } = req.query;
+    const { userId } = req.params;
+
+    try {
+        let query = {};
+
+        if (startDate && endDate) {
+            // Chuyển đổi các ngày từ query sang dạng Date object
+            const start = startDate ? new Date(startDate) : new Date('1970-01-01');
+            const end = endDate ? new Date(endDate) : new Date();
+
+            // Thiết lập bộ lọc ngày
+            query.NgayTao = {
+                $gte: start,
+                $lte: end
+            };
+        }
+        // Tìm kiếm đánh giá với hoặc không có bộ lọc ngày
+        const Danhgias = await DanhGiamodel.find(query)
+            .populate("userId")
+            .populate("sanphamId")
+
+        res.status(200).json(Danhgias);
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách đánh giá:', error);
+        res.status(500).json({ message: 'Lỗi khi lấy danh sách đánh giá' });
+    }
+}
+
+
+
+
 
 async function getListDanhGiaInSanPhamById(req, res, next) {
     const { IDSanPham, userId } = req.params;
@@ -240,7 +263,7 @@ async function deletePhanHoi(req, res) {
             return res.status(404).json({ message: 'Không tìm thấy phản hồi' });
         }
 
-        phanHoi.remove();
+        danhGia.PhanHoi.pull({ _id: phanHoiId });
 
         await danhGia.save();
 
@@ -262,6 +285,7 @@ async function deleteImage(imageUrl) {
     }
 }
 module.exports = {
+    getListDanhGiaAdmin,
     getListDanhGiaInSanPhamById,
     createDanhGia,
     updateDanhGia,
