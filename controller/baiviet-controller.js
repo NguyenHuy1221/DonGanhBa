@@ -82,7 +82,7 @@ async function updateBaiViet(req, res) {
                 return res.status(400).json({ message: 'Error uploading image', error: err });
             }
             const { baivietId } = req.params;
-            const { tieude, tags, noidung, userId = "67054001d6a6039bcca389fa" } = req.body;
+            const { tieude, tags, noidung, userId } = req.body;
             let updatedBaiViet = await BaiVietSchema.findById(baivietId);
             if (!updatedBaiViet) {
                 return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
@@ -135,7 +135,7 @@ async function updateBaiViet(req, res) {
 async function updateLike(req, res) {
     try {
         const { baivietId, userId } = req.params;
-        const baiviet = await BaiVietSchema.findById(phanHoiId);
+        const baiviet = await BaiVietSchema.findById(baivietId);
         if (!baiviet) {
             return res.status(404).json({ message: 'Không tìm thấy bài viết' });
         }
