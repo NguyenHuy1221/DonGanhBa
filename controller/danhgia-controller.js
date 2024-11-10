@@ -26,6 +26,9 @@ async function getListDanhGiaAdmin(req, res, next) {
         const Danhgias = await DanhGiamodel.find(query)
             .populate("userId")
             .populate("sanphamId")
+            .populate({
+                path: 'PhanHoi.userId',
+            });
 
         res.status(200).json(Danhgias);
     } catch (error) {

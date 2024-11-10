@@ -6,11 +6,18 @@ const {
     createBaiViet,
     updateBaiViet,
     updateLike,
-    deleteBaiViet
+    deleteBaiViet,
+    getBaiVietById,
+    addBinhLuan,
+    updateBinhLuan,
+    deleteBinhLuan,
 } = require("../controller/baiviet-controller");
 
 baivietRouter.get("/getListBaiViet/:userId", function (req, res) {
     return getListBaiViet(req, res);
+});
+baivietRouter.get("/getBaiVietById/:userId", function (req, res) {
+    return getBaiVietById(req, res);
 });
 
 baivietRouter.post("/createBaiViet", function (req, res) {
@@ -26,5 +33,18 @@ baivietRouter.put("/updateLike/:baivietId/:userId", function (req, res) {
 baivietRouter.delete("/deleteBaiViet/:baivietId", function (req, res) {
     return deleteBaiViet(req, res);
 });
+
+
+baivietRouter.post("/addBinhLuan/:baivietId", function (req, res) {
+    return addBinhLuan(req, res);
+});
+baivietRouter.put("/updateBinhLuan/:baivietId/:binhLuanId", function (req, res) {
+    return updateBinhLuan(req, res);
+});
+baivietRouter.delete("/deleteBinhLuan/:baivietId/:binhLuanId", function (req, res) {
+    return deleteBinhLuan(req, res);
+});
+
+
 
 module.exports = baivietRouter;

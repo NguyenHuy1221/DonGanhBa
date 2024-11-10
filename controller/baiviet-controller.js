@@ -22,13 +22,16 @@ async function getListBaiViet(req, res, next) {
     try {
         const baiviets = await BaiVietSchema.find()
             .populate("userId")
-        // .populate('binhluan');
+            .populate({
+                path: 'binhluan.userId', // Populate userId của binhluan 
+                // select: 'name email' // Chỉ chọn các trường cần thiết 
+            })
         if (userId) {
             const baivietsWithLikeInfo = baiviets.map(baiViet => {
                 const isLiked = baiViet.likes.includes(userId);
                 return { ...baiViet._doc, isLiked };
             });
-            console.log(baivietsWithLikeInfo)
+
             return res.status(200).json(baivietsWithLikeInfo);
         }
         return res.status(200).json(baiviets);
@@ -39,6 +42,32 @@ async function getListBaiViet(req, res, next) {
     }
 }
 
+async function getBaiVietById(req, res, next) {
+    const { userId } = req.params;
+
+    try {
+        const baiviets = await BaiVietSchema.find({ userId: userId })
+            .populate("userId")
+            .populate({
+                path: 'binhluan.userId', // Populate userId của binhluan 
+                // select: 'name email' // Chỉ chọn các trường cần thiết 
+            })
+        // .populate('binhluan');
+        if (userId) {
+            const baivietsWithLikeInfo = baiviets.map(baiViet => {
+                const isLiked = baiViet.likes.includes(userId);
+                return { ...baiViet._doc, isLiked };
+            });
+
+            return res.status(200).json(baivietsWithLikeInfo);
+        }
+        return res.status(200).json(baiviets);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi khi lấy Bài viết đánh giá' });
+    }
+}
 
 
 async function createBaiViet(req, res) {
@@ -82,7 +111,7 @@ async function updateBaiViet(req, res) {
                 return res.status(400).json({ message: 'Error uploading image', error: err });
             }
             const { baivietId } = req.params;
-            const { tieude, tags, noidung, userId } = req.body;
+            const { tieude, tags, noidung, userId = "6725a59421c28ad87ab2b22f" } = req.body;
             let updatedBaiViet = await BaiVietSchema.findById(baivietId);
             if (!updatedBaiViet) {
                 return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
@@ -98,6 +127,7 @@ async function updateBaiViet(req, res) {
 
             updatedBaiViet.isUpdate = "true"
             if (req.files) {
+                console.log(req.files)
                 // req.files.forEach(file => {
                 //     imagePaths.push(file.path.replace('public', process.env.URL_IMAGE));
                 // });
@@ -106,6 +136,7 @@ async function updateBaiViet(req, res) {
                 const oldImages = updatedBaiViet.image || [];
                 // Lấy danh sách đường dẫn hình ảnh mới 
                 const newImages = req.files.map(file => file.path.replace('public', process.env.URL_IMAGE));
+                console.log("kiem tra du lieu", newImages)
                 // Kết hợp hình ảnh cũ và mới 
                 const combinedImages = [...new Set([...oldImages, ...newImages])];
                 // Xác định hình ảnh cũ cần xóa 
@@ -115,8 +146,7 @@ async function updateBaiViet(req, res) {
                     // Hàm xóa hình ảnh 
                 }
                 // Cập nhật mảng hình ảnh của bài viết 
-                updatedBaiViet.image = combinedImages;
-                // Lưu bài viết đã cập nhật 
+                updatedBaiViet.image = [...new Set([...combinedImages.filter(image => !imagesToDelete.includes(image)), ...newImages])];                // Lưu bài viết đã cập nhật 
                 //await updatedBaiViet.save(); res.status(200).json(updatedBaiViet);
             }
 
@@ -176,81 +206,90 @@ async function deleteBaiViet(req, res) {
         res.status(500).json({ message: 'Đã xảy ra lỗi khi xóa đánh giá' });
     }
 }
-async function addPhanHoi(req, res) {
+async function addBinhLuan(req, res) {
     try {
-        const { danhGiaId } = req.params;
+        const { baivietId } = req.params;
         const { userId, BinhLuan } = req.body;
 
-        const danhGia = await DanhGiamodel.findById(danhGiaId);
+        const baiViet = await BaiVietSchema.findById(baivietId)
 
-        if (!danhGia) {
-            return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
+        if (!baiViet) {
+            return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
         }
 
-        danhGia.PhanHoi.push({
+        baiViet.binhluan.push({
             userId,
             BinhLuan,
             NgayTao: new Date()
         });
 
-        await danhGia.save();
-
-        res.status(201).json(danhGia);
+        await baiViet.save();
+        const newbaiViet = await BaiVietSchema.findById(baivietId).populate("userId")
+            .populate({
+                path: 'binhluan.userId', // Populate userId của binhluan 
+                // select: 'name email' // Chỉ chọn các trường cần thiết 
+            });
+        res.status(201).json(newbaiViet.binhluan);
     } catch (error) {
-        console.error('Lỗi khi thêm phản hồi:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi thêm phản hồi' });
+        console.error('Lỗi khi thêm Bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi thêm Bình luận' });
     }
 }
-async function updatePhanHoi(req, res) {
+async function updateBinhLuan(req, res) {
     try {
-        const { danhGiaId, phanHoiId } = req.params;
+        const { baivietId, binhLuanId } = req.params;
         const { BinhLuan } = req.body;
 
-        const danhGia = await DanhGiamodel.findById(danhGiaId);
+        const baiViet = await BaiVietSchema.findById(baivietId);
 
-        if (!danhGia) {
-            return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
+        if (!baiViet) {
+            return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
         }
 
-        const phanHoi = danhGia.PhanHoi.id(phanHoiId);
-        if (!phanHoi) {
-            return res.status(404).json({ message: 'Không tìm thấy phản hồi' });
+        const binhLuan = baiViet.binhluan.id(binhLuanId);
+        if (!binhLuan) {
+            return res.status(404).json({ message: 'Không tìm thấy bình luận' });
         }
 
-        phanHoi.BinhLuan = BinhLuan;
-        phanHoi.NgayTao = new Date();
+        binhLuan.BinhLuan = BinhLuan;
+        binhLuan.NgayTao = new Date();
 
-        await danhGia.save();
-
-        res.status(200).json(danhGia);
+        await baiViet.save();
+        const newbaiViet = await BaiVietSchema.findById(baivietId).populate("userId")
+            .populate({
+                path: 'binhluan.userId', // Populate userId của binhluan 
+                // select: 'name email' // Chỉ chọn các trường cần thiết 
+            });
+        res.status(201).json(newbaiViet.binhluan);
     } catch (error) {
-        console.error('Lỗi khi cập nhật phản hồi:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật phản hồi' });
+        console.error('Lỗi khi cập nhật bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật Bình luận' });
     }
 }
-async function deletePhanHoi(req, res) {
+
+async function deleteBinhLuan(req, res) {
     try {
-        const { danhGiaId, phanHoiId } = req.params;
+        const { baivietId, binhLuanId } = req.params;
 
-        const danhGia = await DanhGiamodel.findById(danhGiaId);
+        const baiViet = await BaiVietSchema.findById(baivietId);
 
-        if (!danhGia) {
-            return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
+        if (!baiViet) {
+            return res.status(404).json({ message: 'Không tìm thấy bài viết' });
+        }
+        const binhLuan = baiViet.binhluan.id(binhLuanId);
+        if (!binhLuan) {
+            return res.status(404).json({ message: 'Không tìm bình luận' });
         }
 
-        const phanHoi = danhGia.PhanHoi.id(phanHoiId);
-        if (!phanHoi) {
-            return res.status(404).json({ message: 'Không tìm thấy phản hồi' });
-        }
+        baiViet.binhluan.pull({ _id: binhLuanId });
 
-        phanHoi.remove();
+        const updatebinhluan = await danhGia.save();
 
-        await danhGia.save();
 
-        res.status(200).json(danhGia);
+        res.status(200).json(updatebinhluan);
     } catch (error) {
-        console.error('Lỗi khi xóa phản hồi:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi xóa phản hồi' });
+        console.error('Lỗi khi xóa Bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi xóa Bình luận' });
     }
 }
 // async function deleteImage(imageUrl) {
@@ -284,30 +323,90 @@ async function deletePhanHoi(req, res) {
 //     }
 // }
 
+// const fs = require('fs');
+// const path = require('path');
+
 async function deleteImage(imageUrl) {
     try {
-        const parts = imageUrl.split('/');
-        const imageName = parts[parts.length - 1]; // Lấy tên file
-        const imagePath = path.join(__dirname, 'public', 'uploads', imageName);
-        fs.unlink(imagePath, (err) => {
+        // Chuyển đổi tất cả dấu gạch chéo ngược (\) thành gạch chéo (/)
+        let correctedUrl = imageUrl.replace(/\\/g, '/');
+        console.log(imageUrl)
+        // Loại bỏ phần 'https://trusty-koi-useful.ngrok-free.app/uploads/' từ URL
+        const imageName = correctedUrl.replace('https://trusty-koi-useful.ngrok-free.app/uploads/', '');
+        console.log("image", imageName)
+        // Xây dựng đường dẫn đầy đủ đến file hình ảnh
+        //const imagePath = path.join(__dirname, 'public', 'uploads', imageName);
+
+
+
+        // Điều chỉnh lại đường dẫn tuyệt đối 
+        const basePath = path.resolve(__dirname, '../public/uploads');
+        const imagePath = path.join(basePath, imageName);
+        console.log("Full Image Path:", imagePath);
+
+
+
+        // Kiểm tra xem file có tồn tại không trước khi xóa
+        fs.access(imagePath, fs.constants.F_OK, (err) => {
             if (err) {
-                console.error('Lỗi khi xóa ảnh:', err);
-            } else {
-                console.log('Ảnh đã được xóa thành công.');
+                console.error('File không tồn tại tại đường dẫn:', imagePath);
+                return;
             }
+
+            // Xóa file nếu tồn tại
+            fs.unlink(imagePath, (err) => {
+                if (err) {
+                    console.error('Lỗi khi xóa ảnh:', err);
+                } else {
+                    console.log('Ảnh đã được xóa thành công.');
+                }
+            });
         });
     } catch (error) {
         console.error('Lỗi khi xóa ảnh:', error);
     }
 }
 
+
+// async function deleteImage(imageUrl) {
+//     try {
+//         // Loại bỏ phần 'https://trusty-koi-useful.ngrok-free.app/uploads/' từ URL
+//         console.log(imageUrl)
+//         const imageName = imageUrl.replace(/https:\/\/trusty-koi-useful\.ngrok-free\.app\/uploads\//, '');
+
+//         // Xây dựng đường dẫn đầy đủ đến file hình ảnh
+//         const imagePath = path.join(__dirname, 'public', 'uploads', imageName);
+
+//         // Kiểm tra xem file có tồn tại không trước khi xóa
+//         fs.access(imagePath, fs.constants.F_OK, (err) => {
+//             if (err) {
+//                 console.error('File không tồn tại tại đường dẫn:', imagePath);
+//                 return;
+//             }
+
+//             // Xóa file nếu tồn tại
+//             fs.unlink(imagePath, (err) => {
+//                 if (err) {
+//                     console.error('Lỗi khi xóa ảnh:', err);
+//                 } else {
+//                     console.log('Ảnh đã được xóa thành công.');
+//                 }
+//             });
+//         });
+//     } catch (error) {
+//         console.error('Lỗi khi xóa ảnh:', error);
+//     }
+// }
+
+
 module.exports = {
     getListBaiViet,
     createBaiViet,
     updateBaiViet,
     deleteBaiViet,
-    addPhanHoi,
-    updatePhanHoi,
-    deletePhanHoi,
+    addBinhLuan,
+    updateBinhLuan,
+    deleteBinhLuan,
     updateLike,
+    getBaiVietById,
 };

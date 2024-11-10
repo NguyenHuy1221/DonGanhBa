@@ -7,7 +7,11 @@ const BaiVietSchema = new Schema({
     tieude: { type: String, required: true },
     noidung: { type: String, required: true },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    binhluan: [{ type: Schema.Types.ObjectId, ref: 'binhluanbaiviet' }],
+    binhluan: [{
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        BinhLuan: String,
+        NgayTao: { type: Date, default: Date.now },
+    },],
     tags: [{ type: String }],
     trangthai: { type: Boolean, default: false },
     isUpdate: { type: Boolean, default: false },

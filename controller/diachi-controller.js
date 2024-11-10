@@ -28,7 +28,7 @@ async function createDiaChi(req, res, next) {
         const { userId } = req.params;
         // const diaChiList = req.body;
         // console.log(diaChiList)
-        const { tinhThanhPho, quanHuyen, phuongXa, duongThon, Name, SoDienThoai } = req.body;
+        const { tinhThanhPho, quanHuyen, phuongXa, duongThon, Name, SoDienThoai, kinhdo, vido } = req.body;
 
         // Tạo đối tượng địa chỉ mới
         const newDiaChi = {
@@ -38,6 +38,8 @@ async function createDiaChi(req, res, next) {
             duongThon,
             Name,
             SoDienThoai,
+            kinhdo,
+            vido,
             isDeleted: false // hoặc giá trị mặc định khác nếu cần
         };
         const diaChi = await DiaChiModel.findOneAndUpdate(
@@ -55,7 +57,7 @@ async function createDiaChi(req, res, next) {
 async function updateDiaChi(req, res, next) {
     try {
         const { userId, diaChiId } = req.params;
-        const { tinhThanhPho, quanHuyen, phuongXa, duongThon, Name, SoDienThoai } = req.body;
+        const { tinhThanhPho, quanHuyen, phuongXa, duongThon, Name, SoDienThoai, kinhdo, vido } = req.body;
 
         // Tạo đối tượng địa chỉ mới
         const updatedDiaChi = {
@@ -65,6 +67,8 @@ async function updateDiaChi(req, res, next) {
             duongThon,
             Name,
             SoDienThoai,
+            kinhdo,
+            vido,
             isDeleted: false // hoặc giá trị mặc định khác nếu cần
         };
 
