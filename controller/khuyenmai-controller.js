@@ -61,24 +61,32 @@ function calculateDiscount(loaiKhuyenMai, tongTien, giaTriKhuyenMai, gioiHanGiam
 
 async function getlistKhuyenMaiforadmin(req, res, next) {
     try {
-        const { IDDanhMucCon } = req.params;
+        const { startDate, endDate, trangThai } = req.query;
 
-        // Điều kiện tìm kiếm
-        // const conditions = {
-        //     SoLuongHienTai: { $gt: 0 },
-        //     $or: [
-        //         { TrangThai: 0 },
-        //         { IDDanhMucCon: IDDanhMucCon }
-        //     ]
-        // };
+        let filter = {
+            isDeleted: false // Chỉ lấy các khuyến mãi không bị xóa
+        };
 
-        // // Tạo query
-        // let query = KhuyenMaiModel.find(conditions);
-        // const khuyenmais = await query.exec();
-        res.status(200).json(khuyenmais);
+        if (startDate) {
+            filter.NgayBatDau = { $gte: new Date(startDate) };
+        }
+
+        if (endDate) {
+            filter.NgayKetThuc = { $lte: new Date(endDate) };
+        }
+
+        if (trangThai !== undefined) {
+            filter.TrangThai = parseInt(trangThai);
+        }
+
+        const khuyenMais = await KhuyenMaiModel.find(filter)
+            .populate('IDLoaiKhuyenMai')
+        //.populate('IDDanhMucCon');
+
+        res.status(200).json(khuyenMais);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi get list khuyến mãi' });
+        console.error('Lỗi khi lấy danh sách khuyến mãi:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách khuyến mãi' });
     }
 }
 
@@ -208,5 +216,6 @@ module.exports = {
     createKhuyenMai,
     updateKhuyenMai,
     deleteKhuyenMai,
-    getActiveKhuyenMai
+    getActiveKhuyenMai,
+    getlistKhuyenMaiforadmin,
 };

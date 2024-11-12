@@ -9,6 +9,7 @@ const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.CLIENT_ID);
 const jwt = require("jsonwebtoken")
 
+const yeuthichSchema = require("../models/YeuThichSchema")
 async function verifyGoogleToken(token) {
   const ticket = await client.verifyIdToken({
     idToken: token,
@@ -38,7 +39,7 @@ async function RegisterUser(req, res) {
       return res.status(400).json({ message: "Email đã được sử dụng" });
     }
 
-    const otp = Math.floor(1000 + Math.random() * 900000).toString(); // Tạo mã OTP 4 chữ số
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Tạo mã OTP 4 chữ số
     const otpExpiry = Date.now() + 15 * 60 * 1000; // OTP hết hạn sau 15 phút
 
     await UserModel.create({
@@ -186,6 +187,8 @@ async function VerifyOTP(req, res) {
     user.isVerified = true;
     await user.save();
 
+
+
     return res.json({
       message: "Xác nhận OTP thành công, tài khoản đã được kích hoạt",
     });
@@ -212,6 +215,15 @@ async function loginUser(req, res) {
       return res.status(400).json({ message: "Mật khẩu không đúng" });
     }
 
+    // if (!user.IDYeuThich) {
+    //   const yeuThich = new yeuthichSchema({ sanphams: [] });
+    //   await yeuThich.save();
+
+    //   // Cập nhật IDYeuThich của người dùng
+    //   user.IDYeuThich = yeuThich._id;
+    //   await user.save();
+    // }
+
     const token = generateToken(user._id, user.role);
     return res.json({ message: "Đăng nhập thành công", token });
   } catch (error) {
@@ -234,7 +246,8 @@ async function SendOtpForgotPassword(req, res) {
         return res.status(400).json({ message: "OTP đã được gửi, vui lòng chờ trước khi yêu cầu mới" });
       }
     }
-    const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Tạo mã OTP 6 chữ số
+    //const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Tạo mã OTP 6 chữ số
+    const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Tạo mã OTP 4 chữ số
     const otpExpiry = Date.now() + 15 * 60 * 1000; // OTP hết hạn sau 15 phút
 
     user.otp = otp;
@@ -322,14 +335,20 @@ async function SendPassword(req, res) {
   }
 }
 async function ResetPassword(req, res) {
-  const { gmail, matKhauMoi, } = req.body;
+  const { gmail, matKhauMoi, matKhau, } = req.body;
   // const decoded = jwt.verify(resetToken, process.env.SECRET_KEY);
   try {
-    const user = await UserModel.findOne({ gmail: gmail });
+    console.log(gmail, matKhauMoi, matKhau,)
 
+    const user = await UserModel.findOne({ gmail: gmail });
     if (!user) {
       return res.status(400).json({ message: "Người dùng không tồn tại" });
     }
+    const check = await comparePassword(matKhau, user.matKhau);
+    if (!check) {
+      return res.status(400).json({ message: "Mật khẩu không đúng" });
+    }
+
 
     const hash_pass = await hashPassword(matKhauMoi);
     user.matKhau = hash_pass;
@@ -575,6 +594,73 @@ async function saveChat(req, res, next) {
     res.status(400).send({ success: false, msg: error.message })
   }
 }
+
+
+async function toggleFollowUser(req, res) {
+  try {
+    const { userId, targetId, action } = req.body; // userId: người thực hiện hành động, targetId: người bị theo dõi hoặc bỏ theo dõi
+    const user = await UserModel.findById(userId);
+    const targetUser = await UserModel.findById(targetId);
+
+    if (!user || !targetUser) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+    if (action === 'follow') {
+      // Thực hiện theo dõi
+      if (!user.following.includes(targetId)) {
+        user.following.push(targetId);
+        await user.save();
+      }
+      if (!targetUser.followers.includes(userId)) {
+        targetUser.followers.push(userId);
+        await targetUser.save();
+      }
+      res.status(200).json({ message: 'Đã theo dõi người dùng thành công' });
+    } else if (action === 'unfollow') {
+      // Thực hiện bỏ theo dõi
+      user.following = user.following.filter(id => id.toString() !== targetId);
+      await user.save();
+      targetUser.followers = targetUser.followers.filter(id => id.toString() !== userId);
+      await targetUser.save();
+      res.status(200).json({ message: 'Đã bỏ theo dõi người dùng thành công' });
+    } else {
+      res.status(400).json({ message: 'Hành động không hợp lệ' });
+    }
+  } catch (error) {
+    console.error('Lỗi khi xử lý hành động theo dõi/bỏ theo dõi người dùng:', error);
+    res.status(500).json({ message: 'Đã xảy ra lỗi khi xử lý hành động theo dõi/bỏ theo dõi người dùng' });
+  }
+}
+
+async function getListMySanPham(req, res, next) {
+  try {
+    const { userId, yeuThichId } = req.query;
+
+
+    // Tìm kiếm, thêm index nếu chưa có
+    const sanphams = await SanPhamModel.find({ userId: userId })
+
+    let favoritedProductIds = [];
+    if (userId && yeuThichId) {
+      const yeuThich = await YeuThichModel.findById(yeuThichId);
+      if (yeuThich) { favoritedProductIds = yeuThich.sanphams.map(sanpham => sanpham.IDSanPham.toString()); }
+    } // Thêm thuộc tính isFavorited vào từng sản phẩm 
+    const sanphamsWithFavoriteStatus = sanphams.map(sanpham => {
+      const productObject = sanpham.toObject();
+      productObject.isFavorited = favoritedProductIds.includes(productObject._id.toString());
+      return productObject;
+    });
+
+
+    res.status(200).json(sanphamsWithFavoriteStatus);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi tìm kiếm sản phẩm" });
+  }
+}
+
+
+
 module.exports = {
   RegisterUser,
   VerifyOTP,
@@ -593,4 +679,5 @@ module.exports = {
   LoginUserGG,
   getAllUsers,
   updateUser12,
+  toggleFollowUser,
 };

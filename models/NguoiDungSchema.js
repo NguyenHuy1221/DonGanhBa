@@ -30,6 +30,9 @@ const NguoiDungSchema = new Schema({
     entity: { type: String, enum: ['sanpham', 'khuyenmai', 'hoadon'], required: true },
     actions: [{ type: String, enum: ['them', 'xoa', 'sua', 'update'] }]
   }],
+  // Thêm trường followers và following 
+  followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   otp: { type: String },
   otpExpiry: { type: Date },
   isVerified: { type: Boolean, default: false },

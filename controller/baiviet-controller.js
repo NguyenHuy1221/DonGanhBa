@@ -283,7 +283,7 @@ async function deleteBinhLuan(req, res) {
 
         baiViet.binhluan.pull({ _id: binhLuanId });
 
-        const updatebinhluan = await danhGia.save();
+        const updatebinhluan = await baiViet.save();
 
 
         res.status(200).json(updatebinhluan);

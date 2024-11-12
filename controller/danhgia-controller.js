@@ -47,6 +47,9 @@ async function getListDanhGiaInSanPhamById(req, res, next) {
     try {
         const Danhgias = await DanhGiamodel.find({ sanphamId: IDSanPham })
             .populate("userId")
+            .populate({
+                path: 'PhanHoi.userId',
+            });
         // .populate("likes")
 
         // Thêm trường isLiked vào mỗi đối tượng đánh giá để chỉ ra người dùng đã like hay chưa
@@ -209,13 +212,11 @@ async function addPhanHoi(req, res) {
         if (!danhGia) {
             return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
         }
-
         danhGia.PhanHoi.push({
             userId,
             BinhLuan,
             NgayTao: new Date()
         });
-
         await danhGia.save();
 
         res.status(201).json(danhGia);

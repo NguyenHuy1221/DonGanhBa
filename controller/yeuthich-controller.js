@@ -30,8 +30,8 @@ async function getListYeuThichNopopulate(req, res) {
 
 async function addToFavorites(req, res) {
     const { userId, productId } = req.params;
-
     try {
+        console.log(userId, productId)
         // Tìm người dùng theo ID
         const user = await NguoiDungschema.findById(userId);
         if (!user) {
@@ -56,9 +56,11 @@ async function addToFavorites(req, res) {
 
             // Kiểm tra xem sản phẩm đã tồn tại trong danh sách yêu thích chưa 
             const existingProductIndex = yeuThich.sanphams.findIndex(sanpham => sanpham.IDSanPham.equals(productId)); if (existingProductIndex === -1) { // Nếu sản phẩm chưa tồn tại, thêm vào danh sách yêu thích 
-                await YeuThichSchema.findOneAndUpdate({ _id: user.IDYeuThich }, { $push: { sanphams: { IDSanPham: productId } } }, { new: true, runValidators: true }); return res.status(200).json({ success: true, message: 'Đã thêm sản phẩm vào danh sách yêu thích' });
+                yeuThich = await YeuThichSchema.findOneAndUpdate({ _id: user.IDYeuThich }, { $push: { sanphams: { IDSanPham: productId } } }, { new: true, runValidators: true });
+                return res.status(200).json({ success: true, message: 'Đã thêm sản phẩm vào danh sách yêu thích', yeuThich });
             } else { // Nếu sản phẩm đã tồn tại, xóa khỏi danh sách yêu thích 
-                await YeuThichSchema.findOneAndUpdate({ _id: user.IDYeuThich }, { $pull: { sanphams: { IDSanPham: productId } } }, { new: true, runValidators: true }); return res.status(200).json({ success: true, message: 'Đã xóa sản phẩm khỏi danh sách yêu thích' });
+                yeuThich = await YeuThichSchema.findOneAndUpdate({ _id: user.IDYeuThich }, { $pull: { sanphams: { IDSanPham: productId } } }, { new: true, runValidators: true });
+                return res.status(200).json({ success: true, message: 'Đã xóa sản phẩm khỏi danh sách yêu thích', yeuThich });
 
             }
         }

@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 const { convertToVietnamTimezone } = require('../middleware/index');
 const SanPhamSchema = new Schema({
   IDSanPham: { type: String, unique: true }, // Khóa chính, duy nhất
+  userId: { type: Schema.Types.ObjectId, ref: 'User' },
   TenSanPham: { type: String },
   HinhSanPham: { type: String }, // Giả sử lưu đường dẫn hoặc ID hình ảnh
   DonGiaNhap: { type: Number },

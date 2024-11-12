@@ -5,7 +5,8 @@ const {
     createKhuyenMai,
     updateKhuyenMai,
     deleteKhuyenMai,
-    getActiveKhuyenMai } = require("../controller/khuyenmai-controller")
+    getActiveKhuyenMai,
+    getlistKhuyenMaiforadmin, } = require("../controller/khuyenmai-controller")
 
 khuyenmaiRouter.get('/getlistKhuyenMai/:tongTien', async function (req, res) {
     return getlistKhuyenMai(req, res);
@@ -25,7 +26,9 @@ khuyenmaiRouter.delete('/deleteKhuyenMai/:id', async function (req, res) {
     return deleteKhuyenMai(req, res);
 })
 
-
+khuyenmaiRouter.get('/getlistKhuyenMaiforadmin', async function (req, res) {
+    return getlistKhuyenMaiforadmin(req, res);
+})
 
 
 module.exports = khuyenmaiRouter;
