@@ -31,6 +31,7 @@ const {
   searchSanPham,
   checkNumberProductvaBienthe,
   searchSanPhamtest,
+  updateMissingUserIds,
 } = require("../controller/sanpham-controller");
 sanphamRouter.post("/createSanPhamtest", async function (req, res) {
   return createSanPhamtest(req, res);
@@ -179,6 +180,9 @@ sanphamRouter.get("/searchSanPhamtest", async function (req, res) {
 
 sanphamRouter.get("/checkNumberProductvaBienthe/:IDSanPham", async function (req, res) {
   return checkNumberProductvaBienthe(req, res);
+});
+sanphamRouter.post("/updateMissingUserIds/:userId", async function (req, res) {
+  return updateMissingUserIds(req, res);
 });
 
 module.exports = sanphamRouter;

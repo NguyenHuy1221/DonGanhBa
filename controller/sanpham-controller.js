@@ -94,13 +94,14 @@ async function createSanPham(req, res, next) {
       TenAnh: file.originalname,
       UrlAnh: file.path.replace("public", process.env.URL_IMAGE),
     })) : [];
-    const { luachon, IDSanPham, TenSanPham, DonGiaNhap, DonGiaBan, SoLuongNhap, SoLuongHienTai, PhanTramGiamGia, TinhTrang, MoTa, Unit, DanhSachThuocTinh, IDDanhMuc, IDDanhMucCon,
+    const { userId, luachon, IDSanPham, TenSanPham, DonGiaNhap, DonGiaBan, SoLuongNhap, SoLuongHienTai, PhanTramGiamGia, TinhTrang, MoTa, Unit, DanhSachThuocTinh, IDDanhMuc, IDDanhMucCon,
     } = req.body;
     const { sku, gia, soLuong, KetHopThuocTinh } = req.body;
     if (!IDSanPham) {
       return res.status(400).json({ message: 'IDSanPham is required and cannot be null' });
     }
     const newSanPham = new SanPhamModel({
+      userId,
       IDSanPham, TenSanPham,
       HinhSanPham: newPath,
       DonGiaNhap, DonGiaBan,
@@ -145,9 +146,6 @@ async function createSanPham(req, res, next) {
       }
     } else {
       const createdVariants = await ToHopBienThe(savedSanPham._id, sku, gia, soLuong);
-
-      // In ra hoặc trả về biến thể để kiểm tra
-      console.log("Các biến thể đã tạo:", createdVariants);
     }
     res.status(201).json(savedSanPham);
   } catch (error) {
@@ -176,6 +174,40 @@ async function ToHopBienThe(IDSanPham, sku, gia, soLuong) {
           IDGiaTriThuocTinh: value,
         })
       );
+
+      const bienthe = await BienTheSchema.find({ IDSanPham: IDSanPham })
+      // Duyệt qua từng biến thể đã tồn tại
+      for (const existing of bienthe) {
+        const existingKetHopThuocTinh = existing.KetHopThuocTinh;
+        //console.log(existing.KetHopThuocTinh)
+        // Kiểm tra độ dài
+        if (existingKetHopThuocTinh.length !== KetHopThuocTinh.length) {
+          console.log("bo qua")
+          continue; // Tiếp tục với biến thể tiếp theo
+        }
+        // Kiểm tra trùng lặp từng phần tử
+        let isDuplicate = true;
+        for (let i = 0; i < existingKetHopThuocTinh.length; i++) {
+          if (existingKetHopThuocTinh[i].IDGiaTriThuocTinh.toString() !== KetHopThuocTinh[i].IDGiaTriThuocTinh) {
+            isDuplicate = false;
+            break;
+          }
+        }
+
+        if (isDuplicate) {
+          const bientheisDelete = await BienTheSchema.findById(existing._id)
+          if (bientheisDelete && bientheisDelete.isDeleted) {
+            bientheisDelete.sku = sku;
+            bientheisDelete.gia = gia;
+            bientheisDelete.soLuong = soLuong;
+            bientheisDelete.isDeleted = false;
+            await bientheisDelete.save();
+            return res.status(200).json({ message: 'Biến thể đã được khôi phục' });
+          }
+          return res.status(400).json({ error: 'Kết hợp thuộc tính đã tồn tại' });
+        }
+      }
+
       const newVariant = new BienTheSchema({
         IDSanPham: product._id,
         sku: sku,
@@ -290,14 +322,6 @@ async function ToHopBienThe(IDSanPham, sku, gia, soLuong) {
 //   }
 //   return product;
 // }
-
-
-
-
-
-
-
-
 async function createSanPhamtest(req, res, next) {
   const { IDSanPham, TenSanPham, DonGiaNhap, DonGiaBan, SoLuongNhap, SoLuongHienTai, PhanTramGiamGia, TinhTrang, MoTa, Unit, DanhSachThuocTinh, IDDanhMuc, IDDanhMucCon,
   } = req.body;
@@ -443,6 +467,7 @@ async function updateSanPham(req, res, next) {
       DanhSachThuocTinh,
       IDDanhMuc,
       IDDanhMucCon,
+      sku, gia, soLuong
     } = req.body;
 
     if (IDSanPham !== undefined) sanPham.IDSanPham = IDSanPham;
@@ -461,6 +486,11 @@ async function updateSanPham(req, res, next) {
     if (IDDanhMucCon !== undefined) sanPham.IDDanhMucCon = IDDanhMucCon;
 
     const updatedSanPham = await sanPham.save();
+
+    if (luachon == 0) {
+    } else {
+      const createdVariants = await ToHopBienThe(updatedSanPham._id, sku, gia, soLuong);
+    }
     res.status(200).json(updatedSanPham);
   } catch (error) {
     console.error("Lỗi cập nhật sản phẩm:", error);
@@ -947,7 +977,7 @@ async function getlistPageSanPham(req, res, next) {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const sanphams = await SanPhamModel.find().skip(skip).limit(limit);
+    const sanphams = await SanPhamModel.find().skip(skip).limit(limit).populate("userId");
     const totalProducts = await SanPhamModel.countDocuments();
 
     let favoritedProductIds = [];
@@ -1303,6 +1333,35 @@ async function checkVariantExistence(IDSanPham, KetHopThuocTinh) {
     return false;
   }
 }
+
+
+async function updateMissingUserIds(req, res) {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "Thiếu thông tin userId" });
+    }
+    const products = await SanPhamModel.find();
+
+    products.forEach(async (product) => {
+      if (!product.userId) {
+        product.userId = userId;
+        await product.save();
+      }
+    });
+    if (products) {
+      return res.status(200).json({ message: `${products} sản phẩm đã được cập nhật với userId mới` });
+    } else {
+      return res.status(200).json({ message: 'Không có sản phẩm nào cần được cập nhật' });
+    }
+  } catch (error) {
+    console.error('Lỗi khi cập nhật userId cho các sản phẩm:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật userId cho các sản phẩm' });
+  }
+}
+
+
 module.exports = {
   searchSanPham,
   getlistSanPham,
@@ -1349,4 +1408,6 @@ module.exports = {
   getDanhSachThuocTinhTrongSanPham,
   checkNumberProductvaBienthe,
   searchSanPhamtest,
+  //ham su dung ca nhan
+  updateMissingUserIds,
 };

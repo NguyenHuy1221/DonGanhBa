@@ -38,6 +38,8 @@ const {
   LoginUserGG,
   getAllUsers,
   updateUser12,
+  toggleFollowUser,
+  findUserById,
 } = require("../controller/user-controller");
 
 userRoute.get("/showAllUser", function (req, res) {
@@ -138,6 +140,12 @@ userRoute.post("/RegisterUserGG", async function (req, res) {
 //update image user
 userRoute.post("/LoginUserGG/", async function (req, res) {
   return LoginUserGG(req, res);
+});
+userRoute.post("/toggleFollowUser", async function (req, res) {
+  return toggleFollowUser(req, res);
+});
+userRoute.get("/findUserById/:userId", async function (req, res) {
+  return findUserById(req, res);
 });
 
 module.exports = userRoute;

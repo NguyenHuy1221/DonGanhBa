@@ -8,7 +8,8 @@ const crypto = require("crypto");
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.CLIENT_ID);
 const jwt = require("jsonwebtoken")
-
+const BaiVietModel = require("../models/baivietSchema")
+const SanPhamModel = require("../models/SanPhamSchema")
 const yeuthichSchema = require("../models/YeuThichSchema")
 async function verifyGoogleToken(token) {
   const ticket = await client.verifyIdToken({
@@ -642,7 +643,7 @@ async function getListMySanPham(req, res, next) {
 
     let favoritedProductIds = [];
     if (userId && yeuThichId) {
-      const yeuThich = await YeuThichModel.findById(yeuThichId);
+      const yeuThich = await yeuthichSchema.findById(yeuThichId);
       if (yeuThich) { favoritedProductIds = yeuThich.sanphams.map(sanpham => sanpham.IDSanPham.toString()); }
     } // Thêm thuộc tính isFavorited vào từng sản phẩm 
     const sanphamsWithFavoriteStatus = sanphams.map(sanpham => {
@@ -659,6 +660,54 @@ async function getListMySanPham(req, res, next) {
   }
 }
 
+async function findUserById(req, res) {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "Thiếu thông tin userId" });
+    }
+
+    // Lấy thông tin cơ bản của người dùng
+    const user = await UserModel.findById(userId)
+      .populate('followers', 'tenNguoiDung')
+      .populate('following', 'tenNguoiDung');
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // Lấy số lượng và danh sách bài viết của người dùng
+    const [posts, products] = await Promise.all([
+      BaiVietModel.find({ userId }),
+      SanPhamModel.find({ userId })
+    ]);
+
+    const userDetails = {
+      tenNguoiDung: user.tenNguoiDung,
+      anhDaiDien: user.anhDaiDien,
+      GioiTinh: user.GioiTinh,
+      soDienThoai: user.soDienThoai,
+      gmail: user.gmail,
+      ngaySinh: user.ngaySinh,
+      hoKinhDoanh: user.hoKinhDoanh,
+      followers: user.followers.length,
+      following: user.following.length,
+      baiViet: {
+        count: posts.length,
+        list: posts
+      },
+      sanPham: {
+        count: products.length,
+        list: products
+      }
+    };
+
+    return res.json(userDetails);
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin người dùng:", error);
+    return res.status(500).json({ message: "Đã xảy ra lỗi khi lấy thông tin người dùng" });
+  }
+}
 
 
 module.exports = {
@@ -680,4 +729,5 @@ module.exports = {
   getAllUsers,
   updateUser12,
   toggleFollowUser,
+  findUserById,
 };

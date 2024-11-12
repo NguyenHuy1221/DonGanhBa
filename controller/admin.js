@@ -133,6 +133,53 @@ async function updateUserRoleAndPermissions(req, res, next) {
 }
 
 
+async function updateUserRoleAndPermissionsforuser(req, res, next) {
+    const { userId } = req.params;
+    const { role } = req.body; // Nhận role và permissions từ body request
+
+    const validRoles = ['khachhang', 'hokinhdoanh'];
+
+
+    try {
+        // Kiểm tra role hợp lệ
+        if (role && !validRoles.includes(role)) {
+            return res.status(400).json({ message: "Vai trò không hợp lệ" });
+        }
+
+        const user = await NguoiDungModel.findById(userId);
+        if (!user) {
+            return res.status(400).json({ message: "Không tìm thấy người dùng" });
+        }
+
+        // Cập nhật role nếu có
+        if (role) {
+
+            user.role = role;
+            if (role === "hokinhdoanh") {
+                user.role = role;
+                if (user.permissions) {
+                    user.permissions = [];
+                }
+                // const updatedUser = await user.save()
+                // res.status(200).json(updatedUser);
+            }
+            else if (role === "khachhang") {
+                user.role = role;
+                if (user.permissions) {
+                    user.permissions = [];
+                }
+                // const updatedUser = await user.save()
+                // res.status(200).json(updatedUser);
+            }
+        }
+
+        const updatedUser = await user.save();
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error('Lỗi khi cập nhật vai trò và quyền hạn của người dùng:', error);
+        res.status(500).json({ message: 'Lỗi khi cập nhật vai trò và quyền hạn của người dùng' });
+    }
+}
 
 // async function updateUserRoleAndPermissions(req, res, next) {
 //     const { userId } = req.params;
@@ -196,5 +243,6 @@ async function updateUserRoleAndPermissions(req, res, next) {
 
 
 module.exports = {
-    updateUserRoleAndPermissions
+    updateUserRoleAndPermissions,
+    updateUserRoleAndPermissionsforuser
 };
