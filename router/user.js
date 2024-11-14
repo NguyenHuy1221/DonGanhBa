@@ -40,6 +40,8 @@ const {
   updateUser12,
   toggleFollowUser,
   findUserById,
+  getListThongBao,
+  updateDaDoc,
 } = require("../controller/user-controller");
 
 userRoute.get("/showAllUser", function (req, res) {
@@ -144,8 +146,14 @@ userRoute.post("/LoginUserGG/", async function (req, res) {
 userRoute.post("/toggleFollowUser", async function (req, res) {
   return toggleFollowUser(req, res);
 });
-userRoute.get("/findUserById/:userId", async function (req, res) {
+userRoute.get("/findUserById/:userId/:me", async function (req, res) {
   return findUserById(req, res);
+});
+userRoute.get("/getListThongBao/:userId", async function (req, res) {
+  return getListThongBao(req, res);
+});
+userRoute.put("/updateDaDoc/:thongBaoId", async function (req, res) {
+  return updateDaDoc(req, res);
 });
 
 module.exports = userRoute;

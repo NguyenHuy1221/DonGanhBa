@@ -1,6 +1,7 @@
 const DiaChiModel = require("../models/DiaChiSchema");
 const LoaiKhuyenMaiModel = require("../models/LoaiKhuyenMaiSchema")
 const NguoiDungModel = require("../models/NguoiDungSchema")
+const ThongBaoModel = require("../models/thongbaoSchema")
 async function UpdateRole(req, res, next) {
     const { userId } = req.params;
     const { role } = req.body
@@ -242,7 +243,85 @@ async function updateUserRoleAndPermissionsforuser(req, res, next) {
 // }
 
 
+async function getListThongBao(req, res) {
+    const { userId } = req.params;
+    try {
+        const thongBaos = await ThongBaoModel.find({ userId: userId }).sort({ ngayTao: -1 });
+
+        return res.status(200).json(thongBaos);
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách thông báo:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách thông báo' });
+    }
+}
+async function getListThongBaoAdmin(req, res) {
+    try {
+        const thongBaos = await ThongBaoModel.find().sort({ ngayTao: -1 }).populate("userId");
+
+        return res.status(200).json(thongBaos);
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách thông báo:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách thông báo' });
+    }
+}
+async function createThongBao(req, res) {
+    const { userId, tieude, noidung } = req.body;
+    try {
+        const newThongBao = new ThongBaoModel({
+            userId,
+            tieude,
+            noidung,
+        });
+
+        await newThongBao.save();
+        res.status(201).json({ message: 'Tạo thông báo thành công', thongBao: newThongBao });
+    } catch (error) {
+        console.error('Lỗi khi tạo thông báo:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo thông báo' });
+    }
+}
+
+async function createThongBaoNoreq(userId, tieude, noidung) {
+    try {
+        const newThongBao = new ThongBaoModel({
+            userId,
+            tieude,
+            noidung,
+        });
+
+        await newThongBao.save();
+        return { success: true, message: 'Tạo thông báo thành công', thongBao: newThongBao };
+    } catch (error) {
+        console.error('Lỗi khi tạo thông báo:', error);
+        return { success: false, message: 'Đã xảy ra lỗi khi tạo thông báo' };
+    }
+}
+
+
+async function updateDaDoc(req, res) {
+    const { thongBaoId } = req.params;
+    try {
+        const thongBao = await ThongBaoModel.findById(thongBaoId);
+        if (!thongBao) {
+            return res.status(404).json({ message: 'Không tìm thấy thông báo' });
+        }
+
+        thongBao.daDoc = true;
+        await thongBao.save();
+
+        res.status(200).json({ message: 'Đã cập nhật trạng thái đọc của thông báo', thongBao });
+    } catch (error) {
+        console.error('Lỗi khi cập nhật trạng thái đọc của thông báo:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật trạng thái đọc của thông báo' });
+    }
+}
+
+
+
+
 module.exports = {
     updateUserRoleAndPermissions,
-    updateUserRoleAndPermissionsforuser
+    updateUserRoleAndPermissionsforuser,
+    getListThongBaoAdmin,
+    createThongBao,
 };

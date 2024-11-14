@@ -26,6 +26,7 @@ async function getListBaiViet(req, res, next) {
                 path: 'binhluan.userId', // Populate userId của binhluan 
                 // select: 'name email' // Chỉ chọn các trường cần thiết 
             })
+
         if (userId) {
             const baivietsWithLikeInfo = baiviets.map(baiViet => {
                 const isLiked = baiViet.likes.includes(userId);

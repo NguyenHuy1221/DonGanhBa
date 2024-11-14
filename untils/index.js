@@ -102,6 +102,47 @@ function decodeToken(token) {
     throw new Error("Token verification failed: " + error.message);
   }
 }
+
+
+// const AWS = require('aws-sdk');
+
+// // Cấu hình SDK với thông tin từ Viettel Cloud
+// const s3 = new AWS.S3({
+//   accessKeyId: 'YOUR_ACCESS_KEY',
+//   secretAccessKey: 'YOUR_SECRET_KEY',
+//   endpoint: 'https://vstorage.viettel.vn', // endpoint của Viettel Cloud Object Storage
+//   s3ForcePathStyle: true, // Bắt buộc để tuân theo kiểu đường dẫn S3
+//   signatureVersion: 'v4' // Phiên bản chữ ký
+// });
+
+// // Hàm upload file lên Viettel Cloud Object Storage
+// async function uploadFile(filePath, bucketName, key) {
+//   const fs = require('fs');
+//   const fileStream = fs.createReadStream(filePath);
+
+//   const params = {
+//     Bucket: bucketName,
+//     Key: key, // Đường dẫn và tên file trong bucket
+//     Body: fileStream
+//   };
+
+//   try {
+//     const data = await s3.upload(params).promise();
+//     console.log('File uploaded successfully:', data);
+//     return data;
+//   } catch (error) {
+//     console.error('Error uploading file:', error);
+//     throw error;
+//   }
+// }
+
+// // Ví dụ sử dụng hàm uploadFile
+// uploadFile('/path/to/your/image.jpg', 'your-bucket-name', 'images/image.jpg')
+//   .then(data => console.log('Upload successful:', data))
+//   .catch(error => console.error('Upload failed:', error));
+
+
+
 module.exports = {
   hashPassword,
   comparePassword,

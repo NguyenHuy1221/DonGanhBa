@@ -11,6 +11,7 @@ const jwt = require("jsonwebtoken")
 const BaiVietModel = require("../models/baivietSchema")
 const SanPhamModel = require("../models/SanPhamSchema")
 const yeuthichSchema = require("../models/YeuThichSchema")
+const ThongBaoModel = require("../models/thongbaoSchema")
 async function verifyGoogleToken(token) {
   const ticket = await client.verifyIdToken({
     idToken: token,
@@ -602,7 +603,7 @@ async function toggleFollowUser(req, res) {
     const { userId, targetId, action } = req.body; // userId: người thực hiện hành động, targetId: người bị theo dõi hoặc bỏ theo dõi
     const user = await UserModel.findById(userId);
     const targetUser = await UserModel.findById(targetId);
-
+    console.log(userId, targetId, action)
     if (!user || !targetUser) {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
@@ -662,7 +663,7 @@ async function getListMySanPham(req, res, next) {
 
 async function findUserById(req, res) {
   try {
-    const { userId } = req.params;
+    const { userId, me } = req.params;
 
     if (!userId) {
       return res.status(400).json({ message: "Thiếu thông tin userId" });
@@ -678,10 +679,15 @@ async function findUserById(req, res) {
 
     // Lấy số lượng và danh sách bài viết của người dùng
     const [posts, products] = await Promise.all([
-      BaiVietModel.find({ userId }),
+      BaiVietModel.find({ userId }).populate("userId").populate({
+        path: 'binhluan.userId',
+      }),
       SanPhamModel.find({ userId })
     ]);
-
+    const baivietsWithLikeInfo = posts.map(baiViet => {
+      const isLiked = baiViet.likes.includes(me); // Giả sử req.user._id là ID của người dùng hiện tại
+      return { ...baiViet._doc, isLiked };
+    });
     const userDetails = {
       tenNguoiDung: user.tenNguoiDung,
       anhDaiDien: user.anhDaiDien,
@@ -693,8 +699,8 @@ async function findUserById(req, res) {
       followers: user.followers.length,
       following: user.following.length,
       baiViet: {
-        count: posts.length,
-        list: posts
+        count: baivietsWithLikeInfo.length,
+        list: baivietsWithLikeInfo
       },
       sanPham: {
         count: products.length,
@@ -709,6 +715,34 @@ async function findUserById(req, res) {
   }
 }
 
+async function getListThongBao(req, res) {
+  const { userId } = req.params;
+  try {
+    const thongBaos = await ThongBaoModel.find({ userId: userId }).sort({ ngayTao: -1 });
+
+    return res.status(200).json(thongBaos);
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách thông báo:', error);
+    res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách thông báo' });
+  }
+}
+async function updateDaDoc(req, res) {
+  const { thongBaoId } = req.params;
+  try {
+    const thongBao = await ThongBaoModel.findById(thongBaoId);
+    if (!thongBao) {
+      return res.status(404).json({ message: 'Không tìm thấy thông báo' });
+    }
+
+    thongBao.daDoc = true;
+    await thongBao.save();
+
+    res.status(200).json({ message: 'Đã cập nhật trạng thái đọc của thông báo', thongBao });
+  } catch (error) {
+    console.error('Lỗi khi cập nhật trạng thái đọc của thông báo:', error);
+    res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật trạng thái đọc của thông báo' });
+  }
+}
 
 module.exports = {
   RegisterUser,
@@ -730,4 +764,6 @@ module.exports = {
   updateUser12,
   toggleFollowUser,
   findUserById,
+  getListThongBao,
+  updateDaDoc,
 };

@@ -115,7 +115,7 @@ app.get("/logout", (req, res) => {
 
 //chat
 let connectedUsers = []; // Danh sách các user đã kết nối
-
+const { decodeToken } = require("./untils");
 io.on("connection", (socket) => {
   console.log(`New client connected: ${socket.id}`);
   // Lấy token từ handshake
@@ -123,7 +123,7 @@ io.on("connection", (socket) => {
   console.log("hand", socket.handshake)
   console.log(token);
   connectedUsers.push(socket.id);
-  console.log(connectedUsers);
+  console.log("user", decodeToken(token));
   let userid;
   // Xác thực token
   try {

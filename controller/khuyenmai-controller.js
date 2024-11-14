@@ -171,6 +171,7 @@ async function updateKhuyenMai(req, res, next) {
             updateData,
             { new: true }
         );
+        res.status(200).json({ message: 'Cập nhật thành công', updatedKhuyenMai });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi khi update khuyen mai' });
