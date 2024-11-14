@@ -110,7 +110,7 @@ async function getHoaDonByHoaDonIdFullVersion(req, res) {
 
     const hoadon = await HoaDonModel.findById(hoadonId)
       .populate("userId")
-      //.populate('khuyenmaiId')
+      .populate('khuyenmaiId')
       .populate({
         path: 'chiTietHoaDon.idBienThe',
         populate: {

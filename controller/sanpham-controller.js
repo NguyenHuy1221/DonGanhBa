@@ -952,6 +952,7 @@ async function findSanPhambyID(req, res, next) {
           path: 'giaTriThuocTinh'
         }
       })
+      .populate("userId")
 
     let isFavorited = false; // Kiểm tra yêu thích nếu userId không null 
     if (userId && yeuThichId) {
@@ -1136,7 +1137,8 @@ async function searchSanPham(req, res, next) {
     // Tìm kiếm, thêm index nếu chưa có
     const sanphams = await SanPhamModel.find({
       TenSanPham: { $regex: regex }
-    }).collation({ locale: 'vi' }); // Sử dụng collation cho tiếng Việt
+    }).collation({ locale: 'vi' })
+      .populate("userId"); // Sử dụng collation cho tiếng Việt
 
     let favoritedProductIds = [];
     if (userId && yeuThichId) {

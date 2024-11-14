@@ -6,8 +6,12 @@ async function getListYeuThich(req, res) {
     const { userId } = req.params;
     try {
         const user = await NguoiDungschema.findById(userId).populate({
-            path: 'IDYeuThich', populate: {
-                path: 'sanphams.IDSanPham', model: 'SanPham' // Tên model của schema sản phẩm 
+            path: 'IDYeuThich',
+            populate: {
+                path: 'sanphams.IDSanPham', model: 'SanPham',
+                populate: {
+                    path: 'userId', model: 'User' // Tên model của schema sản phẩm 
+                } // Tên model của schema sản phẩm 
             }
         });
         res.status(200).json(user);

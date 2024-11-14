@@ -17,7 +17,7 @@ const MessageModel = require("./models/MessageSchema.js");
 const cors = require("cors");
 app.use(cors());
 const jwt = require('jsonwebtoken')
-
+const { decodeToken } = require("./untils")
 //chat
 const http = require("http"); // Needed to set up a server with socket.io
 // const socketIO = require("socket.io"); // Socket.IO for real-time functionality
@@ -115,52 +115,50 @@ app.get("/logout", (req, res) => {
 
 //chat
 let connectedUsers = []; // Danh sách các user đã kết nối
-const { decodeToken } = require("./untils");
+
 io.on("connection", (socket) => {
   console.log(`New client connected: ${socket.id}`);
   // Lấy token từ handshake
-  const token = socket.handshake.auth.token;
-  console.log("hand", socket.handshake)
-  console.log(token);
+  const tokenerror = socket.handshake.auth.token;
+  // console.log("hand", socket.handshake)
+  // console.log(token);
   connectedUsers.push(socket.id);
-  console.log("user", decodeToken(token));
+  // console.log("user", decodeToken(token));
   let userid;
   // Xác thực token
-  try {
-    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
-      if (err) {
-        console.log("Token verification failed:", err);
-      } else {
-        console.log("Decoded token:", decoded);
-        userid = decoded.data;
-      }
-    });
-  } catch (err) {
-    console.log("Token verification failed:", err);
-    socket.emit("error", { message: "Authentication failed" });
-    socket.disconnect(); // Ngắt kết nối nếu token không hợp lệ
-    return; // Dừng quá trình nếu token không hợp lệ
-  }
 
   // Đảm bảo userid đã tồn tại trước khi xử lý sự kiện khác
-  if (!userid) {
-    socket.emit("error", { message: "Invalid token" });
-    return;
-  }
+  // if (!userid) {
+  //   socket.emit("error", { message: "Invalid token" });
+  //   return;
+  // }
   socket.on("/test", (mgs) => {
     console.log(mgs);
     // io.emit("/test", mgs);
   });
 
-  console.log(userid); // Đảm bảo userid đã được gán trước khi sử dụng
 
-  socket.on("join", async ({ conversationId }) => {
+  socket.on("join", async ({ conversationId, token }) => {
     try {
-      if (!userid) {
+
+      const tokeninfo = decodeToken(token)
+      if (tokeninfo.error) {
+        console.error('Token không hợp lệ:', decoded.error);
+        socket.disconnect(true); // Ngắt kết nối
+      }
+      console.log(tokeninfo.data)
+      console.log(token)
+      console.log("0", tokeninfo.data)
+
+      if (!tokeninfo.data) {
         console.error("User ID is not defined");
         socket.emit("error", { message: "User not authenticated" });
+        socket.disconnect(true); // Ngắt kết nối
+
         return;
       }
+      const userID = tokeninfo.data
+
       // Tìm cuộc trò chuyện và populate các tin nhắn
       const conversation = await ConversationModel.findById(
         conversationId
@@ -168,12 +166,18 @@ io.on("connection", (socket) => {
         path: 'messages',
         populate: {
           path: 'IDSanPham',
-          model: 'SanPham' // Name of the Product model
+          model: 'SanPham',
+          populate: {
+            path: 'userId',
+            model: 'User' // Name of the Product model
+          }
         }
       })
         .populate("sender_id")
         .populate("receiver_id");
 
+
+      // console.log("conversation", conversation)
       if (conversation) {
         socket.join(conversationId);
         //console.log(`User ${userid} joined conversation ${conversationId}`);
@@ -201,15 +205,26 @@ io.on("connection", (socket) => {
 
   socket.on('sendMessage', async ({ conversationId, text, imageUrl, videoUrl, IDSanPham, token }) => {
     try {
-      //const now = Date.now();
-      console.log(token)
+      const tokeninfo = decodeToken(token)
+      if (tokeninfo.error) {
+        console.error('Token không hợp lệ:', decoded.error);
+        socket.disconnect(true); // Ngắt kết nối
+      }
+      if (!tokeninfo.data) {
+        console.error("User ID is not defined");
+        socket.emit("error", { message: "User not authenticated" });
+        socket.disconnect(true); // Ngắt kết nối
+
+        return;
+      }
+      const userID = tokeninfo.data
       const MIN_TIME_BETWEEN_MESSAGES = 1000;
       const message = new MessageModel({
         text,
         imageUrl,
         videoUrl,
         IDSanPham,
-        msgByUserId: userid,
+        msgByUserId: userID,
       });
       console.log(message)
       // Gửi phản hồi nhanh chóng tới client
@@ -242,6 +257,26 @@ io.on("connection", (socket) => {
     }
   });
 });
+async function jwtdecor(token) {
+  try {
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+      if (err) {
+        console.log("Token verification failed:", err);
+        return "token khong hop le"
+      } else {
+        console.log("Decoded token:", decoded);
+        return decoded.data
+      }
+    });
+  } catch (err) {
+    console.log("Token verification failed:", err);
+    socket.emit("error", { message: "Authentication failed" });
+    socket.disconnect(); // Ngắt kết nối nếu token không hợp lệ
+    return; // Dừng quá trình nếu token không hợp lệ
+  }
+
+}
+
 server.listen(3000, "0.0.0.0", () => {
   console.log("Server  is running on port 3000");
 });
