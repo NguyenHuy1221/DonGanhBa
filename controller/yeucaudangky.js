@@ -9,7 +9,6 @@ async function getListYeuCauDangKy(req, res, next) {
         const yeucaudangky = await YeuCauDangKySchema.find().populate("userId")
         if (!yeucaudangky) {
             res.status(404).json({ message: 'Không tìm thấy yêu cầu đăng ký nào' });
-
         }
         return res.status(200).json(yeucaudangky);
 
@@ -19,7 +18,7 @@ async function getListYeuCauDangKy(req, res, next) {
     }
 }
 
-async function getYeuCauDangKyById(req, res, next) {
+async function getYeuCauDangKyByUserId(req, res, next) {
     const { userId } = req.params
     try {
         const baiviets = await YeuCauDangKySchema.find({ userId: userId })
@@ -88,5 +87,8 @@ async function updateYeuCauDangKy(req, res, next) {
 
 
 module.exports = {
-    createYeuCauDangKy
+    createYeuCauDangKy,
+    getListYeuCauDangKy,
+    getYeuCauDangKyByUserId,
+    updateYeuCauDangKy,
 };
