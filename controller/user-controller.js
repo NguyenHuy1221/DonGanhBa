@@ -12,6 +12,12 @@ const BaiVietModel = require("../models/baivietSchema")
 const SanPhamModel = require("../models/SanPhamSchema")
 const yeuthichSchema = require("../models/YeuThichSchema")
 const ThongBaoModel = require("../models/thongbaoSchema")
+const YeuCauRutTienSchema = require("../models/YeuCauRutTienSchema")
+const nodemailer = require('nodemailer');
+const { sendVerificationEmail, createNewRequest } = require('../helpers/helpers');
+
+
+
 async function verifyGoogleToken(token) {
   const ticket = await client.verifyIdToken({
     idToken: token,
@@ -57,7 +63,22 @@ async function RegisterUser(req, res) {
       from: process.env.EMAIL_USER,
       to: gmail,
       subject: "Xác nhận đăng ký tài khoản",
-      text: `Chào ${tenNguoiDung},\n\nVui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn:\n\n${otp}\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+          <div style="background-color: #ffffff; margin: 20px auto; padding: 20px; max-width: 600px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <div style="text-align: center;">
+              <img src="${process.env.LOGO_URL}" alt="Logo" style="width: 150px; margin-bottom: 20px;">
+            </div>
+            <h1 style="text-align: center;">Vui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn</h1>
+            <p>Chào ${tenNguoiDung},</p>
+            <p>Mã OTP : ${otp}</p>
+            <p>Trân trọng,</p>
+            <p>Đội ngũ hỗ trợ</p>
+            <p>${new Date().toDateString()}</p>
+          </div>
+        </div>
+      `
+      //text: `Chào ${tenNguoiDung},\n\nVui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn:\n\n${otp}\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -212,6 +233,12 @@ async function loginUser(req, res) {
       return res.status(400).json({ message: "Tài khoản chưa được xác nhận" });
     }
 
+    if (!user.matKhau) {
+      return res.status(404).json({ message: "mat khau khong ton tai" });
+    }
+
+
+
     const check = await comparePassword(matKhau, user.matKhau);
     if (!check) {
       return res.status(400).json({ message: "Mật khẩu không đúng" });
@@ -260,7 +287,22 @@ async function SendOtpForgotPassword(req, res) {
       from: process.env.EMAIL_USER,
       to: gmail,
       subject: "Xác nhận khôi phục mật khẩu",
-      text: `Chào ${user.tenNguoiDung},\n\nVui lòng sử dụng mã OTP sau để xác nhận khôi phục mật khẩu của bạn:\n\n${otp}\n\n thời hạn 5 phút \n\nTrân trọng,\nĐội ngũ hỗ trợ`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+          <div style="background-color: #ffffff; margin: 20px auto; padding: 20px; max-width: 600px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <div style="text-align: center;">
+              <img src="${process.env.LOGO_URL}" alt="Logo" style="width: 150px; margin-bottom: 20px;">
+            </div>
+            <h1 style="text-align: center;">Vui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn</h1>
+            <p>Chào ${user.tenNguoiDung},</p>
+            <p>Mã OTP : ${otp}</p>
+            <p>Trân trọng,</p>
+            <p>Đội ngũ hỗ trợ</p>
+            <p>${new Date().toDateString()}</p>
+          </div>
+        </div>
+      `
+      //text: `Chào ${user.tenNguoiDung},\n\nVui lòng sử dụng mã OTP sau để xác nhận khôi phục mật khẩu của bạn:\n\n${otp}\n\n thời hạn 5 phút \n\nTrân trọng,\nĐội ngũ hỗ trợ`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -422,7 +464,22 @@ async function ResendOTP(req, res) {
       from: process.env.EMAIL_USER,
       to: gmail,
       subject: "Xác nhận mã OTP mới",
-      text: `Chào ${user.tenNguoiDung},\n\nVui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn:\n\n${otp}\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+          <div style="background-color: #ffffff; margin: 20px auto; padding: 20px; max-width: 600px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <div style="text-align: center;">
+              <img src="${process.env.LOGO_URL}" alt="Logo" style="width: 150px; margin-bottom: 20px;">
+            </div>
+            <h1 style="text-align: center;">Vui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn</h1>
+            <p>Chào ${user.tenNguoiDung},</p>
+            <p>Mã OTP : ${otp}</p>
+            <p>Trân trọng,</p>
+            <p>Đội ngũ hỗ trợ</p>
+            <p>${new Date().toDateString()}</p>
+          </div>
+        </div>
+      `
+      //text: `Chào ${user.tenNguoiDung},\n\nVui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn:\n\n${otp}\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -671,8 +728,8 @@ async function findUserById(req, res) {
 
     // Lấy thông tin cơ bản của người dùng
     const user = await UserModel.findById(userId)
-      .populate('followers', 'tenNguoiDung')
-      .populate('following', 'tenNguoiDung');
+      .populate('followers', 'tenNguoiDung anhDaiDien _id')
+      .populate('following', 'tenNguoiDung anhDaiDien _id');
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
@@ -715,6 +772,40 @@ async function findUserById(req, res) {
   }
 }
 
+
+
+async function getUserFollowers(req, res) {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'Thiếu thông tin userId' });
+    }
+
+    // Lấy thông tin người dùng và populate thông tin của các followers
+    const user = await UserModel.findById(userId)
+      .populate('followers')
+      .populate('following');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    // Lấy danh sách followers và thông tin cần thiết
+    const followers = user.followers
+    const followings = user.following
+    return res.json({ followers, followings });
+  } catch (error) {
+    console.error('Lỗi khi lấy thông tin followers:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy thông tin followers' });
+  }
+}
+
+
+
+
+
+
 async function getListThongBao(req, res) {
   const { userId } = req.params;
   try {
@@ -744,6 +835,309 @@ async function updateDaDoc(req, res) {
   }
 }
 
+const updateDaDocAll = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Tìm tất cả thông báo của người dùng dựa trên userId
+    const notifications = await ThongBaoModel.find({ userId: userId });
+
+    // Kiểm tra nếu không có thông báo nào
+    if (!notifications || notifications.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy thông báo nào cho người dùng này" });
+    }
+
+    // Cập nhật tất cả thông báo thành "đã đọc"
+    await ThongBaoModel.updateMany(
+      { userId: userId },
+      { $set: { daDoc: true } }
+    );
+
+    return res.status(200).json({ message: "Cập nhật thông báo thành công" });
+  } catch (error) {
+    console.error("Error updating notifications:", error);
+    return res.status(500).json({ message: "Có lỗi xảy ra khi cập nhật thông báo" });
+  }
+};
+
+
+async function deleteThongBao(req, res) {
+  const { thongBaoId } = req.params;
+  try {
+    const thongBao = await ThongBaoModel.findById(thongBaoId);
+    if (!thongBao) {
+      return res.status(404).json({ message: 'Không tìm thấy thông báo' });
+    }
+
+    await ThongBaoModel.findByIdAndDelete(thongBaoId);
+
+    res.status(200).json({ message: 'Đã xóa thông báo thành công' });
+  } catch (error) {
+    console.error('Lỗi khi xóa thông báo:', error);
+    res.status(500).json({ message: 'Đã xảy ra lỗi khi xóa thông báo' });
+  }
+}
+const deleteAllThongBao = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Tìm tất cả thông báo của người dùng dựa trên userId
+    const notifications = await ThongBaoModel.find({ userId: userId });
+
+    // Kiểm tra nếu không có thông báo nào
+    if (!notifications || notifications.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy thông báo nào cho người dùng này" });
+    }
+
+    // Xóa tất cả thông báo của người dùng
+    await ThongBaoModel.deleteMany({ userId: userId });
+
+    return res.status(200).json({ message: "Đã xóa tất cả thông báo thành công" });
+  } catch (error) {
+    console.error("Lỗi khi xóa thông báo:", error);
+    return res.status(500).json({ message: "Có lỗi xảy ra khi xóa thông báo" });
+  }
+};
+
+
+const twilio = require('twilio');
+const accountSid = process.env.YOUR_ACCOUNT_SID; // Thay thế bằng Account SID từ Twilio
+const authToken = process.env.YOUR_AUTH_TOKEN;   // Thay thế bằng Auth Token từ Twilio
+const client2 = new twilio(accountSid, authToken);
+
+const { v4: uuidv4 } = require('uuid');
+
+// Hàm gửi OTP qua SMS
+// async function sendOtp(phoneNumber) {
+//   try {
+//     // Tạo mã OTP ngẫu nhiên
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//     // Gửi tin nhắn SMS chứa mã OTP
+//     const message = await client.messages.create({
+//       body: `Your OTP code is ${otp}`,
+//       from: 'YOUR_TWILIO_PHONE_NUMBER', // Thay thế bằng số điện thoại từ Twilio
+//       to: phoneNumber
+//     });
+
+//     console.log(`OTP sent successfully: ${message.sid}`);
+//     return otp; // Lưu mã OTP này để xác thực sau
+//   } catch (error) {
+//     console.error('Failed to send OTP:', error);
+//     throw error;
+//   }
+// }
+
+// // Ví dụ sử dụng hàm sendOtp
+// const phoneNumber = '+84912345678'; // Thay thế bằng số điện thoại thực tế
+
+// async function createYeuCauRutTien(req, res) {
+//   const { userId, tenNganHang, soTaiKhoan, soTien, ghiChu } = req.body;
+//   if (!userId || !tenNganHang || !soTaiKhoan || !soTien) {
+//     return res.status(400).json({ message: 'Thiếu thông tin yêu cầu' });
+//   }
+
+//   try {
+//     const verificationToken = crypto.randomBytes(32).toString("hex");
+//     const user = await UserModel.findById(userId)
+
+//     const newRequest = new YeuCauRutTienSchema({
+//       userId,
+//       tenNganHang,
+//       soTaiKhoan,
+//       soTien,
+//       ghiChu,
+//       verificationToken
+//     });
+
+//     await newRequest.save();
+
+//     const transporter = nodemailer.createTransport({
+//       service: 'gmail', // Use `true` for port 465, `false` for all other ports
+//       auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_PASS,
+//       },
+//     });
+//     const verificationUrl = `${process.env.BASE_URL}/verify/${verificationToken}`;
+//     const mailOptions = {
+//       from: 'DONGANHSTORE@gmail.com',
+//       to: user.gmail,
+//       subject: 'Yêu cầu xác Minh yêu cầu rút tiền',
+//       html: `
+//         <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+//           <div style="background-color: #ffffff; margin: 20px auto; padding: 20px; max-width: 600px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+//             <div style="text-align: center;">
+//               <img src="${process.env.LOGO_URL}" alt="Logo" style="width: 150px; margin-bottom: 20px;">
+//             </div>
+//             <h1 style="text-align: center;">Xác thực yêu cầu rút tiền</h1>
+//             <p>Chào ${user.tenNguoiDung},</p>
+//             <p>Vui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết sau:</p>
+//             <a href="${verificationUrl}" style="display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px;">Xác thực</a>
+//             <p>Trân trọng,</p>
+//             <p>Đội ngũ hỗ trợ</p>
+//             <p>${new Date().toDateString()}</p>
+//           </div>
+//         </div>
+//       `
+//       //text: `Chào ${user.tenNguoiDung},\n\nVui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết sau:\n\n${process.env.BASE_URL}/verify/${verificationToken}\n\nTrân trọng,\nĐội ngũ hỗ trợ\n\n ${Date.now()}`,
+//     };
+//     transporter.sendMail(mailOptions, function (error, info) {
+//       if (error) {
+//         console.log(error);
+//       } else {
+//         console.log('Email sent: ' + info.response);
+//       }
+//     });
+//     return res.status(200).json({ message: 'Yêu cầu rút tiền đã được gửi', request: newRequest });
+//   } catch (error) {
+//     console.error('Lỗi khi tạo yêu cầu rút tiền:', error);
+//     return res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo yêu cầu rút tiền' });
+//   }
+// }
+
+async function createYeuCauRutTien(req, res) {
+  const { userId, tenNganHang, soTaiKhoan, soTien, ghiChu } = req.body;
+  if (!userId || !tenNganHang || !soTaiKhoan || !soTien) {
+    return res.status(400).json({ message: 'Thiếu thông tin yêu cầu' });
+  }
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const newRequest = await createNewRequest(userId, tenNganHang, soTaiKhoan, soTien, ghiChu, verificationToken);
+    await sendVerificationEmail(user, verificationToken);
+    return res.status(200).json({ message: 'Yêu cầu rút tiền mới đã được gửi', request: newRequest });
+  } catch (error) {
+    console.error('Lỗi khi tạo yêu cầu rút tiền:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo yêu cầu rút tiền' });
+  }
+}
+
+
+
+
+// const sendVerificationEmail = async (user, verificationToken) => {
+//   const transporter = nodemailer.createTransport({
+//     service: 'gmail',
+//     auth: {
+//       user: process.env.EMAIL_USER,
+//       pass: process.env.EMAIL_PASS,
+//     },
+//   });
+
+//   const verificationUrl = `${process.env.BASE_URL}/verify/${verificationToken}`;
+//   const mailOptions = {
+//     from: 'DONGANHSTORE@gmail.com',
+//     to: user.gmail,
+//     subject: 'Yêu cầu xác Minh yêu cầu rút tiền',
+//     html: `
+//       <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+//         <div style="background-color: #ffffff; margin: 20px auto; padding: 20px; max-width: 600px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+//           <div style="text-align: center;">
+//             <img src="${process.env.LOGO_URL}" alt="Logo" style="width: 150px; margin-bottom: 20px;">
+//           </div>
+//           <h1 style="text-align: center;">Xác thực yêu cầu rút tiền</h1>
+//           <p>Chào ${user.tenNguoiDung},</p>
+//           <p>Vui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết sau:</p>
+//           <a href="${verificationUrl}" style="display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px;">Xác thực</a>
+//           <p>Trân trọng,</p>
+//           <p>Đội ngũ hỗ trợ</p>
+//           <p>${new Date().toDateString()}</p>
+//         </div>
+//       </div>
+//     `
+//   };
+
+//   await transporter.sendMail(mailOptions);
+// };
+
+// const createNewRequest = async (userId, tenNganHang, soTaiKhoan, soTien, ghiChu, verificationToken) => {
+//   const newRequest = new YeuCauRutTienSchema({
+//     userId,
+//     tenNganHang,
+//     soTaiKhoan,
+//     soTien,
+//     ghiChu,
+//     verificationToken
+//   });
+
+//   await newRequest.save();
+//   return newRequest;
+// };
+
+
+async function resendYeuCauRutTien(req, res) {
+  const { yeuCauId } = req.params;
+  if (!yeuCauId) {
+    return res.status(400).json({ message: 'Thiếu thông tin requestId' });
+  }
+
+  try {
+    // Tìm yêu cầu rút tiền với requestId
+    const request = await YeuCauRutTienSchema.findById(yeuCauId).populate('userId');
+
+    if (!request || request.XacThuc) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu rút tiền hoặc yêu cầu đã được xác thực' });
+    }
+
+    // Gửi lại email xác thực
+    const user = request.userId;
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    await sendVerificationEmail(user, verificationToken);
+    request.verificationToken = verificationToken
+    await request.save()
+    return res.status(200).json({ message: 'Email xác thực đã được gửi lại', request });
+  } catch (error) {
+    console.error('Lỗi khi gửi lại email xác thực:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi gửi lại email xác thực' });
+  }
+}
+
+
+
+async function deleteYeuCauRutTienCoDieuKien(req, res) {
+  const { yeuCauId } = req.params;
+
+  if (!yeuCauId) {
+    return res.status(400).json({ message: 'Thiếu thông tin requestId' });
+  }
+
+  try {
+    const request = await YeuCauRutTienSchema.findOneAndDelete({ _id: yeuCauId, XacThuc: false });
+
+    if (!request) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu rút tiền hoặc yêu cầu đã được xác thực' });
+    }
+
+    return res.status(200).json({ message: 'Yêu cầu rút tiền đã được xóa thành công', request });
+  } catch (error) {
+    console.error('Lỗi khi xóa yêu cầu rút tiền:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi xóa yêu cầu rút tiền' });
+  }
+}
+
+
+async function getListYeuCauRutTienByuserId(req, res) {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Thiếu thông tin userId' });
+  }
+
+  try {
+    const requests = await YeuCauRutTienSchema.find({ userId: userId });
+
+    return res.status(200).json({ data: requests });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách yêu cầu rút tiền của người dùng:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách yêu cầu rút tiền của người dùng' });
+  }
+}
+
 module.exports = {
   RegisterUser,
   VerifyOTP,
@@ -766,4 +1160,12 @@ module.exports = {
   findUserById,
   getListThongBao,
   updateDaDoc,
+  updateDaDocAll,
+  deleteThongBao,
+  deleteAllThongBao,
+  getUserFollowers,
+  getListYeuCauRutTienByuserId,
+  createYeuCauRutTien,
+  resendYeuCauRutTien,
+  deleteYeuCauRutTienCoDieuKien,
 };

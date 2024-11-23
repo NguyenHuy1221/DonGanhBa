@@ -19,7 +19,9 @@ const yeuthichRoute = require("../router/yeuthich")
 const adminRoute = require("../router/admin")
 const baivietRoute = require("../router/baiviet")
 const doanhthuRoute = require("../router/doanhthu")
+const yeucaudangkyRoute = require("../router/yeucaudangky")
 // const phuongthucthanhtoanRoute = require("../router/phuongthucthanhtoan")
+apiRoute.use("/yeucaudangky", yeucaudangkyRoute);
 apiRoute.use("/doanhthu", doanhthuRoute);
 apiRoute.use("/baiviet", baivietRoute);
 apiRoute.use("/admin", adminRoute);

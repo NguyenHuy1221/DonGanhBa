@@ -428,11 +428,50 @@ async function updatetrangthaiHoaDOn(req, res, next) {
   const { TrangThai } = req.body
   try {
 
-    const hoadon = await HoaDonModel.findById(hoadonId)// Lấy thông tin đơn hàng từ DB
-    if (!hoadon) {
-      return 'hoa don không tồn tại';
-    }
+    const hoadon = await HoaDonModel.findById(hoadonId)
+      .populate({ path: 'chiTietHoaDon.idBienThe', populate: { path: 'IDSanPham', model: 'SanPham' } });
 
+    if (!hoadon) {
+      res.status(404).json({ message: 'Hóa đơn ko tồn tại' });
+
+    }
+    if (TrangThai == 3) {
+
+
+      hoadon.DaThanhToan = true;
+      let tongTienThucTe = hoadon.TongTien;
+
+      if (hoadon.SoTienKhuyenMai && hoadon.SoTienKhuyenMai > 1) {
+        tongTienThucTe -= hoadon.SoTienKhuyenMai;
+      }
+
+      if (!hoadon.tienDaCong) {
+        let sellerIdList = [];
+        for (const chiTiet of hoadon.chiTietHoaDon) {
+          const bienThe = chiTiet.idBienThe;
+          const sanPham = bienThe.IDSanPham;
+          const sellerId = sanPham.userId; // Giả sử bạn có thông tin người bán trong schema SanPham
+
+          if (!sellerIdList.includes(sellerId.toString())) {
+            sellerIdList.push(sellerId.toString());
+
+            await UserModel.findOneAndUpdate(
+              { _id: sellerId },
+              { $inc: { soTienHienTai: chiTiet.soLuong * chiTiet.donGia } },
+              { new: true }
+            );
+          }
+        }
+
+        console.log('Đã cập nhật số tiền hiện tại của người bán');
+
+        // Cập nhật biến tienDaCong trong hóa đơn
+        hoadon.tienDaCong = true;
+      } else {
+        return res.status(400).json({ message: 'Số tiền đã được cộng trước đó' });
+      }
+
+    }
     if (TrangThai == 4) {
       for (const chiTiet of hoadon.chiTietHoaDon) {
         if (chiTiet.idBienThe) {
@@ -459,10 +498,10 @@ async function updatetrangthaiHoaDOn(req, res, next) {
     }
     hoadon.TrangThai = TrangThai;
     await hoadon.save();
-    res.status(200).json("Huy don hang thanh cong");
+    res.status(200).json("Cập nhập đơn hàng thành công");
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Lỗi khi cập nhật trang thái hủy hoa don' });
+    res.status(500).json({ message: 'Lỗi khi cập nhật trang thái  hoa don' });
   }
 }
 

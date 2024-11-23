@@ -5,6 +5,7 @@ const NguoiDungSchema = new Schema({
   anhDaiDien: String,
   tenNguoiDung: String,
   GioiTinh: String,
+  soTienHienTai: { type: Number, default: 0 },/// Tổng tiền bán hàng
   soDienThoai: String,
   gmail: String,
   matKhau: String,

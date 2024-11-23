@@ -2,6 +2,8 @@ const DiaChiModel = require("../models/DiaChiSchema");
 const LoaiKhuyenMaiModel = require("../models/LoaiKhuyenMaiSchema")
 const NguoiDungModel = require("../models/NguoiDungSchema")
 const ThongBaoModel = require("../models/thongbaoSchema")
+const YeuCauRutTienSchema = require('../models/YeuCauRutTienSchema');
+
 async function UpdateRole(req, res, next) {
     const { userId } = req.params;
     const { role } = req.body
@@ -316,6 +318,89 @@ async function updateDaDoc(req, res) {
     }
 }
 
+// Lấy danh sách yêu cầu rút tiền của người dùng theo userId
+async function getUserWithdrawalRequests(req, res) {
+    const { userId } = req.params;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Thiếu thông tin userId' });
+    }
+
+    try {
+        const requests = await YeuCauRutTienSchema.find({ userId, isDeleted: false });
+
+        return res.status(200).json({ requests });
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách yêu cầu rút tiền của người dùng:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách yêu cầu rút tiền của người dùng' });
+    }
+}
+
+// Lấy danh sách yêu cầu rút tiền cho admin với các điều kiện lọc
+async function getAdminWithdrawalRequests(req, res) {
+    const { isDeleted, daXuLy, choXacThuc } = req.query;
+
+    const filter = {};
+
+    if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'false';
+    if (daXuLy !== undefined) filter.daXuLy = daXuLy === 'false';
+    if (choXacThuc !== undefined) filter.XacThuc = XacThuc === 'false';
+
+    // Mặc định chỉ lấy những yêu cầu chưa xử lý nếu không có điều kiện lọc nào được gửi
+    if (Object.keys(filter).length === 0) filter.daXuLy = false;
+
+    try {
+        const requests = await YeuCauRutTienSchema.find(filter).populate('userId', 'tenNguoiDung email soDienThoai');
+
+        return res.status(200).json({ requests });
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách yêu cầu rút tiền cho admin:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách yêu cầu rút tiền cho admin' });
+    }
+}
+
+
+async function updateWithdrawalRequest(req, res) {
+    const { requestId } = req.params;
+
+    if (!requestId) {
+        return res.status(400).json({ message: 'Thiếu thông tin requestId' });
+    }
+
+    try {
+        const request = await YeuCauRutTienSchema.findByIdAndUpdate(
+            requestId,
+            { daXuLy: true },
+            { new: true }
+        );
+
+        if (!request) {
+            return res.status(404).json({ message: 'Không tìm thấy yêu cầu rút tiền' });
+        }
+
+        return res.status(200).json({ message: 'Yêu cầu rút tiền đã được cập nhật', request });
+    } catch (error) {
+        console.error('Lỗi khi cập nhật yêu cầu rút tiền:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật yêu cầu rút tiền' });
+    }
+}
+
+
+
+async function deleteManyWithdrawalRequests(req, res) {
+    try {
+        // Cập nhật tất cả yêu cầu có daXuLy là true và isDeleted là false thành isDeleted = true
+        const result = await YeuCauRutTienSchema.updateMany(
+            { daXuLy: true, isDeleted: false, XacThuc: true },
+            { $set: { isDeleted: true } }
+        );
+
+        return res.status(200).json({ message: 'Đã cập nhật trạng thái xóa cho các yêu cầu rút tiền', result });
+    } catch (error) {
+        console.error('Lỗi khi cập nhật trạng thái xóa cho các yêu cầu rút tiền:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật trạng thái xóa cho các yêu cầu rút tiền' });
+    }
+}
 
 
 
@@ -324,4 +409,9 @@ module.exports = {
     updateUserRoleAndPermissionsforuser,
     getListThongBaoAdmin,
     createThongBao,
+    getUserWithdrawalRequests,
+    getAdminWithdrawalRequests,
+    updateWithdrawalRequest,
+    deleteManyWithdrawalRequests,
+
 };

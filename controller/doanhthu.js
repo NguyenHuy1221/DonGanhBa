@@ -11,8 +11,8 @@ async function GetDoanhThu(req, res, next) {
 
         if (fromDate && toDate) {
             // Chuyển đổi các ngày từ query sang dạng Date object
-            const start = startDate ? new Date(startDate) : new Date('1970-01-01');
-            const end = endDate ? new Date(endDate) : new Date();
+            const start = fromDate ? new Date(fromDate) : new Date('1970-01-01');
+            const end = toDate ? new Date(toDate) : new Date();
 
             // Thiết lập bộ lọc ngày
             query.NgayTao = {

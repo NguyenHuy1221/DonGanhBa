@@ -4,9 +4,20 @@ const { convertToVietnamTimezone } = require('../middleware/index');
 
 const YeuCauDangKySchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    trangThai: { type: String, enum: ['cho', 'xacnhan', 'huy'], default: 'pending' },
+    soluongloaisanpham: { type: Number },
+    soluongsanpham: { type: Number },
+    ghiChu: { type: String },
+    diaChi: {
+        tinhThanhPho: String,
+        quanHuyen: String,
+        phuongXa: String,
+        duongThon: String,
+        Name: { type: String },
+        SoDienThoai: { type: String },
+    },
+    hinhthucgiaohang: { type: String, enum: ['tugiao', 'denlay'], default: 'tugiao' },
+    trangThai: { type: String, enum: ['cho', 'xacnhan', 'huy'], default: 'cho' },
     ngayTao: { type: Date, default: Date.now },
-    ghiChu: String, // Ghi chú của người dùng gửi yêu cầu hoặc của admin khi xét duyệt
 }, {
     timestamps: true
 });

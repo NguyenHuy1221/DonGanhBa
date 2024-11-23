@@ -104,42 +104,58 @@ function decodeToken(token) {
 }
 
 
-// const AWS = require('aws-sdk');
+const express = require('express');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { v4: uuidv4 } = require('uuid');
 
-// // Cấu hình SDK với thông tin từ Viettel Cloud
-// const s3 = new AWS.S3({
-//   accessKeyId: 'YOUR_ACCESS_KEY',
-//   secretAccessKey: 'YOUR_SECRET_KEY',
-//   endpoint: 'https://vstorage.viettel.vn', // endpoint của Viettel Cloud Object Storage
-//   s3ForcePathStyle: true, // Bắt buộc để tuân theo kiểu đường dẫn S3
-//   signatureVersion: 'v4' // Phiên bản chữ ký
-// });
 
-// // Hàm upload file lên Viettel Cloud Object Storage
-// async function uploadFile(filePath, bucketName, key) {
-//   const fs = require('fs');
-//   const fileStream = fs.createReadStream(filePath);
+// Cấu hình AWS S3 Client
+const s3Client = new S3Client({
+  region: 'ap-southeast-1',
+  endpoint: process.env.VIETTEL_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.VIETTEL_ACCESS_KEY,
+    secretAccessKey: process.env.VIETTEL_SECRET_KEY
+  }
+});
 
-//   const params = {
-//     Bucket: bucketName,
-//     Key: key, // Đường dẫn và tên file trong bucket
-//     Body: fileStream
-//   };
+// Cấu hình Multer để xử lý file upload
+const storagememory = multer.memoryStorage(); // Lưu trữ file trong bộ nhớ tạm
 
-//   try {
-//     const data = await s3.upload(params).promise();
-//     console.log('File uploaded successfully:', data);
-//     return data;
-//   } catch (error) {
-//     console.error('Error uploading file:', error);
-//     throw error;
-//   }
-// }
+const uploadmemory = multer({
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'), false);
+    }
+  }
+});
 
-// // Ví dụ sử dụng hàm uploadFile
-// uploadFile('/path/to/your/image.jpg', 'your-bucket-name', 'images/image.jpg')
-//   .then(data => console.log('Upload successful:', data))
-//   .catch(error => console.error('Upload failed:', error));
+// Hàm upload file lên Viettel Cloud
+async function uploadFileToViettelCloud(buffer, bucketName, key, mimetype) {
+  const params = {
+    Bucket: bucketName,
+    Key: key,
+    Body: buffer,
+    ContentType: mimetype
+  };
+
+  try {
+    const data = await s3Client.send(new PutObjectCommand(params));
+    console.log('File uploaded successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+}
+
+
+
+
+
+
 
 
 
@@ -150,4 +166,6 @@ module.exports = {
   upload,
   uploadFiles,
   decodeToken,
+  uploadFileToViettelCloud,
+  uploadmemory,
 };

@@ -18,11 +18,11 @@ const cors = require("cors");
 app.use(cors());
 const jwt = require('jsonwebtoken')
 const { decodeToken } = require("./untils")
+
+
 //chat
 const http = require("http"); // Needed to set up a server with socket.io
-// const socketIO = require("socket.io"); // Socket.IO for real-time functionality
 var server = http.createServer(app); // Use http server
-// const io = socketIO(server); // Initialize socket.io on the server
 var io = require("socket.io")(server, {
   cors: {
     origin: "*",
@@ -33,6 +33,8 @@ var io = require("socket.io")(server, {
 });
 
 // // Thư mục chứa hình ảnh
+app.set('view engine', 'ejs')
+app.set('views', path.join(__dirname, 'views'));
 const publicPath = path.join(__dirname, "public");
 app.use(express.static(publicPath));
 
