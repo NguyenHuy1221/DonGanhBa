@@ -5,6 +5,7 @@ const doanhthuRouter = express.Router();
 const {
     GetDoanhThu,
     GetDoanhThu12,
+    getData,
 } = require("../controller/doanhthu");
 
 doanhthuRouter.get("/GetDoanhThu", function (req, res) {
@@ -13,6 +14,9 @@ doanhthuRouter.get("/GetDoanhThu", function (req, res) {
 
 doanhthuRouter.get("/GetDoanhThu12", function (req, res) {
     return GetDoanhThu12(req, res);
+});
+doanhthuRouter.get("/getData", function (req, res) {
+    return getData(req, res);
 });
 
 

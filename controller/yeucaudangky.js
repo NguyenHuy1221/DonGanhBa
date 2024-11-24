@@ -34,13 +34,12 @@ async function getYeuCauDangKyByUserId(req, res, next) {
 
 async function createYeuCauDangKy(req, res) {
     try {
-
         const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang } = req.body;
-
         const yeucaudangky = await YeuCauDangKySchema.findOne({ userId: userId })
-
         if (yeucaudangky) {
-            res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
+            if (yeucaudangky.trangThai === "cho" || yeucaudangky.trangThai === "xacnhan") {
+                res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
+            }
         }
         const newYeuCauDangKy = new YeuCauDangKySchema({
             userId,
@@ -50,19 +49,14 @@ async function createYeuCauDangKy(req, res) {
             diaChi,
             hinhthucgiaohang
         });
-
         const taoYeuCauDangKy = await newYeuCauDangKy.save();
         //const baiviet = await BaiVietSchema.findById(taobaiviet._id).populate("userId")
-        res.status(201).json({ message: 'Tạo bài viết thành công', taoYeuCauDangKy });
+        res.status(201).json({ message: 'Tạo Yêu cầu đăng ký thành công', taoYeuCauDangKy });
     } catch (error) {
         console.error('Lỗi khi tạo Bài viết:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo Bài viết' });
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo Tạo Yêu cầu đăng ký' });
     }
 }
-
-
-
-
 async function updateYeuCauDangKy(req, res, next) {
     const { yeuCauDangKyId } = req.params
     const { TrangThai } = req.body
@@ -73,15 +67,19 @@ async function updateYeuCauDangKy(req, res, next) {
             return 'Yêu cầu đăng ký không tồn tại';
         }
         if (yeuCauDangKy.trangThai === TrangThai) {
-            res.status(200).json({ message: 'Ko thể thay đổi trạng thái giống nhau' });
+            res.status(400).json({ message: 'Ko thể thay đổi trạng thái giống nhau' });
+
         }
+        // else if (yeuCauDangKy.trangThai === "xacnhan" && TrangThai === "xacnhan") {
+        //     res.status(400).json({ message: 'Ko thể thay đổi trạng thái khi đã xác nhận ' });
+        // }
         yeuCauDangKy.trangThai = TrangThai;
 
-        await hoadon.save();
-        res.status(200).json("Huy don hang thanh cong");
+        await yeuCauDangKy.save();
+        res.status(200).json({ message: "Cập nhập trạng thái đăng ký thành công" });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi cập nhật trang thái hủy hoa don' });
+        res.status(500).json({ message: 'Lỗi khi cập nhật trang thái hủy Đăng ký' });
     }
 }
 

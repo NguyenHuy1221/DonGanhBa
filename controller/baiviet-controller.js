@@ -112,7 +112,7 @@ async function updateBaiViet(req, res) {
                 return res.status(400).json({ message: 'Error uploading image', error: err });
             }
             const { baivietId } = req.params;
-            const { tieude, tags, noidung, userId = "6725a59421c28ad87ab2b22f" } = req.body;
+            const { tieude, tags, noidung, userId } = req.body;
             let updatedBaiViet = await BaiVietSchema.findById(baivietId);
             if (!updatedBaiViet) {
                 return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
