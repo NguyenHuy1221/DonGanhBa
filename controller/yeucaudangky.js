@@ -3,7 +3,7 @@ require("dotenv").config();
 const YeuCauDangKySchema = require("../models/YeuCauDangKy")
 const fs = require('fs');
 const path = require('path');
-
+const NguoiDungModel = require("../models/NguoiDungSchema")
 async function getListYeuCauDangKy(req, res, next) {
     try {
         const yeucaudangky = await YeuCauDangKySchema.find().populate("userId")
@@ -73,9 +73,17 @@ async function updateYeuCauDangKy(req, res, next) {
         // else if (yeuCauDangKy.trangThai === "xacnhan" && TrangThai === "xacnhan") {
         //     res.status(400).json({ message: 'Ko thể thay đổi trạng thái khi đã xác nhận ' });
         // }
-        yeuCauDangKy.trangThai = TrangThai;
 
+        yeuCauDangKy.trangThai = TrangThai;
         await yeuCauDangKy.save();
+        if (yeuCauDangKy.trangThai === "xacnhan") {
+            const user = await NguoiDungModel.findById(yeuCauDangKy.userId);
+            if (!user) {
+                return res.status(400).json({ message: "Không tìm thấy người dùng" });
+            }
+            user.role = "hokinhdoanh";
+            const updatedUser = await user.save();
+        }
         res.status(200).json({ message: "Cập nhập trạng thái đăng ký thành công" });
     } catch (error) {
         console.error(error);

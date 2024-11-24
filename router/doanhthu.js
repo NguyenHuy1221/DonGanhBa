@@ -6,6 +6,7 @@ const {
     GetDoanhThu,
     GetDoanhThu12,
     getData,
+    getProductStatistics,
 } = require("../controller/doanhthu");
 
 doanhthuRouter.get("/GetDoanhThu", function (req, res) {
@@ -18,7 +19,9 @@ doanhthuRouter.get("/GetDoanhThu12", function (req, res) {
 doanhthuRouter.get("/getData", function (req, res) {
     return getData(req, res);
 });
-
+doanhthuRouter.get("/getProductStatistics", function (req, res) {
+    return getProductStatistics(req, res);
+});
 
 
 module.exports = doanhthuRouter;

@@ -428,10 +428,54 @@ async function showUserById(req, res) {
   }
 }
 
+// async function getAllUsers(req, res) {
+//   try {
+//     const users = await UserModel.find();
+//     return res.json(users);
+//   } catch (error) {
+//     console.error("Lỗi khi lấy danh sách người dùng:", error);
+//     return res.status(500).json({
+//       message: "Đã xảy ra lỗi khi lấy danh sách người dùng",
+//     });
+//   }
+// }
+
 async function getAllUsers(req, res) {
   try {
-    const users = await UserModel.find();
-    return res.json(users);
+    const { tenNguoiDung, gmail, soDienThoai, role } = req.query;
+
+    // Tạo điều kiện tìm kiếm dựa trên các tham số truy vấn
+    const searchCriteria = {};
+
+    if (tenNguoiDung) {
+      searchCriteria.tenNguoiDung = { $regex: tenNguoiDung, $options: 'i' };
+    }
+    if (gmail) {
+      searchCriteria.gmail = { $regex: gmail, $options: 'i' };
+    }
+    if (soDienThoai) {
+      searchCriteria.soDienThoai = { $regex: soDienThoai, $options: 'i' };
+    }
+    if (role) {
+      searchCriteria.role = role;
+    }
+
+    // Tìm kiếm người dùng dựa trên tiêu chí tìm kiếm
+    const users = await UserModel.find(searchCriteria);
+
+    // Tính toán số lượng người dùng theo từng role
+    const userCounts = await UserModel.aggregate([
+      { $group: { _id: "$role", count: { $sum: 1 } } }
+    ]);
+
+    // Tính tổng số lượng người dùng
+    const totalUserCount = await UserModel.countDocuments();
+
+    return res.json({
+      users,
+      userCounts,
+      totalUserCount
+    });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách người dùng:", error);
     return res.status(500).json({
@@ -439,6 +483,7 @@ async function getAllUsers(req, res) {
     });
   }
 }
+
 
 async function ResendOTP(req, res) {
   const { gmail } = req.body;

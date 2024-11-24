@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 const HoaDonSchema = require("../models/HoaDonSchema");
 const LoaiKhuyenMaiModel = require("../models/LoaiKhuyenMaiSchema")
 const NguoiDungModel = require("../models/NguoiDungSchema")
-
+const sanphamModel = require("../models/SanPhamSchema")
+const bientheModel = require("../models/BienTheSchema")
+const danhmucModel = require("../models/DanhMucSchema")
 async function GetDoanhThu(req, res, next) {
     const { fromDate, toDate, filter } = req.query;
     try {
@@ -139,7 +141,9 @@ async function getData(req, res) {
 
         let totalData = {
             TongDoanhThu: 0,
+            TongKhuyenMaidasudung: 0,
             TongDangCho: 0,
+            TongKhuyenMaisapsudung: 0,
             TongHuy: 0,
             TongHoaDon: 0,
             TongBienTheBan: 0,
@@ -169,11 +173,12 @@ async function getData(req, res) {
             if (!acc[key]) {
                 acc[key] = {
                     TongDoanhThu: 0,
+                    TongKhuyenMaidasudung: 0,
                     TongDangCho: 0,
+                    TongKhuyenMaisapsudung: 0,
                     TongHuy: 0,
                     TongHoaDon: 0,
                     TongBienTheBan: 0,
-                    TongKhuyenMai: 0,
                     DonHangCho: 0,
                     DonHangXacNhan: 0,
                     DonHangHuy: 0
@@ -195,8 +200,11 @@ async function getData(req, res) {
             }
 
             if (SoTienKhuyenMai > 0 && khuyenmaiId) {
-                if (TrangThai === 0 || TrangThai === 1) {
-                    acc[key].TongKhuyenMai += SoTienKhuyenMai;
+                if (TrangThai === 0 || TrangThai === 1 || TrangThai === 2) {
+                    acc[key].TongKhuyenMaisapsudung += SoTienKhuyenMai;
+                }
+                if (TrangThai === 3) {
+                    acc[key].TongKhuyenMaidasudung += SoTienKhuyenMai;
                 }
             }
 
@@ -216,8 +224,11 @@ async function getData(req, res) {
             }
 
             if (SoTienKhuyenMai > 0 && khuyenmaiId) {
-                if (TrangThai === 0 || TrangThai === 1) {
-                    totalData.TongKhuyenMai += SoTienKhuyenMai;
+                if (TrangThai === 0 || TrangThai === 1 || TrangThai === 2) {
+                    totalData.TongKhuyenMaidasudung += SoTienKhuyenMai;
+                }
+                if (TrangThai === 3) {
+                    totalData.TongKhuyenMaisapsudung += SoTienKhuyenMai;
                 }
             }
 
@@ -232,6 +243,87 @@ async function getData(req, res) {
 }
 
 
+// const SanPham = require('../models/SanPham');
+// const BienThe = require('../models/BienThe');
+// const HoaDon = require('../models/HoaDon');
+
+async function getProductStatistics(req, res) {
+    const { fromDate, toDate } = req.query;
+
+    try {
+        let query = {};
+
+        // Kiểm tra và xử lý ngày bắt đầu và ngày kết thúc
+        const startDate = fromDate ? new Date(fromDate) : new Date('1970-01-01');
+        const endDate = toDate ? new Date(toDate) : new Date();
+
+        if (fromDate && toDate) {
+            query.NgayTao = {
+                $gte: startDate,
+                $lte: endDate
+            };
+        }
+
+        // Lấy danh sách các sản phẩm đang được bán
+        const sanPhams = await sanphamModel.find({ TinhTrang: 'Còn hàng', SanPhamMoi: false }).populate("IDDanhMuc");
+
+        // Tính toán số lượng sản phẩm theo từng danh mục
+        const categorySales = {};
+
+        sanPhams.forEach(sp => {
+            if (!categorySales[sp.IDDanhMuc._id]) {
+                categorySales[sp.IDDanhMuc._id] = { soLuong: 0, TenDanhMuc: '' };
+            }
+            categorySales[sp.IDDanhMuc._id].soLuong += 1;
+            categorySales[sp.IDDanhMuc._id].TenDanhMuc = sp.IDDanhMuc.TenDanhMuc;
+        });
+
+        // Lấy hóa đơn trong khoảng thời gian
+        const hoaDons = await HoaDonSchema.find(query)
+            .populate({
+                path: 'chiTietHoaDon.idBienThe',
+                populate: {
+                    path: 'IDSanPham',
+                }
+            });
+
+        let productSales = {};
+
+        hoaDons.forEach(hoaDon => {
+            hoaDon.chiTietHoaDon.forEach(item => {
+                const { idBienThe, soLuong } = item;
+
+                if (!productSales[idBienThe.IDSanPham._id]) {
+                    productSales[idBienThe.IDSanPham._id] = {
+                        soLuong: 0,
+                        TenSanPham: idBienThe.IDSanPham.TenSanPham
+                    };
+                }
+                productSales[idBienThe.IDSanPham._id].soLuong += soLuong;
+            });
+        });
+
+        // Biến đổi productSales thành mảng và sắp xếp theo số lượng bán ra
+        let productCounts = Object.entries(productSales).map(([id, { soLuong, TenSanPham }]) => ({ id, soLuong, TenSanPham }));
+        productCounts.sort((a, b) => b.soLuong - a.soLuong);
+
+        const totalProductSales = productCounts.reduce((sum, product) => sum + product.soLuong, 0);
+        const topSellingProducts = productCounts.slice(0, 10); // Lấy top 10 sản phẩm bán chạy nhất
+
+        res.status(200).json({
+            totalProductSales,
+            productCounts,
+            topSellingProducts,
+            categorySales
+        });
+    } catch (error) {
+        console.error('Error: ', error);
+        res.status(500).json({ message: 'Lỗi khi lấy thông tin thống kê sản phẩm', error: error.message });
+    }
+}
+
+
+
 
 
 
@@ -240,4 +332,5 @@ module.exports = {
     GetDoanhThu,
     GetDoanhThu12,
     getData,
+    getProductStatistics,
 };
