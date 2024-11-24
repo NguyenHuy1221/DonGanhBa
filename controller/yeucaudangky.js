@@ -67,7 +67,7 @@ async function updateYeuCauDangKy(req, res, next) {
             return 'Yêu cầu đăng ký không tồn tại';
         }
         if (yeuCauDangKy.trangThai === TrangThai) {
-            res.status(400).json({ message: 'Ko thể thay đổi trạng thái giống nhau' });
+            return res.status(400).json({ message: 'Ko thể thay đổi trạng thái giống nhau' });
 
         }
         // else if (yeuCauDangKy.trangThai === "xacnhan" && TrangThai === "xacnhan") {
