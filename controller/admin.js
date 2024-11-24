@@ -337,7 +337,7 @@ async function getUserWithdrawalRequests(req, res) {
 }
 
 // Lấy danh sách yêu cầu rút tiền cho admin với các điều kiện lọc
-async function getAdminWithdrawalRequests(req, res) {
+async function getAdminYeuCauRutTien(req, res) {
     const { isDeleted, daXuLy, choXacThuc } = req.query;
 
     const filter = {};
@@ -350,7 +350,7 @@ async function getAdminWithdrawalRequests(req, res) {
     if (Object.keys(filter).length === 0) filter.daXuLy = false;
 
     try {
-        const requests = await YeuCauRutTienSchema.find(filter).populate('userId', 'tenNguoiDung email soDienThoai');
+        const requests = await YeuCauRutTienSchema.find(filter).populate('userId');
 
         return res.status(200).json({ requests });
     } catch (error) {
@@ -358,9 +358,7 @@ async function getAdminWithdrawalRequests(req, res) {
         return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách yêu cầu rút tiền cho admin' });
     }
 }
-
-
-async function updateWithdrawalRequest(req, res) {
+async function updateYeuCauRutTien(req, res) {
     const { requestId } = req.params;
 
     if (!requestId) {
@@ -410,8 +408,8 @@ module.exports = {
     getListThongBaoAdmin,
     createThongBao,
     getUserWithdrawalRequests,
-    getAdminWithdrawalRequests,
-    updateWithdrawalRequest,
+    getAdminYeuCauRutTien,
+    updateYeuCauRutTien,
     deleteManyWithdrawalRequests,
 
 };

@@ -38,7 +38,7 @@ async function createYeuCauDangKy(req, res) {
         const yeucaudangky = await YeuCauDangKySchema.findOne({ userId: userId })
         if (yeucaudangky) {
             if (yeucaudangky.trangThai === "cho" || yeucaudangky.trangThai === "xacnhan") {
-                res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
+                return res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
             }
         }
         const newYeuCauDangKy = new YeuCauDangKySchema({
@@ -71,7 +71,7 @@ async function updateYeuCauDangKy(req, res, next) {
 
         }
         // else if (yeuCauDangKy.trangThai === "xacnhan" && TrangThai === "xacnhan") {
-        //     res.status(400).json({ message: 'Ko thể thay đổi trạng thái khi đã xác nhận ' });
+        //    return res.status(400).json({ message: 'Ko thể thay đổi trạng thái khi đã xác nhận ' });
         // }
 
         yeuCauDangKy.trangThai = TrangThai;

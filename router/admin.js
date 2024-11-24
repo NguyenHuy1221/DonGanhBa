@@ -7,6 +7,8 @@ const {
     updateUserRoleAndPermissionsforuser,
     getListThongBaoAdmin,
     createThongBao,
+    getAdminYeuCauRutTien,
+    updateYeuCauRutTien,
 } = require("../controller/admin");
 
 adminRouter.post("/updateUserRoleAndPermissions/:userId", function (req, res) {
@@ -22,8 +24,18 @@ adminRouter.get("/getListThongBaoAdmin", function (req, res) {
 adminRouter.post("/createThongBao", function (req, res) {
     return createThongBao(req, res);
 });
+
+adminRouter.get("/getAdminYeuCauRutTien", function (req, res) {
+    return getAdminYeuCauRutTien(req, res);
+});
+adminRouter.put("/updateYeuCauRutTien/:requestId", function (req, res) {
+    return updateYeuCauRutTien(req, res);
+});
+
+
 // Route xử lý upload file
 const { v4: uuidv4 } = require('uuid');
+
 adminRouter.post('/upload', uploadmemory.single('file'), async (req, res) => {
     const file = req.file;
     const bucketName = 'file';

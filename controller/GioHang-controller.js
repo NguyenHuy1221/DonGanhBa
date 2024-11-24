@@ -206,7 +206,7 @@ async function zaloPay(req, res, next) {
     if (response.data.return_code === 1) {
       res.status(200).json(response.data); // Trả về thông tin QR code cho frontend
     } else {
-      res.status(400).json({ error: "Không thể tạo đơn hàng ZaloPay" });
+      return res.status(400).json({ error: "Không thể tạo đơn hàng ZaloPay" });
     }
   } catch (error) {
     console.error("Lỗi khi xử lý thanh toán ZaloPay:", error);
