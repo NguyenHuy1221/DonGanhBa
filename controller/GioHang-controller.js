@@ -53,6 +53,20 @@ async function getGioHangById(req, res, next) {
   }
 }
 
+// const mongoose = require("mongoose");
+// const GioHang = require('../models/GioHang');
+// const BienThe = require('../models/BienThe');
+// const SanPham = require('../models/SanPham');
+
+
+
+
+
+
+
+
+
+
 async function updateGioHang(req, res, next) {
   try {
     const { chiTietGioHang } = req.body;
@@ -110,7 +124,6 @@ async function deleteGioHang(req, res, next) {
     res.status(500).json({ error: "Lỗi khi xóa sản phẩm khỏi giỏ hàng" });
   }
 }
-
 async function getGioHangByUserId(req, res, next) {
   try {
     const { userId } = req.params;
@@ -120,28 +133,132 @@ async function getGioHangByUserId(req, res, next) {
       .populate({
         path: "chiTietGioHang.idBienThe",
         populate: [
+          { path: "KetHopThuocTinh.IDGiaTriThuocTinh", },
           {
-            path: "KetHopThuocTinh.IDGiaTriThuocTinh",
+            path: "IDSanPham", model: "SanPham",
+            populate:
+              { path: "userId", model: "User", },
           },
         ],
       });
-
-
     if (!gioHang) {
-      // return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
-      gioHang = new GioHang({
+      //  return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
+      const gioHang2 = new GioHang({
         userId,
         chiTietGioHang: [],
       });
-      await gioHang.save();
+      await gioHang2.save();
+      return res.status(200).json({ message: "không có sản phẩm nào" });
+
     }
-    res.status(200).json(gioHang);
+
+    // Gộp các biến thể cùng sản phẩm ID hoặc cùng userID
+    const mergedCartItems = {};
+
+    gioHang.chiTietGioHang.forEach(item => {
+      const sanPhamId = item.idBienThe.IDSanPham._id.toString();
+      //const userId = item.idBienThe.IDSanPham.userId.toString();
+
+      const key = `${userId}-${sanPhamId}`;
+
+      if (!mergedCartItems[key]) {
+        mergedCartItems[key] = {
+          // userId,
+          // //: item.idBienThe.IDSanPham.userId
+          gioHangId: gioHang._id,
+          sanPham: item.idBienThe.IDSanPham,
+          chiTietGioHang: [],
+        };
+      }
+      // Lấy tất cả các trường từ idBienThe trừ IDSanPham và userId 
+      const bienTheData = { ...item.idBienThe._doc };
+      bienTheData.IDSanPham = item.idBienThe.IDSanPham._id;
+
+      //bienTheData.userId = item.idBienThe.IDSanPham.userId._id;
+      mergedCartItems[key].chiTietGioHang.push({
+        idBienThe: {
+          ...bienTheData,
+          //idBienThe: item.idBienThe,
+
+        },
+        soLuong: item.soLuong,
+        donGia: item.donGia,
+      });
+    });
+
+    const mergedCart = Object.values(mergedCartItems);
+    // console.log({ user: gioHang.userId, mergedCart })
+    res.status(200).json({ user: gioHang.userId, mergedCart });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Lỗi khi lấy thông tin giỏ hàng theo userId" });
+    console.error("Lỗi khi lấy thông tin giỏ hàng:", error);
+    res.status(500).json({ error: "Lỗi khi lấy thông tin giỏ hàng" });
   }
 }
+//du lieu gio hang tra ve khi get ra
+// const user = {
+//   data: user
+// }
+// const mergedCart = [{
+//   sanPham: {
+//     data: sanpham,
+//     userId: {
+//       data: user
+//     }
+//   },
+//   chiTietGioHang: [{
+//     data: chitietgiohang // cái này như cũ
+//   },
+//   {
+//     data: chitietgiohang // cái này như cũ
+//   },
+//   ]
+// }
+//   , {
+//   sanPham: {
+//     data: sanpham,
+//     userId: {
+//       data: user
+//     }
+//   },
+//   chiTietGioHang: [{
+//     data: chitietgiohang // cái này như cũ
+//   },
+//   {
+//     data: chitietgiohang // cái này như cũ
+//   },
+//   ]
+// }]
+// async function getGioHangByUserId(req, res, next) {
+//   try {
+//     const { userId } = req.params;
+
+//     const gioHang = await GioHang.findOne({ userId })
+//       .populate("userId")
+//       .populate({
+//         path: "chiTietGioHang.idBienThe",
+//         populate: [
+//           {
+//             path: "KetHopThuocTinh.IDGiaTriThuocTinh",
+//           },
+//         ],
+//       });
+
+
+//     if (!gioHang) {
+//       // return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
+//       gioHang = new GioHang({
+//         userId,
+//         chiTietGioHang: [],
+//       });
+//       await gioHang.save();
+//     }
+//     res.status(200).json(gioHang);
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ error: "Lỗi khi lấy thông tin giỏ hàng theo userId" });
+//   }
+// }
 
 const config = {
   app_id: "2554",

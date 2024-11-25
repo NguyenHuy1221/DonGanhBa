@@ -10,6 +10,7 @@ const YeuCauRutTienSchema = new Schema({
     verificationToken: { type: String },
     isDeleted: { type: Boolean, default: false }, // Trạng thái xóa
     daXuLy: { type: Boolean, default: false }, // Trạng thái đã xử lý
+    thatBai: { type: Boolean, default: false },
     XacThuc: { type: Boolean, default: false }, // Trạng thái chờ xác thực
     ngayYeuCau: { type: Date, default: Date.now }, // Ngày yêu cầu
 }, {

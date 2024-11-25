@@ -338,14 +338,14 @@ async function getUserWithdrawalRequests(req, res) {
 
 // Lấy danh sách yêu cầu rút tiền cho admin với các điều kiện lọc
 async function getAdminYeuCauRutTien(req, res) {
-    const { isDeleted, daXuLy, choXacThuc } = req.query;
+    const { isDeleted, daXuLy, choXacThuc, thatBai } = req.query;
 
     const filter = {};
 
     if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'false';
     if (daXuLy !== undefined) filter.daXuLy = daXuLy === 'false';
-    if (choXacThuc !== undefined) filter.XacThuc = XacThuc === 'false';
-
+    if (choXacThuc !== undefined) filter.XacThuc = choXacThuc === 'false';
+    if (thatBai !== undefined) filter.thatBai = thatBai === 'false';
     // Mặc định chỉ lấy những yêu cầu chưa xử lý nếu không có điều kiện lọc nào được gửi
     if (Object.keys(filter).length === 0) filter.daXuLy = false;
 
@@ -360,23 +360,48 @@ async function getAdminYeuCauRutTien(req, res) {
 }
 async function updateYeuCauRutTien(req, res) {
     const { requestId } = req.params;
-
+    const { trangThai } = req.body
     if (!requestId) {
         return res.status(400).json({ message: 'Thiếu thông tin requestId' });
     }
 
     try {
-        const request = await YeuCauRutTienSchema.findByIdAndUpdate(
-            requestId,
-            { daXuLy: true },
-            { new: true }
-        );
+        const checkrequest = await YeuCauRutTienSchema.findById(requestId)
 
-        if (!request) {
-            return res.status(404).json({ message: 'Không tìm thấy yêu cầu rút tiền' });
+        if (!checkrequest.XacThuc) {
+            return res.status(400).json({ message: 'Yêu cầu chưa được xác thực' });
+        }
+        if (trangThai === "xacnhan") {
+            const request = await YeuCauRutTienSchema.findByIdAndUpdate(
+                requestId,
+                { daXuLy: true },
+                { new: true }
+            );
+            if (!request) {
+                return res.status(404).json({ message: 'Không tìm thấy yêu cầu rút tiền' });
+            }
+            return res.status(200).json({ message: 'Yêu cầu rút tiền đã được cập nhật', request });
+
+        } else if (trangThai === "huy") {
+            const request = await YeuCauRutTienSchema.findByIdAndUpdate(
+                requestId,
+                {
+                    daXuLy: true,
+                    thatBai: true,
+                },
+                { new: true }
+            );
+            if (!request) {
+                return res.status(404).json({ message: 'Không tìm thấy yêu cầu rút tiền' });
+            }
+            return res.status(200).json({ message: 'Yêu cầu rút tiền đã được cập nhật', request });
+
+        } else {
+            return res.status(200).json({ message: 'Trạng thái không chính xác' });
+
         }
 
-        return res.status(200).json({ message: 'Yêu cầu rút tiền đã được cập nhật', request });
+
     } catch (error) {
         console.error('Lỗi khi cập nhật yêu cầu rút tiền:', error);
         return res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật yêu cầu rút tiền' });
