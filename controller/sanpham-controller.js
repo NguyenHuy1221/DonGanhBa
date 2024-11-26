@@ -20,7 +20,7 @@ const HoaDon = require("../models/HoaDonSchema");
 
 
 const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
-
+const { v4: uuidv4 } = require('uuid');
 // const { upload } = require("../untils/index");
 //ham lay danh sach thuoc tinh
 async function getlistSanPham(req, res, next) {
