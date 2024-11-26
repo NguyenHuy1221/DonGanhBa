@@ -728,7 +728,7 @@ async function toggleFollowUser(req, res) {
       await targetUser.save();
       res.status(200).json({ message: 'Đã bỏ theo dõi người dùng thành công' });
     } else {
-      res.status(400).json({ message: 'Hành động không hợp lệ' });
+      return res.status(400).json({ message: 'Hành động không hợp lệ' });
     }
   } catch (error) {
     console.error('Lỗi khi xử lý hành động theo dõi/bỏ theo dõi người dùng:', error);
@@ -1051,6 +1051,10 @@ async function createYeuCauRutTien(req, res) {
     const user = await UserModel.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+    if (user.soTienHienTai < soTien || soTien < 2000000) {
+      return res.status(200).json({ message: "không đủ tiền hoặc phải rút trên 2 triệu" });
+
     }
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const newRequest = await createNewRequest(userId, tenNganHang, soTaiKhoan, soTien, ghiChu, verificationToken);
