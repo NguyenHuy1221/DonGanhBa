@@ -10,7 +10,7 @@ const SanPhamSchema = new Schema({
   DonGiaBan: { type: Number },
   SoLuongNhap: { type: Number, default: 0 },
   SoLuongHienTai: { type: Number, default: 0 },
-  PhanTramGiamGia: { type: Number },
+  PhanTramGiamGia: { type: Number, default: 0 },
   NgayTao: { type: Date, default: Date.now },
   //TinhTrang: { type: String }, // Ví dụ: 'Còn hàng', 'Hết hàng'
   SanPhamMoi: { type: Boolean, default: false },// sản phẩm vừa tạo sẽ không được bán luôn , phải tự tay xác nhận mới được bán

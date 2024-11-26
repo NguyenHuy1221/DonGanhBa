@@ -105,7 +105,7 @@ function decodeToken(token) {
 
 
 const express = require('express');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteBucketCorsCommand } = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 
 
@@ -143,8 +143,9 @@ async function uploadFileToViettelCloud(buffer, bucketName, key, mimetype) {
 
   try {
     const data = await s3Client.send(new PutObjectCommand(params));
-    console.log('File uploaded successfully:', data);
-    return data;
+    const fileUrl = `${process.env.VIETTEL_ENDPOINT}/${bucketName}/${key}`;
+    console.log('File uploaded successfully:', data, fileUrl);
+    return fileUrl;
   } catch (error) {
     console.error('Error uploading file:', error);
     throw error;
@@ -169,3 +170,17 @@ module.exports = {
   uploadFileToViettelCloud,
   uploadmemory,
 };
+
+
+// code khac phuc khi lo cau hinh cors khien chung ta ko lam gi dc bucket
+
+// const deleteBucketParams = {
+//   Bucket: bucketName
+// };
+
+// try {
+//   const data = await s3Client.send(new DeleteBucketCorsCommand(deleteBucketParams));
+//   console.log("Bucket deleted successfully:", data);
+// } catch (err) {
+//   console.error("Error deleting bucket:", err);
+// }

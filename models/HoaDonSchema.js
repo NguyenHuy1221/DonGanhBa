@@ -12,6 +12,7 @@ const getCurrentDate = () => {
 };
 const HoaDonSchema = new Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  hoKinhDoanhId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   khuyenmaiId: { type: mongoose.Schema.Types.ObjectId, ref: "KhuyenMai" },
   diaChi: {
     tinhThanhPho: String,
@@ -24,7 +25,6 @@ const HoaDonSchema = new Schema({
   TongTien: Number,
   DaThanhToan: { type: Boolean, default: false },
   SoTienKhuyenMai: { type: Number, default: 0 },
-
   tienDaCong: { type: Boolean, default: false }, // danh dau viec da thanh toan
   TrangThai: Number, // 0đặt hàng ,1đóng gói , 2bắt đầug giao , 3hoàn thành đơn hàng , 4huy
   ThanhToan: { type: Boolean, default: false },

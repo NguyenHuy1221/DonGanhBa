@@ -17,6 +17,10 @@ const multer = require("multer");
 const util = require('util');
 const { v4: uid } = require('uuid');
 const HoaDon = require("../models/HoaDonSchema");
+
+
+const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
+
 // const { upload } = require("../untils/index");
 //ham lay danh sach thuoc tinh
 async function getlistSanPham(req, res, next) {
@@ -85,15 +89,54 @@ async function createSanPham(req, res, next) {
   //sản phẩm tạo sẽ có 2 lựa chọn , 1 là tổ hợp biến thể , 2 là thêm biến thể 
   try {
     // Xử lý tệp chính và các tệp bổ sung
-    await uploadFields(req, res);
-    if (!req.files['file'] || !req.files['file'][0]) {
-      return res.status(400).json({ message: 'File is required' });
+    // await uploadFields(req, res);
+    // if (!req.files['file'] || !req.files['file'][0]) {
+    //   return res.status(400).json({ message: 'File is required' });
+    // }
+    // const newPath = req.files['file'][0].path.replace("public", process.env.URL_IMAGE);
+    // const hinhBoSung = req.files['files'] ? req.files['files'].map(file => ({
+    //   TenAnh: file.originalname,
+    //   UrlAnh: file.path.replace("public", process.env.URL_IMAGE),
+    // })) : [];
+    const bucketName = process.env.VIETTEL_BUCKET;
+    const avatarFile = req.files && req.files.find(file => file.fieldname === 'file');
+    const detailFiles = req.files && req.files.filter(file => file.fieldname === 'files');
+
+    if (!avatarFile && !detailFiles) {
+      return res.status(400).json({ message: 'Không có file được upload' });
     }
-    const newPath = req.files['file'][0].path.replace("public", process.env.URL_IMAGE);
-    const hinhBoSung = req.files['files'] ? req.files['files'].map(file => ({
-      TenAnh: file.originalname,
-      UrlAnh: file.path.replace("public", process.env.URL_IMAGE),
-    })) : [];
+    let avatarUrl = ''; let detailUrls = []; // Upload ảnh đại diện nếu có 
+    if (avatarFile) {
+      let objectKey = ""
+      if (avatarFile.mimetype.startsWith('image/')) {
+        objectKey = `images/${uuidv4()}-${avatarFile.originalname}`;
+      } else {
+        return res.status(400).json({ message: 'Chỉ được upload image' });
+      }
+      try {
+        avatarUrl = await uploadFileToViettelCloud(avatarFile.buffer, bucketName, objectKey, avatarFile.mimetype);
+      }
+      catch (error) {
+        console.error('Lỗi khi tải lên ảnh đại diện:', error);
+        return res.status(400).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh đại diện' });
+      }
+    } // Upload ảnh chi tiết nếu có 
+    if (detailFiles && detailFiles.length > 0) {
+      const uploadPromises = detailFiles.map(file => {
+        let objectKey = ""
+        if (file.mimetype.startsWith('image/')) {
+          objectKey = `images/${uuidv4()}-${file.originalname}`;
+        } else {
+          return res.status(400).json({ message: 'Chỉ được upload image' });
+        }
+        return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+      });
+      try { detailUrls = await Promise.all(uploadPromises); } catch (error) {
+        console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
+      }
+    }
+
     const { userId, luachon, IDSanPham, TenSanPham, DonGiaNhap, DonGiaBan, SoLuongNhap, SoLuongHienTai, PhanTramGiamGia, TinhTrang, MoTa, Unit, DanhSachThuocTinh, IDDanhMuc, IDDanhMucCon,
     } = req.body;
     const { sku, gia, soLuong, KetHopThuocTinh } = req.body;
@@ -103,10 +146,10 @@ async function createSanPham(req, res, next) {
     const newSanPham = new SanPhamModel({
       userId,
       IDSanPham, TenSanPham,
-      HinhSanPham: newPath,
+      HinhSanPham: avatarUrl,
       DonGiaNhap, DonGiaBan,
       SoLuongNhap, SoLuongHienTai: 0, PhanTramGiamGia, TinhTrang, MoTa, Unit,
-      HinhBoSung: hinhBoSung,
+      HinhBoSung: detailUrls,
       DanhSachThuocTinh: DanhSachThuocTinh, IDDanhMuc, IDDanhMucCon,
     });
     // Lưu đối tượng vào cơ sở dữ liệu

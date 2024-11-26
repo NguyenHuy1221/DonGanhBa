@@ -124,6 +124,7 @@ async function deleteGioHang(req, res, next) {
     res.status(500).json({ error: "Lỗi khi xóa sản phẩm khỏi giỏ hàng" });
   }
 }
+//old
 // async function getGioHangByUserId(req, res, next) {
 //   try {
 //     const { userId } = req.params;
@@ -200,7 +201,6 @@ async function deleteGioHang(req, res, next) {
 async function getGioHangByUserId(req, res, next) {
   try {
     const { userId } = req.params;
-
     // Lấy giỏ hàng và populate các trường liên quan
     const gioHang = await GioHang.findOne({ userId })
       .populate("userId")
@@ -245,31 +245,29 @@ async function getGioHangByUserId(req, res, next) {
       // Lấy tất cả các trường từ idBienThe nhưng chỉ giữ lại _id của IDSanPham và userId
       const bienTheData = { ...item.idBienThe._doc };
       bienTheData.IDSanPham = item.idBienThe.IDSanPham._id;
-      bienTheData.userId = item.idBienThe.IDSanPham.userId._id;
+      //bienTheData.userId = item.idBienThe.IDSanPham.userId._id;
 
       mergedCartItems[key].chiTietGioHang.push({
         // ...bienTheData,
         idBienThe: {
           ...bienTheData,
         },
+        _id: item._id,
         soLuong: item.soLuong,
         donGia: item.donGia,
       });
     });
-
     // Gộp các sản phẩm theo userId
     const groupedByUser = {};
-
     Object.values(mergedCartItems).forEach(item => {
       const userId = item.userId;
       if (!groupedByUser[userId]) {
         groupedByUser[userId] = {
           user: item.userId,
-          sanPham: [],
+          sanPhamList: [],
         };
-        console.log(groupedByUser)
       }
-      groupedByUser[userId].sanPham.push(item);
+      groupedByUser[userId].sanPhamList.push(item);
     });
 
     const mergedCart = Object.values(groupedByUser);

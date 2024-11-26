@@ -425,6 +425,41 @@ async function deleteManyWithdrawalRequests(req, res) {
     }
 }
 
+//đây là hàm thử nhiệm ko sử dụng
+async function demoUploadimageviettel(req, res) {
+    const { userId, tieude, noidung } = req.body;
+
+    // Kiểm tra xem có file upload hay không
+    const file = req.file;
+    let fileUrl = '';
+
+    if (file) {
+        const bucketName = process.env.VIETTEL_BUCKET;
+        const objectKey = file.mimetype.startsWith('image/') ? `images/${uuidv4()}-${file.originalname}` : `videos/${uuidv4()}-${file.originalname}`;
+
+        try {
+            fileUrl = await uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+        } catch (error) {
+            console.error('Lỗi khi tải lên ảnh:', error);
+            return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh' });
+        }
+    }
+
+    try {
+        const newThongBao = new ThongBaoModel({
+            userId,
+            tieude,
+            noidung,
+            imageUrl: fileUrl // Lưu đường dẫn ảnh vào thông báo
+        });
+
+        await newThongBao.save();
+        res.status(201).json({ message: 'Tạo thông báo thành công', thongBao: newThongBao });
+    } catch (error) {
+        console.error('Lỗi khi tạo thông báo:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo thông báo' });
+    }
+}
 
 
 module.exports = {

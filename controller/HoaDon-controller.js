@@ -133,7 +133,7 @@ async function getHoaDonByHoaDonIdFullVersion(req, res) {
 
 
 async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
-  const { userId, diaChiMoi, ghiChu, khuyenmaiId, ChiTietGioHang, YeuCauNhanHang, giohangId, TongTien } = req.body;
+  const { userId, diaChiMoi, ghiChu, ChiTietGioHang, TongTien, mergedCart } = req.body;
   // const vietnamTime = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
   // Tạo một object để lưu trữ các trường cần cập nhật
   if (!ghiChu) {

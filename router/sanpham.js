@@ -1,5 +1,7 @@
 const express = require("express");
 const sanphamRouter = express.Router();
+const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
+
 const {
   getlistSanPham,
   toggleSanPhamMoi,
@@ -45,7 +47,7 @@ sanphamRouter.get("/getSanPhamListNew_Old", async function (req, res) {
 sanphamRouter.post("/toggleSanPhamMoi/:IDSanPham", async function (req, res) {
   return toggleSanPhamMoi(req, res);
 });
-sanphamRouter.post("/createSanPham", async function (req, res) {
+sanphamRouter.post("/createSanPham", uploadmemory.any(), async function (req, res) {
   return createSanPham(req, res);
 });
 sanphamRouter.post("/updateHinhBoSung/:IDSanPham", async function (req, res) {
