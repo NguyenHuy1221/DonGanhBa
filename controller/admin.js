@@ -347,7 +347,7 @@ async function getAdminYeuCauRutTien(req, res) {
     // if (choXacThuc !== undefined) filter.XacThuc = choXacThuc === 'false';
     // if (thatBai !== undefined) filter.thatBai = thatBai === 'false';
     // Mặc định chỉ lấy những yêu cầu chưa xử lý nếu không có điều kiện lọc nào được gửi
-    if (Object.keys(filter).length === 0) filter.daXuLy = false;
+    //if (Object.keys(filter).length === 0) filter.daXuLy = false;
 
     try {
         const requests = await YeuCauRutTienSchema.find(filter).populate('userId');
