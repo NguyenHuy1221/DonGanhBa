@@ -61,12 +61,35 @@ async function getGioHangById(req, res, next) {
 
 
 
+// async function updateGioHang(req, res, next) {
+//   try {
+//     const { chiTietGioHang } = req.body;
 
+//     const gioHang = await GioHang.findById(req.params.id);
+//     if (!gioHang) {
+//       return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
+//     }
 
+//     chiTietGioHang.forEach((updatedProduct) => {
+//       const existingProduct = gioHang.chiTietGioHang.find(
+//         (item) =>
+//           item.idBienThe.toString() === updatedProduct.idBienThe.toString()
+//       );
 
+//       if (existingProduct) {
+//         existingProduct.soLuong = updatedProduct.soLuong;
+//         existingProduct.donGia = updatedProduct.donGia;
+//       } else {
+//         gioHang.chiTietGioHang.push(updatedProduct);
+//       }
+//     });
 
-
-
+//     const updatedGioHang = await gioHang.save();
+//     res.status(200).json(updatedGioHang);
+//   } catch (error) {
+//     res.status(500).json({ error: "Lỗi khi cập nhật giỏ hàng" });
+//   }
+// }
 async function updateGioHang(req, res, next) {
   try {
     const { chiTietGioHang } = req.body;
@@ -79,7 +102,7 @@ async function updateGioHang(req, res, next) {
     chiTietGioHang.forEach((updatedProduct) => {
       const existingProduct = gioHang.chiTietGioHang.find(
         (item) =>
-          item.idBienThe.toString() === updatedProduct.idBienThe.toString()
+          item._id.toString() === updatedProduct._id.toString()
       );
 
       if (existingProduct) {

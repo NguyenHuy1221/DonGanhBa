@@ -98,6 +98,7 @@ async function createSanPham(req, res, next) {
     //   TenAnh: file.originalname,
     //   UrlAnh: file.path.replace("public", process.env.URL_IMAGE),
     // })) : [];
+    // const bucketName = process.env.VIETTEL_BUCKET;
     const bucketName = process.env.VIETTEL_BUCKET;
     const avatarFile = req.files && req.files.find(file => file.fieldname === 'file');
     const detailFiles = req.files && req.files.filter(file => file.fieldname === 'files');
@@ -196,7 +197,7 @@ async function createSanPham(req, res, next) {
     res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 }
-async function ToHopBienThe(IDSanPham, sku, gia, soLuong) {
+async function ToHopBienThe(req, res, IDSanPham, sku, gia, soLuong) {
   const projection = {
     _id: 1,
     // Set chapters to null explicitly

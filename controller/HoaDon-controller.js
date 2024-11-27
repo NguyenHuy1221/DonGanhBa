@@ -134,6 +134,52 @@ async function getHoaDonByHoaDonIdFullVersion(req, res) {
 
 async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
   const { userId, diaChiMoi, ghiChu, ChiTietGioHang, TongTien, mergedCart } = req.body;
+
+  mergedCart.forEach((item, index) => {
+    console.log(`Item ${index + 1}:`);
+
+    if (item.mergedCart && item.mergedCart.length > 0) {
+      item.mergedCart.forEach((subItem, subIndex) => {
+        console.log(`  Sub-Item ${subIndex + 1}:`);
+        console.log(`  User: ${JSON.stringify(subItem.user, null, 2)}`);
+        console.log("dulieu : ", subItem)
+        if (subItem.sanPhamList && subItem.sanPhamList.length > 0) {
+          subItem.sanPhamList.forEach((sanPhamItem, sanPhamIndex) => {
+            console.log(`    SanPhamItem ${sanPhamIndex + 1}:`);
+            console.log(`    User: ${JSON.stringify(sanPhamItem.user, null, 2)}`);
+            console.log(`    SanPham: ${JSON.stringify(sanPhamItem.sanPham, null, 2)}`);
+            console.log("dulieu : ", sanPhamItem)
+            if (sanPhamItem.chiTietGioHangs && sanPhamItem.chiTietGioHangs.length > 0) {
+              sanPhamItem.chiTietGioHangs.forEach((chiTiet, chiTietIndex) => {
+                console.log(`      ChiTietGioHang ${chiTietIndex + 1}:`);
+                console.log(chiTiet);
+              });
+            } else {
+              console.log("      No chiTietGioHangs found in this sanPhamItem");
+            }
+          });
+        } else {
+          console.log("    No sanPhamList found in this subItem");
+        }
+      });
+    } else {
+      console.log("No nested mergedCart found in this item");
+    }
+  });
+
+  // mergedCart.forEach((item, index) => {
+  //   console.log(`Item ${index + 1}:`);
+  //   item.mergedCart.forEach((product) => {
+  //     console.log("  - user:", product.user);
+  //     console.log("    Tên:", product.sanPham);
+  //     // console.log("    Giá:", product.sanPham.gia);
+  //     console.log("    Chi tiết:");
+  //     product.chiTietGioHangs.forEach(detail => {
+  //       console.log("      - Số lượng:", detail.soLuong);
+  //       console.log("      - Giá bán:", detail.donGia);
+  //     });
+  //   });
+  // });
   // const vietnamTime = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
   // Tạo một object để lưu trữ các trường cần cập nhật
   if (!ghiChu) {
@@ -146,34 +192,34 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     // const orderResponse = await createOrder(orderData);
     // user.diaChi = diaChiMoi;
     // await user.save();
-    const newHoaDon = new HoaDonModel({
-      userId,
-      diaChi: diaChiMoi,
-      TrangThai,
-      TongTien,
-      chiTietHoaDon: ChiTietGioHang,
-      GhiChu: ghiChu,
+    // const newHoaDon = new HoaDonModel({
+    //   userId,
+    //   diaChi: diaChiMoi,
+    //   TrangThai,
+    //   TongTien,
+    //   chiTietHoaDon: ChiTietGioHang,
+    //   GhiChu: ghiChu,
 
-    });
-    for (const chiTiet of ChiTietGioHang) {
-      if (chiTiet.idBienThe) {
-        await BienThe.findOneAndUpdate(
-          { _id: chiTiet.idBienThe._id },
-          { $inc: { soLuong: -chiTiet.soLuong } }
-        );
-      }
+    // });
+    // for (const chiTiet of ChiTietGioHang) {
+    //   if (chiTiet.idBienThe) {
+    //     await BienThe.findOneAndUpdate(
+    //       { _id: chiTiet.idBienThe._id },
+    //       { $inc: { soLuong: -chiTiet.soLuong } }
+    //     );
+    //   }
 
-      await SanPham.findOneAndUpdate(
-        { _id: chiTiet.idBienThe.IDSanPham },
-        {
-          $inc: { soLuongDaBan: chiTiet.soLuong },
-          $inc: { SoLuongHienTai: -chiTiet.soLuong }
-        }
-      );
-    }
-    // Lưu đối tượng vào cơ sở dữ liệu
-    const savedHoaDon = await newHoaDon.save();
-    res.status(200).json(savedHoaDon);
+    //   await SanPham.findOneAndUpdate(
+    //     { _id: chiTiet.idBienThe.IDSanPham },
+    //     {
+    //       $inc: { soLuongDaBan: chiTiet.soLuong },
+    //       $inc: { SoLuongHienTai: -chiTiet.soLuong }
+    //     }
+    //   );
+    // }
+    // // Lưu đối tượng vào cơ sở dữ liệu
+    // const savedHoaDon = await newHoaDon.save();
+    res.status(200).json({ message: 'ok', mergedCart });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Lỗi khi Tạo Đơn Hàng' });
