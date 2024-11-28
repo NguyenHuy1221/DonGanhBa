@@ -194,4 +194,15 @@ const { addThuocTinhForSanPham,
   deleteThuocTinhForSanPham,
 } = require("../controller/sanpham-controller-v2");
 
+
+sanphamRouter.post("/addThuocTinhForSanPham/:IDSanPham", async function (req, res) {
+  return addThuocTinhForSanPham(req, res);
+});
+
+sanphamRouter.put("/updateGiaTriThuocTinhForSanPham/:IDSanPham/:thuocTinhId", async function (req, res) {
+  return updateGiaTriThuocTinhForSanPham(req, res);
+});
+sanphamRouter.delete("/deleteThuocTinhForSanPham/:IDSanPham/:thuocTinhId", async function (req, res) {
+  return deleteThuocTinhForSanPham(req, res);
+});
 module.exports = sanphamRouter;

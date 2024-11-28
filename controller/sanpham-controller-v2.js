@@ -21,12 +21,12 @@ const HoaDon = require("../models/HoaDonSchema");
 
 
 const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
+const { checkDuplicateGiaTriThuocTinh } = require("../helpers/helpers")
 const { v4: uuidv4 } = require('uuid');
 // const { upload } = require("../untils/index");
 //ham lay danh sach thuoc tinh
 
-
-async function addThuocTinhForSanPham(req, res) {
+async function addThuocTinhForSanPham(req, res, next) {
     const { IDSanPham } = req.params;
     const { thuocTinhId, giaTriThuocTinhIds } = req.body;
 
@@ -36,12 +36,24 @@ async function addThuocTinhForSanPham(req, res) {
             return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
         }
 
-        const newThuocTinh = {
-            thuocTinh: thuocTinhId,
-            giaTriThuocTinh: giaTriThuocTinhIds,
-        };
+        // Tìm thuộc tính theo thuocTinhId
+        const existingThuocTinhIndex = sanPham.DanhSachThuocTinh.findIndex(
+            (tt) => tt.thuocTinh.toString() === thuocTinhId.toString()
+        );
 
-        sanPham.DanhSachThuocTinh.push(newThuocTinh);
+        if (existingThuocTinhIndex !== -1) {
+            // Nếu thuộc tính đã tồn tại, thay thế giá trị thuộc tính cũ bằng giá trị mới
+            sanPham.DanhSachThuocTinh[existingThuocTinhIndex].giaTriThuocTinh = giaTriThuocTinhIds;
+        } else {
+            // Nếu thuộc tính chưa tồn tại, thêm thuộc tính mới vào danh sách
+            const newThuocTinh = {
+                thuocTinh: thuocTinhId,
+                giaTriThuocTinh: giaTriThuocTinhIds,
+            };
+
+            sanPham.DanhSachThuocTinh.push(newThuocTinh);
+        }
+
         await sanPham.save();
 
         res.status(200).json({ message: 'Thêm thuộc tính thành công', sanPham });
@@ -50,6 +62,7 @@ async function addThuocTinhForSanPham(req, res) {
         res.status(500).json({ error: 'Lỗi hệ thống' });
     }
 }
+
 
 async function updateGiaTriThuocTinhForSanPham(req, res) {
     const { IDSanPham, thuocTinhId } = req.params;

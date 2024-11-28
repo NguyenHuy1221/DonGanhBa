@@ -223,11 +223,15 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
 
     // Tạo một đối tượng để theo dõi hóa đơn theo hoKinhDoanhId
     const hoaDonMap = {};
-
+    const mergedCart2 = mergedCart.user
+    console.log("mergedCart2", mergedCart)
     // Duyệt qua mergedCart để tạo hóa đơn cho từng hoKinhDoanhId
-    for (const item of mergedCart.mergedCart) {
+    for (const item of mergedCart2) {
       console.log("item", item)
-      const hoKinhDoanhId = item.sanPham.userId._id;
+      console.log("user", item.mergedCart)
+      console.log("user", item.user)
+      console.log("sanpham", item.sanPhamList.userId)
+      const hoKinhDoanhId = item.sanPhamList.userId._id;
 
       if (!hoaDonMap[hoKinhDoanhId]) {
         hoaDonMap[hoKinhDoanhId] = {

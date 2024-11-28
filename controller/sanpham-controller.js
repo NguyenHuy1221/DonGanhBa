@@ -21,6 +21,7 @@ const HoaDon = require("../models/HoaDonSchema");
 
 
 const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
+const { checkDuplicateGiaTriThuocTinh } = require("../helpers/helpers")
 const { v4: uuidv4 } = require('uuid');
 // const { upload } = require("../untils/index");
 //ham lay danh sach thuoc tinh
@@ -863,6 +864,10 @@ async function createBienTheThuCong(req, res, next) {
   const { IDSanPham } = req.params;
   const { sku, gia, soLuong, KetHopThuocTinh } = req.body;
   try {
+    console.log(KetHopThuocTinh)
+    if (KetHopThuocTinh) {
+      await checkDuplicateGiaTriThuocTinh(res, KetHopThuocTinh)
+    }
     const bienthe = await BienTheSchema.find({ IDSanPham: IDSanPham })
     // Duyệt qua từng biến thể đã tồn tại
     for (const existing of bienthe) {
