@@ -5,10 +5,10 @@ const CryptoJS = require("crypto-js");
 const moment = require("moment");
 const Transaction = require("../models/TransactionSchema");
 
+
 async function createGioHang(req, res, next) {
   try {
     const { userId, chiTietGioHang } = req.body;
-
     let gioHang = await GioHang.findOne({ userId });
 
     if (!gioHang) {
@@ -18,14 +18,13 @@ async function createGioHang(req, res, next) {
       });
     } else {
       chiTietGioHang.forEach((newProduct) => {
-        const existingProduct = gioHang.chiTietGioHang.find(
-          (item) =>
-            item.idBienThe.toString() === newProduct.idBienThe.toString()
+        const existingProductIndex = gioHang.chiTietGioHang.findIndex(
+          (item) => item.idBienThe.toString() === newProduct.idBienThe.toString()
         );
 
-        if (existingProduct) {
-          existingProduct.soLuong += newProduct.soLuong;
-          existingProduct.donGia += newProduct.donGia;
+        if (existingProductIndex !== -1) {
+          gioHang.chiTietGioHang[existingProductIndex].soLuong += newProduct.soLuong;
+          gioHang.chiTietGioHang[existingProductIndex].donGia = newProduct.donGia;
         } else {
           gioHang.chiTietGioHang.push(newProduct);
         }
@@ -35,9 +34,12 @@ async function createGioHang(req, res, next) {
     const savedGioHang = await gioHang.save();
     res.status(201).json(savedGioHang);
   } catch (error) {
+    console.error('Lỗi khi tạo hoặc cập nhật giỏ hàng:', error);
     res.status(500).json({ error: "Lỗi khi tạo hoặc cập nhật giỏ hàng" });
   }
 }
+
+
 
 async function getGioHangById(req, res, next) {
   try {

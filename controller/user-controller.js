@@ -459,8 +459,22 @@ async function getAllUsers(req, res) {
     if (role) {
       searchCriteria.role = role;
     }
-    let users
-    if (userId.role === "admin" || userId.role === "nhanvien") {
+    let users = []
+    let user = {}
+    if (userId) {
+      user = await UserModel.findById(userId);
+      if (!user) {
+        return res.status(200).json({
+          message: "Không tìm thấy user bằng userid"
+        });
+      }
+    } else {
+      return res.status(200).json({
+        message: "Không có userid"
+      });
+    }
+
+    if (user.role === "admin" || user.role === "nhanvien") {
       users = await UserModel.find(searchCriteria);
     } else {
       return res.status(200).json({
