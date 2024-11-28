@@ -30,7 +30,7 @@ async function getlistSanPham(req, res, next) {
 
   try {
 
-    const sanphams = await SanPhamModel.find().sort({ [NgayTao]: -1 }); // Lọc và sắp xếp
+    const sanphams = await SanPhamModel.find()// Lọc và sắp xếp
     if (!sanphams) {
       res.status(404).json({ message: 'Khong thay san pham nao' });
 
@@ -196,7 +196,10 @@ async function createSanPham(req, res, next) {
         return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
       }
     }
-
+    const hinhBoSungData = detailUrls.map((url, index) => ({
+      TenAnh: detailFiles[index].originalname, // Tên ảnh từ file gốc
+      UrlAnh: url, // URL đã tải lên
+    }));
     const { userId, luachon, IDSanPham, TenSanPham, DonGiaNhap, DonGiaBan, SoLuongNhap, SoLuongHienTai, PhanTramGiamGia, TinhTrang, MoTa, Unit, DanhSachThuocTinh, IDDanhMuc, IDDanhMucCon,
     } = req.body;
     const { sku, gia, soLuong, KetHopThuocTinh } = req.body;
@@ -209,7 +212,7 @@ async function createSanPham(req, res, next) {
       HinhSanPham: avatarUrl,
       DonGiaNhap, DonGiaBan,
       SoLuongNhap, SoLuongHienTai: 0, PhanTramGiamGia, TinhTrang, MoTa, Unit,
-      HinhBoSung: detailUrls,
+      HinhBoSung: hinhBoSungData,
       DanhSachThuocTinh: DanhSachThuocTinh, IDDanhMuc, IDDanhMucCon,
     });
     // Lưu đối tượng vào cơ sở dữ liệu
@@ -1121,6 +1124,7 @@ async function getlistBienTheInSanPham(req, res, next) {
     res.status(500).json({ message: "Lỗi khi tìm kiếm giá trị thuộc tính" });
   }
 }
+// k su dung
 async function getlistBienTheAdmin(req, res, next) {
   const { IDSanPham } = req.params;
 

@@ -1,16 +1,7 @@
 const express = require("express");
 const sanphamRouter = express.Router();
 const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
-
-const {
-  getlistSanPham,
-  getlistSanPhamAdmin,
-  toggleSanPhamMoi,
-  getSanPhamListNew_Old,
-  createSanPham,
-  updateHinhBoSung,
-  createThuocTinhSanPham,
-  createSanPhamVoiBienThe,
+const { getlistSanPham, getlistSanPhamAdmin, toggleSanPhamMoi, getSanPhamListNew_Old, createSanPham, updateHinhBoSung, createThuocTinhSanPham, createSanPhamVoiBienThe,
   getlistBienThe,
   createBienTheThuCong,
   updateBienTheThuCong,
@@ -124,10 +115,10 @@ sanphamRouter.get(
   async function (req, res) {
     return getlistBienTheInSanPham(req, res);
   }
-);
+);// k su dung
 sanphamRouter.get("/getlistBienTheAdmin/:IDSanPham", async function (req, res) {
   return getlistBienTheAdmin(req, res);
-});
+});// k su dung
 
 
 sanphamRouter.get("/getlistPageSanPham", async function (req, res) {
@@ -198,5 +189,9 @@ sanphamRouter.get("/checkNumberProductvaBienthe/:IDSanPham", async function (req
 sanphamRouter.post("/updateMissingUserIds/:userId", async function (req, res) {
   return updateMissingUserIds(req, res);
 });
+const { addThuocTinhForSanPham,
+  updateGiaTriThuocTinhForSanPham,
+  deleteThuocTinhForSanPham,
+} = require("../controller/sanpham-controller-v2");
 
 module.exports = sanphamRouter;
