@@ -27,6 +27,22 @@ const { v4: uuidv4 } = require('uuid');
 
 
 async function getlistSanPham(req, res, next) {
+
+  try {
+
+    const sanphams = await SanPhamModel.find().sort({ [NgayTao]: -1 }); // Lọc và sắp xếp
+    if (!sanphams) {
+      res.status(404).json({ message: 'Khong thay san pham nao' });
+
+    }
+    res.status(200).json(sanphams);
+  } catch (error) {
+    console.error('Lỗi khi truy xuất sản phẩm:', error);
+    res.status(500).json({ message: 'Lỗi khi truy xuất sản phẩm' });
+  }
+}
+
+async function getlistSanPhamAdmin(req, res, next) {
   const { userId } = req.params;
   const { search = '', tinhTrang = 'Còn hàng', sort = 'NgayTao', gmail = '' } = req.query; // Lấy các tham số tìm kiếm và lọc từ query
 
@@ -74,8 +90,6 @@ async function getlistSanPham(req, res, next) {
     res.status(500).json({ message: 'Lỗi khi truy xuất sản phẩm' });
   }
 }
-
-
 
 
 async function toggleSanPhamMoi(req, res, next) {
@@ -556,7 +570,6 @@ async function updateSanPham(req, res, next) {
       DanhSachThuocTinh,
       IDDanhMuc,
       IDDanhMucCon,
-      sku, gia, soLuong
     } = req.body;
 
     if (IDSanPham !== undefined) sanPham.IDSanPham = IDSanPham;
@@ -576,10 +589,10 @@ async function updateSanPham(req, res, next) {
 
     const updatedSanPham = await sanPham.save();
 
-    if (luachon == 0) {
-    } else {
-      const createdVariants = await ToHopBienThe(updatedSanPham._id, sku, gia, soLuong);
-    }
+    // if (luachon == 0) {
+    // } else {
+    //   const createdVariants = await ToHopBienThe(updatedSanPham._id, sku, gia, soLuong);
+    // }
     res.status(200).json(updatedSanPham);
   } catch (error) {
     console.error("Lỗi cập nhật sản phẩm:", error);
@@ -831,15 +844,17 @@ async function createThuocTinhSanPham(req, res, next) {
 //hamdequy
 async function getlistBienThe(req, res, next) {
   const { IDSanPham } = req.params;
-  console.log(IDSanPham);
+
   try {
     const BienThe = await BienTheSchema.find({ IDSanPham: IDSanPham }).populate('KetHopThuocTinh.IDGiaTriThuocTinh');
+
     res.status(200).json(BienThe);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi khi truy xuat san pham" });
   }
 }
+
 //create biến thể sản phẩm chay , dự phòng
 async function createBienTheThuCong(req, res, next) {
   const { IDSanPham } = req.params;
@@ -1106,7 +1121,24 @@ async function getlistBienTheInSanPham(req, res, next) {
     res.status(500).json({ message: "Lỗi khi tìm kiếm giá trị thuộc tính" });
   }
 }
+async function getlistBienTheAdmin(req, res, next) {
+  const { IDSanPham } = req.params;
 
+  try {
+    const BienThe = await BienTheSchema.find({ IDSanPham: IDSanPham }).populate('KetHopThuocTinh.IDGiaTriThuocTinh');
+    const sanpham = await SanPhamModel.findById(IDSanPham)
+    if (!BienThe) {
+      res.status(404).json({ message: "không tìm thấy biến thể nào" });
+    }
+    if (!sanpham) {
+      res.status(404).json({ message: "không tìm thấy sản phẩm" });
+    }
+    res.status(200).json({ BienThe, sanpham });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi truy xuat san pham" });
+  }
+}
 async function findSanPhamByDanhMuc(req, res, next) {
   const { IDDanhMuc } = req.params;
 
@@ -1456,6 +1488,7 @@ async function updateMissingUserIds(req, res) {
 module.exports = {
   searchSanPham,
   getlistSanPham,
+  getlistSanPhamAdmin,
   getSanPhamListNew_Old,
   toggleSanPhamMoi,
   createSanPham,
@@ -1477,6 +1510,7 @@ module.exports = {
   // deleteImageSanPham,
   findSanPhambyID,
   getlistBienTheInSanPham,
+  getlistBienTheAdmin,
   sapXepSanPhamTheoGia,
   sapXepSanPhamTheoGiaGiamDan,
   sapXepSanPhamTheoNgayTao,

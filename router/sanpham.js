@@ -4,6 +4,7 @@ const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
 
 const {
   getlistSanPham,
+  getlistSanPhamAdmin,
   toggleSanPhamMoi,
   getSanPhamListNew_Old,
   createSanPham,
@@ -21,6 +22,7 @@ const {
   getlistPageSanPham,
   findSanPhambyID,
   getlistBienTheInSanPham,
+  getlistBienTheAdmin,
   findSanPhamByDanhMuc,
   sapXepSanPhamTheoGia,
   sapXepSanPhamTheoGiaGiamDan,
@@ -39,9 +41,13 @@ sanphamRouter.post("/createSanPhamtest", async function (req, res) {
   return createSanPhamtest(req, res);
 });
 //dangsdungadmin
-sanphamRouter.get("/getlistSanPham/:userId", async function (req, res) {
+sanphamRouter.get("/getlistSanPham", async function (req, res) {
   return getlistSanPham(req, res);
 });
+sanphamRouter.get("/getlistSanPhamAdmin/:userId", async function (req, res) {
+  return getlistSanPhamAdmin(req, res);
+});
+
 sanphamRouter.get("/getSanPhamListNew_Old", async function (req, res) {
   return getSanPhamListNew_Old(req, res);
 });
@@ -119,6 +125,11 @@ sanphamRouter.get(
     return getlistBienTheInSanPham(req, res);
   }
 );
+sanphamRouter.get("/getlistBienTheAdmin/:IDSanPham", async function (req, res) {
+  return getlistBienTheAdmin(req, res);
+});
+
+
 sanphamRouter.get("/getlistPageSanPham", async function (req, res) {
   return getlistPageSanPham(req, res);
 });
