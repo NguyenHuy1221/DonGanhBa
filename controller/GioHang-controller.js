@@ -92,8 +92,9 @@ async function getGioHangById(req, res, next) {
 // }
 async function updateGioHang(req, res, next) {
   try {
-    const { chiTietGioHang } = req.body;
 
+    const { chiTietGioHang } = req.body;
+    console.log(chiTietGioHang)
     const gioHang = await GioHang.findById(req.params.id);
     if (!gioHang) {
       return res.status(404).json({ error: "Giỏ hàng không tồn tại" });

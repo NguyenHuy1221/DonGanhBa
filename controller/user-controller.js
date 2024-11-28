@@ -443,7 +443,7 @@ async function showUserById(req, res) {
 async function getAllUsers(req, res) {
   try {
     const { tenNguoiDung, gmail, soDienThoai, role } = req.query;
-
+    const { userId } = req.params
     // Tạo điều kiện tìm kiếm dựa trên các tham số truy vấn
     const searchCriteria = {};
 
@@ -459,9 +459,15 @@ async function getAllUsers(req, res) {
     if (role) {
       searchCriteria.role = role;
     }
-
+    let users
+    if (userId.role === "admin" || userId.role === "nhanvien") {
+      users = await UserModel.find(searchCriteria);
+    } else {
+      return res.status(200).json({
+        message: "Không có quyền "
+      });
+    }
     // Tìm kiếm người dùng dựa trên tiêu chí tìm kiếm
-    const users = await UserModel.find(searchCriteria);
 
     // Tính toán số lượng người dùng theo từng role
     const userCounts = await UserModel.aggregate([

@@ -38,7 +38,8 @@ const {
 sanphamRouter.post("/createSanPhamtest", async function (req, res) {
   return createSanPhamtest(req, res);
 });
-sanphamRouter.get("/getlistSanPham", async function (req, res) {
+//dangsdungadmin
+sanphamRouter.get("/getlistSanPham/:userId", async function (req, res) {
   return getlistSanPham(req, res);
 });
 sanphamRouter.get("/getSanPhamListNew_Old", async function (req, res) {

@@ -52,7 +52,7 @@ const {
   deleteYeuCauRutTienCoDieuKien,
 } = require("../controller/user-controller");
 
-userRoute.get("/showAllUser", function (req, res) {
+userRoute.get("/showAllUser/:userId", function (req, res) {
   return getAllUsers(req, res);
 });
 

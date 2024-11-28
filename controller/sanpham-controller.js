@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const HoadonModel = require("../models/HoaDonSchema")
 const YeuThichModel = require("../models/YeuThichSchema")
+const UserModel = require("../models/NguoiDungSchema")
 //thu vien tim ket qua gan dung
 const fuzzysearch = require('fuzzysearch');
 
@@ -23,15 +24,59 @@ const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
 const { v4: uuidv4 } = require('uuid');
 // const { upload } = require("../untils/index");
 //ham lay danh sach thuoc tinh
+
+
 async function getlistSanPham(req, res, next) {
+  const { userId } = req.params;
+  const { search = '', tinhTrang = 'Còn hàng', sort = 'NgayTao', gmail = '' } = req.query; // Lấy các tham số tìm kiếm và lọc từ query
+
+  let filter = {};
+  let user = {}
+  if (tinhTrang !== 'all') {
+    filter.TinhTrang = tinhTrang;
+  }
+  if (search) {
+    filter.TenSanPham = { $regex: search, $options: 'i' }; // Tìm kiếm theo tên sản phẩm
+  }
+  if (userId) {
+    user = await UserModel.findById(userId);
+    console.log(user)
+  }
   try {
-    const sanphams = await SanPhamModel.find();
+    let sanphams = [];
+    if (user.role === 'admin') {
+      if (gmail) {
+        // Tìm userId từ gmail
+        const userhokinhdoanh = await UserModel.findOne({ gmail });
+        if (userhokinhdoanh) {
+          filter.userId = userhokinhdoanh._id; // Lọc theo userId
+        } else {
+          return res.status(404).json({
+            message: 'Không tìm thấy người dùng với gmail này',
+          });
+        }
+      }
+      sanphams = await SanPhamModel.find(filter).sort({ [sort]: -1 }); // Lọc và sắp xếp
+    } else if (user.role === 'nhanvien') {
+      sanphams = await SanPhamModel.find(filter).sort({ [sort]: -1 });
+    } else if (user.role === 'hokinhdoanh') {
+      filter.userId = user._id; // Lọc theo userId
+      sanphams = await SanPhamModel.find(filter).sort({ [sort]: -1 });
+    } else {
+      return res.status(403).json({
+        message: 'Không có quyền',
+      });
+    }
+
     res.status(200).json(sanphams);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi khi truy xuat san pham" });
+    console.error('Lỗi khi truy xuất sản phẩm:', error);
+    res.status(500).json({ message: 'Lỗi khi truy xuất sản phẩm' });
   }
 }
+
+
+
 
 async function toggleSanPhamMoi(req, res, next) {
   const { IDSanPham } = req.params;

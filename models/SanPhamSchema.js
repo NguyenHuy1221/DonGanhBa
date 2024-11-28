@@ -14,8 +14,7 @@ const SanPhamSchema = new Schema({
   NgayTao: { type: Date, default: Date.now },
   //TinhTrang: { type: String }, // Ví dụ: 'Còn hàng', 'Hết hàng'
   SanPhamMoi: { type: Boolean, default: false },// sản phẩm vừa tạo sẽ không được bán luôn , phải tự tay xác nhận mới được bán
-  TinhTrang: { type: String, enum: ['Còn hàng', 'Hết hàng', 'Ngừng kinh doanh'] },
-  MoTa: { type: String },
+  TinhTrang: { type: String, enum: ['Còn hàng', 'Hết hàng', 'Ngừng kinh doanh', 'Đã xóa'] }, MoTa: { type: String },
   Unit: { type: String, default: "1" }, // Đơn vị tính
   HinhBoSung: [{
     TenAnh: { type: String },
