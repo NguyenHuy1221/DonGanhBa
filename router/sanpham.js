@@ -192,6 +192,7 @@ sanphamRouter.post("/updateMissingUserIds/:userId", async function (req, res) {
 const { addThuocTinhForSanPham,
   updateGiaTriThuocTinhForSanPham,
   deleteThuocTinhForSanPham,
+  findthuoctinhInsanpham,
 } = require("../controller/sanpham-controller-v2");
 
 
@@ -205,4 +206,8 @@ sanphamRouter.put("/updateGiaTriThuocTinhForSanPham/:IDSanPham/:thuocTinhId", as
 sanphamRouter.delete("/deleteThuocTinhForSanPham/:IDSanPham/:thuocTinhId/:giaTriThuocTinhId", async function (req, res) {
   return deleteThuocTinhForSanPham(req, res);
 });
+sanphamRouter.get("/findthuoctinhInsanpham/:IDSanPham", async function (req, res) {
+  return findthuoctinhInsanpham(req, res);
+});
+
 module.exports = sanphamRouter;

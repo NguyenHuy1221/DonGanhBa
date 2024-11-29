@@ -211,8 +211,31 @@ async function deleteThuocTinhForSanPham(req, res) {
 }
 
 
+async function findthuoctinhInsanpham(req, res) {
+    const { IDSanPham } = req.params;
+    try {
+        // Tìm sản phẩm dựa trên _id
+        const sanPham = await SanPhamModel.findById(IDSanPham).populate('DanhSachThuocTinh.thuocTinh', 'TenThuocTinh');
+
+        if (!sanPham) {
+            return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+        }
+
+        // Lấy dữ liệu DanhSachThuocTinh và chỉ giữ lại thuộc tính thuocTinh
+        const thuoctinhlist = sanPham.DanhSachThuocTinh.map(item => ({
+            _id: item.thuocTinh._id,
+            TenThuocTinh: item.thuocTinh.TenThuocTinh,
+        }));
+
+        res.status(200).json({ thuoctinhlist });
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách thuộc tính của sản phẩm:', error);
+        res.status(500).json({ message: 'Lỗi hệ thống' });
+    }
+}
 module.exports = {
     addThuocTinhForSanPham,
     updateGiaTriThuocTinhForSanPham,
     deleteThuocTinhForSanPham,
+    findthuoctinhInsanpham,
 };
