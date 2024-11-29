@@ -13,6 +13,7 @@ const SanPhamModel = require("../models/SanPhamSchema")
 const yeuthichSchema = require("../models/YeuThichSchema")
 const ThongBaoModel = require("../models/thongbaoSchema")
 const YeuCauRutTienSchema = require("../models/YeuCauRutTienSchema")
+const FirebaseSchema = require("../models/FirebaseSchema")
 const nodemailer = require('nodemailer');
 const { sendVerificationEmail, createNewRequest } = require('../helpers/helpers');
 
@@ -1207,6 +1208,40 @@ async function getListYeuCauRutTienByuserId(req, res) {
   }
 }
 
+
+
+async function saveFcmTokenFireBase(req, res) {
+  const { userId, fcmToken } = req.body;
+
+  try {
+    // Kiểm tra xem fcmToken đã tồn tại chưa
+    const existingToken = await FirebaseSchema.findOne({ firebaseToken });
+    if (existingToken) {
+      // Nếu fcmToken đã tồn tại, cập nhật userId
+      existingToken.userId = userId;
+      await existingToken.save();
+      return res.status(200).json({ message: 'Token FCM đã được cập nhật với userId mới' });
+    }
+
+    // Kiểm tra xem userId đã tồn tại chưa
+    const existingUser = await FirebaseSchema.findOne({ userId });
+    if (existingUser) {
+      existingToken.firebaseToken = fcmToken;
+      await existingToken.save();
+      return res.status(200).json({ message: 'Token FCM đã được cập nhật với userId mới' });
+    }
+
+    // Nếu không tồn tại fcmToken và userId, tạo mới
+    await FirebaseSchema.create({ userId, firebaseToken: fcmToken });
+    return res.status(201).json({ message: 'Lưu thành công' });
+  } catch (error) {
+    console.error('Lỗi khi lưu token:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi lưu token fcm' });
+  }
+}
+
+// app.post('/send-notification', async (req, res) => { const { userId, title, body } = req.body; try { const user = await User.findOne({ userId }); if (!user) { return res.status(404).json({ message: 'Không tìm thấy người dùng' }); } const message = { notification: { title, body, }, token: user.fcmToken, }; const response = await admin.messaging().send(message); return res.status(200).json({ message: 'Thông báo đã được gửi đi', response }); } catch (error) { console.error('Lỗi khi gửi thông báo:', error); return res.status(500).json({ message: 'Đã xảy ra lỗi khi gửi thông báo' }); } });
+
 module.exports = {
   RegisterUser,
   VerifyOTP,
@@ -1237,4 +1272,5 @@ module.exports = {
   createYeuCauRutTien,
   resendYeuCauRutTien,
   deleteYeuCauRutTienCoDieuKien,
+  saveFcmTokenFireBase,
 };

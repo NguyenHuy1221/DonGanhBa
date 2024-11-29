@@ -5,14 +5,14 @@ const {
     createThuocTinh,
     updateThuocTinh,
     deleteThuocTinh,
-    findThuocTinh,} = require("../controller/thuoctinh-controller")
+    findThuocTinh, } = require("../controller/thuoctinh-controller")
 
-    thuoctinhRouter.get('/getlistThuocTinh', async function (req, res) {
-        return getlistThuocTinh(req, res);
-    })
-    
+thuoctinhRouter.get('/getlistThuocTinh/:userId', async function (req, res) {
+    return getlistThuocTinh(req, res);
+})
 
-thuoctinhRouter.get('/findThuocTinh', async function (req, res) {
+
+thuoctinhRouter.get('/findThuocTinh/:userId', async function (req, res) {
     return findThuocTinh(req, res);
 })
 

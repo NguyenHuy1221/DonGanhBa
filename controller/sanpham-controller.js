@@ -19,6 +19,7 @@ const util = require('util');
 const { v4: uid } = require('uuid');
 const HoaDon = require("../models/HoaDonSchema");
 
+const GiohangModel = require("../models/GioHangSchema")
 
 const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
 const { checkDuplicateGiaTriThuocTinh } = require("../helpers/helpers")
@@ -252,7 +253,7 @@ async function createSanPham(req, res, next) {
         res.status(500).json({ error: 'Lỗi hệ thống liên quan đến biến thể' });
       }
     } else {
-      const createdVariants = await ToHopBienThe(savedSanPham._id, sku, gia, soLuong);
+      const createdVariants = await ToHopBienThe(res, savedSanPham._id, sku, gia, soLuong);
     }
     res.status(201).json(savedSanPham);
   } catch (error) {
@@ -260,7 +261,7 @@ async function createSanPham(req, res, next) {
     res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 }
-async function ToHopBienThe(req, res, IDSanPham, sku, gia, soLuong) {
+async function ToHopBienThe(res, IDSanPham, sku, gia, soLuong) {
   const projection = {
     _id: 1,
     // Set chapters to null explicitly
@@ -997,8 +998,11 @@ async function deleteBienTheThuCong(req, res, next) {
       'chiTietHoaDon.idBienThe': IDBienThe
     });
 
+    const gioHangs = await GiohangModel.find({
+      'chiTietHoaDon.idBienThe': IDBienThe
+    });
     // Kiểm tra xem có hóa đơn nào chứa biến thể cần xóa
-    if (hoaDons.length > 0) {
+    if (hoaDons.length > 0 || gioHangs.length > 0) {
       // Cập nhật trạng thái isDeleted của biến thể
       const bienthe = await BienTheSchema.findByIdAndUpdate(IDBienThe, { isDeleted: true });
       await SanPhamModel.findOneAndUpdate(

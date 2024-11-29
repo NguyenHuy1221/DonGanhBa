@@ -50,6 +50,7 @@ const {
   resendYeuCauRutTien,
   getListYeuCauRutTienByuserId,
   deleteYeuCauRutTienCoDieuKien,
+  saveFcmTokenFireBase,
 } = require("../controller/user-controller");
 
 userRoute.get("/showAllUser/:userId", function (req, res) {
@@ -191,6 +192,12 @@ userRoute.get("/getListYeuCauRutTienByuserId/:userId", async function (req, res)
 userRoute.delete("/deleteYeuCauRutTienCoDieuKien/:yeuCauId", async function (req, res) {
   return deleteYeuCauRutTienCoDieuKien(req, res);
 });
+
+userRoute.post("/saveFcmTokenFireBase", async function (req, res) {
+  return saveFcmTokenFireBase(req, res);
+});
+
+
 userRoute.get("/verify/:token", async function (req, res) {
   const { token } = req.params;
   try {

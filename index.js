@@ -19,7 +19,6 @@ app.use(cors());
 const jwt = require('jsonwebtoken')
 const { decodeToken } = require("./untils")
 
-
 //chat
 const http = require("http"); // Needed to set up a server with socket.io
 var server = http.createServer(app); // Use http server

@@ -24,7 +24,6 @@ const SanPhamSchema = new Schema({
     thuocTinh: { type: Schema.Types.ObjectId, ref: 'ThuocTinh' },
     giaTriThuocTinh: [{ type: Schema.Types.ObjectId, ref: 'GiaTriThuocTinh' }]
   }],
-
   IDDanhMuc: { type: String, ref: 'DanhMuc' }, // Tham chiếu đến danh mục cha
   IDDanhMucCon: { type: String, ref: 'DanhMucCon' } // Tham chiếu đến danh mục con
 });

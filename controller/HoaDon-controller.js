@@ -220,18 +220,14 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
   try {
     const user = await UserModel.findById(userId);
     console.log(removeAccents(user.tenNguoiDung));
-
-    // Tạo một đối tượng để theo dõi hóa đơn theo hoKinhDoanhId
     const hoaDonMap = {};
-    const mergedCart2 = mergedCart.user
     console.log("mergedCart2", mergedCart)
-    // Duyệt qua mergedCart để tạo hóa đơn cho từng hoKinhDoanhId
-    for (const item of mergedCart2) {
+    for (const item of mergedCart.mergedCart) {
       console.log("item", item)
-      console.log("user", item.mergedCart)
       console.log("user", item.user)
-      console.log("sanpham", item.sanPhamList.userId)
-      const hoKinhDoanhId = item.sanPhamList.userId._id;
+      console.log("sanpham", item.sanPhamList)
+
+      const hoKinhDoanhId = item.user._id;
 
       if (!hoaDonMap[hoKinhDoanhId]) {
         hoaDonMap[hoKinhDoanhId] = {
@@ -245,22 +241,26 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
         };
       }
 
-
-      item.chiTietGioHangs.forEach(chiTiet => {
-        hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
-          idBienThe: chiTiet.idBienThe._id,
-          soLuong: chiTiet.soLuong,
-          donGia: chiTiet.donGia
+      item.sanPhamList.forEach(sanPhamItem => {
+        sanPhamItem.chiTietGioHangs.forEach(chiTiet => {
+          hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
+            idBienThe: chiTiet.idBienThe._id,
+            soLuong: chiTiet.soLuong,
+            donGia: chiTiet.donGia
+          });
+          hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
         });
-        hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
       });
+
     }
 
     // Lưu từng hóa đơn và cập nhật số lượng sản phẩm
+    let hoadon = [];
     for (const hoKinhDoanhId in hoaDonMap) {
       const hoaDonData = hoaDonMap[hoKinhDoanhId];
       const newHoaDon = new HoaDonModel(hoaDonData);
-      await newHoaDon.save();
+      const dulieuhoadon = await newHoaDon.save();
+      hoadon.push(dulieuhoadon)
 
       for (const chiTiet of hoaDonData.chiTietHoaDon) {
         await BienThe.findOneAndUpdate(
@@ -277,8 +277,8 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
         );
       }
     }
-    console.log({ message: 'Tạo hóa đơn thành công', mergedCart })
-    res.status(200).json({ message: 'Tạo hóa đơn thành công', mergedCart });
+    // console.log({ message: 'Tạo hóa đơn thành công', hoadon })
+    res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Lỗi khi tạo đơn hàng' });
@@ -348,19 +348,7 @@ async function updateTransactionHoaDon(req, res, next) {
     if (khuyenmaiId && giaTriGiam > 0) {
       discountedItems = calculateDiscountedItems(hoadon.chiTietHoaDon, giaTriGiam, totalQuantity);
     }
-    // const totalQuantity = hoadon.chiTietHoaDon.reduce((total, item) => total + item.soLuong, 0);
-    // // Tính toán các sản phẩm đã được giảm giá
-    // const discountedItems = calculateDiscountedItems(hoadon.chiTietHoaDon, giaTriGiam, totalQuantity);
-    // console.log(discountedItems)
-    // Tạo mảng items cho API thanh toán
-    // const itemsForAPI = JSON.stringify(discountedItems.map(item => ({
-    //   item_id: item.idBienThe,
-    //   item_code: item.idBienThe,
-    //   item_name: item.idBienThe,
-    //   price_amount: item.donGia,
-    //   quantity: item.soLuong,
-    //   url: process.env.BASE_URL + item.idBienThe,
-    // })));
+
     const orderData2 = {
       mrc_order_id: orderIdbaokim,
       total_amount: total_tien,
@@ -417,6 +405,86 @@ async function updateTransactionHoaDon(req, res, next) {
   }
 }
 
+
+
+async function updateTransactionlistHoaDon(req, res, next) {
+  const { transactionId, khuyenmaiId, giaTriGiam = 0, hoadon } = req.body;
+  console.log(khuyenmaiId, giaTriGiam)
+  console.log("listhoadon", hoadon)
+  return res.status(200).json({ message: 'Hóa đơn không tồn tại', hoadon: hoadon });
+
+  try {
+    const hoadon = await HoaDonModel.findById(hoadonId).populate("userId"); // Lấy thông tin đơn hàng từ DB
+    const token = refreshToken();
+    const vietnamTime = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
+    const orderIdbaokim = `${"name"}-${vietnamTime}`;
+    let total_tien = hoadon.TongTien;
+    if (khuyenmaiId && giaTriGiam > 0) {
+      total_tien = hoadon.TongTien - giaTriGiam;
+      total_tien = Math.max(total_tien, 0);
+    }
+    const totalQuantity = hoadon.chiTietHoaDon.reduce((total, item) => total + item.soLuong, 0);
+    // Tính toán các sản phẩm đã được giảm giá
+    let discountedItems = hoadon.chiTietHoaDon; // Giữ nguyên mảng ban đầu nếu không có khuyến mãi
+    if (khuyenmaiId && giaTriGiam > 0) {
+      discountedItems = calculateDiscountedItems(hoadon.chiTietHoaDon, giaTriGiam, totalQuantity);
+    }
+
+    const orderData2 = {
+      mrc_order_id: orderIdbaokim,
+      total_amount: total_tien,
+      description: hoadon.GhiChu,
+      url_success: `${process.env.MAIN_BASE_URL}api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
+      merchant_id: parseInt(process.env.MERCHANT_ID),
+      url_detail: "https://baokim.vn/",
+      lang: "en",
+      bpm_id: transactionId,
+      webhooks: "https://baokim.vn/",
+      customer_email: hoadon.userId.gmail,
+      customer_phone: "0358748103",
+      customer_name: "ho duc hau",
+      customer_address: hoadon.diaChi.tinhThanhPho + " " + hoadon.diaChi.quanHuyen + " " + hoadon.diaChi.phuongXa + " " + hoadon.diaChi.duongThon,
+      items: JSON.stringify(discountedItems.map(item => ({
+        item_id: item.idBienThe,
+        item_code: item.idBienThe,
+        item_name: item.idBienThe,
+        price_amount: item.donGia,
+        quantity: item.soLuong,
+        url: process.env.BASE_URL + item.idBienThe,
+      }))),
+
+    };
+    console.log(hoadon.TongTien - giaTriGiam)
+    // Kiểm tra thời gian hết hạn của đơn hàng
+
+    if (!hoadon) {
+      return res.status(500).json({ message: 'Hóa đơn không tồn tại' });
+    }
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    const donhangmoi = await createOrder(orderData2)
+    console.log(donhangmoi)
+    if (khuyenmaiId && giaTriGiam > 0) {
+      hoadon.khuyenmaiId = khuyenmaiId;
+      hoadon.SoTienKhuyenMai = giaTriGiam;
+      await KhuyenMai.findOneAndUpdate(
+        { _id: khuyenmaiId },
+        { $inc: { SoLuongHienTai: -1 } }
+      );
+    }
+    hoadon.transactionId = transactionId;
+    hoadon.payment_url = donhangmoi.data.payment_url
+    hoadon.mrc_order_id = orderIdbaokim
+    hoadon.order_id = donhangmoi.data.order_id
+    hoadon.redirect_url = donhangmoi.data.redirect_url
+    hoadon.expiresAt = expiresAt;
+    // await hoadon.save();
+    res.status(200).json(donhangmoi);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi khi cập nhật hoa don' });
+  }
+}
 
 
 async function Checkdonhangbaokim(req, res, next) {
@@ -628,10 +696,7 @@ async function updatetrangthaiHoaDOn(req, res, next) {
 async function updateTransactionHoaDonCOD(req, res, next) {
   const hoadonId = req.params.hoadonId
   const { transactionId, khuyenmaiId, giaTriGiam = 0 } = req.body;
-
-
   try {
-
     const hoadon = await HoaDonModel.findById(hoadonId)// Lấy thông tin đơn hàng từ DB
     if (!hoadon) {
       return 'hoa don không tồn tại';
@@ -657,7 +722,38 @@ async function updateTransactionHoaDonCOD(req, res, next) {
     res.status(500).json({ message: 'Lỗi khi cập nhật hoa don' });
   }
 }
+async function updateTransactionListHoaDonCOD(req, res, next) {
+  const { transactionId, khuyenmaiId, giaTriGiam = 0, hoadon } = req.body;
+  console.log("listhoadon", hoadon)
+  return res.status(200).json({ message: 'Hóa đơn ', hoadon: hoadon });
 
+  try {
+    console.log("hoadon", hoadon)
+    // const hoadon = await HoaDonModel.findById(hoadonId)// Lấy thông tin đơn hàng từ DB
+    if (!hoadon) {
+      return 'hoa don không tồn tại';
+    }
+    // const totalQuantity = hoadon.chiTietHoaDon.reduce((total, item) => total + item.soLuong, 0);
+    // // Tính toán các sản phẩm đã được giảm giá
+    // const discountedItems = calculateDiscountedItems(hoadon.chiTietHoaDon, giaTriGiam, totalQuantity);
+    // console.log(discountedItems)
+    if (khuyenmaiId && giaTriGiam > 0) {
+      hoadon.khuyenmaiId = khuyenmaiId;
+      hoadon.SoTienKhuyenMai = giaTriGiam;
+      await KhuyenMai.findOneAndUpdate(
+        { _id: khuyenmaiId },
+        { $inc: { SoLuongHienTai: -1 } }
+      );
+    }
+    hoadon.transactionId = transactionId;
+    await hoadon.save();
+    //{ message: "Tạo dơn hàng thành công" }
+    res.status(200).json({ message: "Tạo dơn hàng thành công", "data": { hoadon } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi khi cập nhật hoa don' });
+  }
+}
 
 
 async function NhanThanhToanTuBaoKim(req, res) {
@@ -787,9 +883,11 @@ module.exports = {
   getHoaDonByHoaDonIdFullVersion,
   createUserDiaChivaThongTinGiaoHang,
   updateTransactionHoaDon,
+  updateTransactionlistHoaDon,
+  updateTransactionHoaDonCOD,
+  updateTransactionListHoaDonCOD,
   Checkdonhangbaokim,
   updatetrangthaihuydonhang,
-  updateTransactionHoaDonCOD,
   NhanThanhToanTuBaoKim,
   HuyDonHang,
   updateDiaChighichuHoaDon,

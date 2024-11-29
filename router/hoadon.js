@@ -5,9 +5,12 @@ const { getlistHoaDon,
     getHoaDonByHoaDonId,
     createUserDiaChivaThongTinGiaoHang,
     updateTransactionHoaDon,
+    updateTransactionlistHoaDon,
+    updateTransactionHoaDonCOD,
+    updateTransactionListHoaDonCOD,
     Checkdonhangbaokim,
     updatetrangthaihuydonhang,
-    updateTransactionHoaDonCOD,
+
     getHoaDonByHoaDonIdFullVersion,
     NhanThanhToanTuBaoKim,
     HuyDonHang,
@@ -37,6 +40,10 @@ hoadonRouter.post('/createUserDiaChivaThongTinGiaoHang', async function (req, re
 hoadonRouter.post('/updateTransactionHoaDon/:hoadonId', async function (req, res) {
     return updateTransactionHoaDon(req, res);
 })
+hoadonRouter.post('/updateTransactionlistHoaDon', async function (req, res) {
+    return updateTransactionlistHoaDon(req, res);
+})
+
 hoadonRouter.get('/Checkdonhangbaokim/:orderId', async function (req, res) {
     return Checkdonhangbaokim(req, res);
 })
@@ -45,6 +52,9 @@ hoadonRouter.put('/updatetrangthaihuydonhang/:hoadonId', async function (req, re
 })
 hoadonRouter.put('/updateTransactionHoaDonCOD/:hoadonId', async function (req, res) {
     return updateTransactionHoaDonCOD(req, res);
+})
+hoadonRouter.put('/updateTransactionListHoaDonCOD', async function (req, res) {
+    return updateTransactionListHoaDonCOD(req, res);
 })
 
 // hoadonRouter.delete('/updateTransactionHoaDonCOD/:hoadonId', async function (req, res) {

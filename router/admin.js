@@ -9,6 +9,7 @@ const {
     createThongBao,
     getAdminYeuCauRutTien,
     updateYeuCauRutTien,
+    FixadminupdateThuocTinhIsDeleted,
 } = require("../controller/admin");
 
 adminRouter.post("/updateUserRoleAndPermissions/:userId", function (req, res) {
@@ -30,6 +31,9 @@ adminRouter.get("/getAdminYeuCauRutTien", function (req, res) {
 });
 adminRouter.put("/updateYeuCauRutTien/:requestId", function (req, res) {
     return updateYeuCauRutTien(req, res);
+});
+adminRouter.post("/FixadminupdateThuocTinhIsDeleted", function (req, res) {
+    return FixadminupdateThuocTinhIsDeleted(req, res);
 });
 
 

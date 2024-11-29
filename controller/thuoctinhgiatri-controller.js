@@ -91,11 +91,35 @@ async function deleteThuocTinhGiaTri(req, res, next) {
 }
 
 async function findThuocTinhGiaTri(req, res, next) {
-    const { ThuocTinhID } = req.params;
+    const { ThuocTinhID, userId } = req.params;
 
-
+    let user = {}
+    let thuocTinhs = []
+    let query = {
+        isDeleted: false,
+        ThuocTinhID: ThuocTinhID
+    };
     try {
-        const thuocTinhs = await ThuocTinhGiaTriModel.find({ ThuocTinhID: ThuocTinhID }).populate('ThuocTinhID');;
+        if (userId) {
+            user = await UserModel.findById(userId);
+            if (!user) {
+                return res.status(200).json({
+                    message: "Không tìm thấy user bằng userid"
+                });
+            }
+        }
+        else {
+            res.status(404).json({ message: 'Chưa có userId' });
+        }
+
+        if (user.role === "admin" || user.role === "nhanvien") {
+        } else if (user.role === "hokinhdoanh") {
+            query.$or = [{ IDUser: userId }, { role: { $in: ['admin', 'nhanvien'] } }];
+        } else {
+            return res.status(200).json({ message: "Không có quyền " });
+        }
+
+        const thuocTinhs = await ThuocTinhGiaTriModel.find(query).populate('ThuocTinhID');;
         res.status(200).json(thuocTinhs);
     } catch (error) {
         console.error(error);

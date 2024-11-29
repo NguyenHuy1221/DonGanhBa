@@ -202,7 +202,7 @@ sanphamRouter.post("/addThuocTinhForSanPham/:IDSanPham", async function (req, re
 sanphamRouter.put("/updateGiaTriThuocTinhForSanPham/:IDSanPham/:thuocTinhId", async function (req, res) {
   return updateGiaTriThuocTinhForSanPham(req, res);
 });
-sanphamRouter.delete("/deleteThuocTinhForSanPham/:IDSanPham/:thuocTinhId", async function (req, res) {
+sanphamRouter.delete("/deleteThuocTinhForSanPham/:IDSanPham/:thuocTinhId/:giaTriThuocTinhId", async function (req, res) {
   return deleteThuocTinhForSanPham(req, res);
 });
 module.exports = sanphamRouter;
