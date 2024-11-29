@@ -14,4 +14,4 @@ const BienTheSchema = new Schema({
 
 const BienThe = mongoose.model('BienThe', BienTheSchema);
 
-module.exports = BienThe; 
+module.exports = BienThe;  

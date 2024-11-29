@@ -4,7 +4,7 @@ const { convertToVietnamTimezone } = require('../middleware/index');
 
 const FireBaseSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    firebaseToken: { type: Schema.Types.ObjectId, required: true },
+    firebaseToken: { type: String, required: true },
 
 });
 

@@ -529,35 +529,57 @@ async function updateHinhBoSung(req, res, next) {
 async function updateSanPham(req, res, next) {
   try {
     const { id } = req.params;
+    const bucketName = process.env.VIETTEL_BUCKET;
+    const avatarFile = req.files && req.files.find(file => file.fieldname === 'file');
+    const detailFiles = req.files && req.files.filter(file => file.fieldname === 'files');
+    let avatarUrl = ''; let detailUrls = []; // Upload ảnh đại diện nếu có 
 
     const sanPham = await SanPhamModel.findById(id);
     if (!sanPham) {
       return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
     }
 
-    await uploadFields(req, res);
 
-    if (req.files && req.files['file'] && req.files['file'][0]) {
-      const oldImagePath = sanPham.HinhSanPham.replace(process.env.URL_IMAGE, 'public');
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
+
+
+    if (avatarFile) {
+      let objectKey = ""
+      if (avatarFile.mimetype.startsWith('image/')) {
+        objectKey = `images/${uuidv4()}-${avatarFile.originalname}`;
+      } else {
+        return res.status(400).json({ message: 'Chỉ được upload image' });
       }
-      const newPath = req.files['file'][0].path.replace("public", process.env.URL_IMAGE);
-      sanPham.HinhSanPham = newPath;
-    }
-
-    if (req.files && req.files['files']) {
-      sanPham.HinhBoSung.forEach(hinh => {
-        const oldImagePath = hinh.UrlAnh.replace(process.env.URL_IMAGE, 'public');
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+      try {
+        avatarUrl = await uploadFileToViettelCloud(avatarFile.buffer, bucketName, objectKey, avatarFile.mimetype);
+        sanPham.HinhSanPham = avatarUrl
+      }
+      catch (error) {
+        console.error('Lỗi khi tải lên ảnh đại diện:', error);
+        return res.status(400).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh đại diện' });
+      }
+    } // Upload ảnh chi tiết nếu có 
+    if (detailFiles && detailFiles.length > 0) {
+      const uploadPromises = detailFiles.map(file => {
+        let objectKey = ""
+        if (file.mimetype.startsWith('image/')) {
+          objectKey = `images/${uuidv4()}-${file.originalname}`;
+        } else {
+          return res.status(400).json({ message: 'Chỉ được upload image' });
         }
+        return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
       });
-      const hinhBoSung = req.files['files'].map(file => ({
-        TenAnh: file.originalname,
-        UrlAnh: file.path.replace("public", process.env.URL_IMAGE),
-      }));
-      sanPham.HinhBoSung = hinhBoSung;
+      try {
+        detailUrls = await Promise.all(uploadPromises);
+        const hinhBoSungData = detailUrls.map((url, index) => ({
+          TenAnh: detailFiles[index].originalname, // Tên ảnh từ file gốc
+          UrlAnh: url, // URL đã tải lên
+        }));
+        sanPham.HinhBoSung = hinhBoSungData
+
+      } catch (error) {
+        console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
+      }
     }
 
     const {

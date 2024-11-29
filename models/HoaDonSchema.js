@@ -21,6 +21,8 @@ const HoaDonSchema = new Schema({
     duongThon: String,
     Name: { type: String },
     SoDienThoai: { type: String },
+    Name: { type: String },
+    kinhdo: { type: String },
   },
   TongTien: Number,
   DaThanhToan: { type: Boolean, default: false },
