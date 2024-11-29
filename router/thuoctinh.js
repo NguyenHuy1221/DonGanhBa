@@ -16,11 +16,11 @@ thuoctinhRouter.get('/findThuocTinh/:userId', async function (req, res) {
     return findThuocTinh(req, res);
 })
 
-thuoctinhRouter.post('/createThuocTinh', async function (req, res) {
+thuoctinhRouter.post('/createThuocTinh/:userId', async function (req, res) {
     return createThuocTinh(req, res);
 })
 
-thuoctinhRouter.put('/updateThuocTinh/:id', async function (req, res) {
+thuoctinhRouter.put('/updateThuocTinh/:id/:userId', async function (req, res) {
     return updateThuocTinh(req, res);
 })
 

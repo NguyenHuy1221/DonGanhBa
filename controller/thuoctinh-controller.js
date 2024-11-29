@@ -79,14 +79,15 @@ async function getlistThuocTinh(req, res, next) {
 
 //hàm thêm thuộc tính
 async function createThuocTinh(req, res, next) {
-    const { ThuocTinhID, TenThuocTinh, userId } = req.body;
+    const { userId } = req.params;
+
+    const { ThuocTinhID, TenThuocTinh } = req.body;
     try {
 
         // Kiểm tra xem ThuocTinhID đã tồn tại chưa
         const existingThuocTinh = await ThuocTinhModel.findOne({ ThuocTinhID });
         if (!userId) {
             return res.status(404).json({ message: 'thiếu userId' });
-
         }
         if (existingThuocTinh) {
             return res.status(409).json({ message: 'Thuộc tính đã tồn tại' });
@@ -110,8 +111,8 @@ async function createThuocTinh(req, res, next) {
 
 
 async function updateThuocTinh(req, res, next) {
-    const { id } = req.params;
-    const { TenThuocTinh, ThuocTinhID, userId } = req.body;
+    const { id, userId } = req.params;
+    const { TenThuocTinh, ThuocTinhID } = req.body;
 
     if (!userId) {
         return res.status(404).json({ message: 'chưa có userId' });
