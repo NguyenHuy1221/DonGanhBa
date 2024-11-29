@@ -59,7 +59,7 @@ sanphamRouter.post("/createThuocTinhSanPham/:IDSanPham", async function (req, re
 sanphamRouter.post("/createSanPhamVoiBienThe/:IDSanPham", async function (req, res) {
   return createSanPhamVoiBienThe(req, res);
 });
-sanphamRouter.put("/updateSanPham/:id", async function (req, res) {
+sanphamRouter.put("/updateSanPham/:id", uploadmemory.any(), async function (req, res) {
   return updateSanPham(req, res);
 });
 sanphamRouter.put("/deleteSanPham/:IDSanPham", async function (req, res) {
