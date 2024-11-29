@@ -63,7 +63,7 @@ hoadonRouter.put('/updatetrangthaihuydonhang/:hoadonId', async function (req, re
 hoadonRouter.put('/updateTransactionHoaDonCOD/:hoadonId', async function (req, res) {
     return updateTransactionHoaDonCOD(req, res);
 })
-hoadonRouter.put('/updateTransactionListHoaDonCOD', async function (req, res) {
+hoadonRouter.post('/updateTransactionListHoaDonCOD', async function (req, res) {
     return updateTransactionListHoaDonCOD(req, res);
 })
 

@@ -4,6 +4,9 @@ const YeuCauDangKySchema = require("../models/YeuCauDangKy")
 const fs = require('fs');
 const path = require('path');
 const NguoiDungModel = require("../models/NguoiDungSchema")
+const { createThongBaoNoreq } = require("../helpers/helpers")
+const transporter = require("./mailer");
+
 async function getListYeuCauDangKy(req, res, next) {
     try {
         const yeucaudangky = await YeuCauDangKySchema.find().populate("userId")
@@ -41,6 +44,7 @@ async function createYeuCauDangKy(req, res) {
                 return res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
             }
         }
+        const user = await NguoiDungModel.findById(userId)
         const newYeuCauDangKy = new YeuCauDangKySchema({
             userId,
             ghiChu,
@@ -49,8 +53,21 @@ async function createYeuCauDangKy(req, res) {
             diaChi,
             hinhthucgiaohang
         });
+        const mailOptionForAdmin = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_ADMIN_TAMTHOI,
+            subject: "Đơn đăng ký làm hộ kinh doanh",
+            text: `Chào Admin,\n\nCó một đơn đăng ký làm hộ kinh doanh mới. của  ${user.tenNguoiDung} đã được đăng ký\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
+        };
+
+        transporter.sendMail(mailOptionForAdmin, (error, info) => {
+            if (error) {
+                console.error("Lỗi khi gửi email admin:", error);
+            } else {
+                console.log("Email đã được gửi admin:", info.response);
+            }
+        });
         const taoYeuCauDangKy = await newYeuCauDangKy.save();
-        //const baiviet = await BaiVietSchema.findById(taobaiviet._id).populate("userId")
         res.status(201).json({ message: 'Tạo Yêu cầu đăng ký thành công', taoYeuCauDangKy });
     } catch (error) {
         console.error('Lỗi khi tạo Bài viết:', error);
@@ -83,6 +100,10 @@ async function updateYeuCauDangKy(req, res, next) {
             }
             user.role = "hokinhdoanh";
             const updatedUser = await user.save();
+            await createThongBaoNoreq(yeuCauDangKy.userId, "Yêu cầu đăng ký trở thành hộ kinh doanh", "Chúc mừng bạn đã đăng ký thành công trở thành hộ kinh doanh")
+        } else if (yeuCauDangKy.trangThai === "huy") {
+            await createThongBaoNoreq(yeuCauDangKy.userId, "Yêu cầu đăng ký trở thành hộ kinh doanh", "Rất tiếc , yêu cầu đăng ký của bạn đã bị từ chối")
+
         }
         res.status(200).json({ message: "Cập nhập trạng thái đăng ký thành công" });
     } catch (error) {

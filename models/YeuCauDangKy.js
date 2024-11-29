@@ -14,6 +14,8 @@ const YeuCauDangKySchema = new Schema({
         duongThon: String,
         Name: { type: String },
         SoDienThoai: { type: String },
+        Name: { type: String },
+        kinhdo: { type: String },
     },
     hinhthucgiaohang: { type: String, enum: ['tugiao', 'denlay'], default: 'tugiao' },
     trangThai: { type: String, enum: ['cho', 'xacnhan', 'huy'], default: 'cho' },

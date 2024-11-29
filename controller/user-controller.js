@@ -15,7 +15,7 @@ const ThongBaoModel = require("../models/thongbaoSchema")
 const YeuCauRutTienSchema = require("../models/YeuCauRutTienSchema")
 const FirebaseSchema = require("../models/FirebaseSchema")
 const nodemailer = require('nodemailer');
-const { sendVerificationEmail, createNewRequest } = require('../helpers/helpers');
+const { sendVerificationEmail, createNewRequest, createThongBaoNoreq } = require('../helpers/helpers');
 
 
 
@@ -1079,6 +1079,37 @@ async function createYeuCauRutTien(req, res) {
     }
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const newRequest = await createNewRequest(userId, tenNganHang, soTaiKhoan, soTien, ghiChu, verificationToken);
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_ADMIN_TAMTHOI,
+      subject: "yêu cầu rút tiền",
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+          <div style="background-color: #ffffff; margin: 20px auto; padding: 20px; max-width: 600px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <div style="text-align: center;">
+              <img src="${process.env.LOGO_URL}" alt="Logo" style="width: 150px; margin-bottom: 20px;">
+            </div>
+            <h1 style="text-align: center;">có một yêu cầu rút tiền vừa được gửi đến của ${user.role}</h1>
+            <p>${user.tenNguoiDung},</p>
+            <p>Số tiền : ${soTien}</p>
+            <p>Trân trọng,</p>
+            <p>Đội ngũ hỗ trợ</p>
+            <p>${new Date().toDateString()}</p>
+          </div>
+        </div>
+      `
+      //text: `Chào ${user.tenNguoiDung},\n\nVui lòng sử dụng mã OTP sau để xác nhận tài khoản của bạn:\n\n${otp}\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Lỗi khi gửi email admin:", error);
+      } else {
+        console.log("Email đã được gửi admin:", info.response);
+      }
+    });
+    await createThongBaoNoreq(userId, "Yêu cầu rút tiền", "Yêu cầu rút tiền của bạn đã được tạo thành công vui lòng chờ duyệt")
+
     await sendVerificationEmail(user, verificationToken);
     return res.status(200).json({ message: 'Yêu cầu rút tiền mới đã được gửi', request: newRequest });
   } catch (error) {

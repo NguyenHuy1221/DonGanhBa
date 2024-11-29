@@ -3,7 +3,7 @@ const UserModel = require('../models/NguoiDungSchema')
 const YeuCauRutTienSchema = require("../models/YeuCauRutTienSchema")
 const nodemailer = require('nodemailer');
 const GiaTriThuocTinhSchema = require("../models/GiaTriThuocTinhSchema")
-
+const ThongBaoModel = require("../models/thongbaoSchema")
 const sendVerificationEmail = async (user, verificationToken) => {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -116,6 +116,20 @@ async function checkDuplicateGiaTriThuocTinh(res, KetHopThuocTinh) {
   }
 }
 
+async function createThongBaoNoreq(userId, tieude, noidung) {
+  try {
+    const newThongBao = new ThongBaoModel({
+      userId,
+      tieude,
+      noidung,
+    });
+    await newThongBao.save();
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi tạo thông báo:', error);
+    return false;
+  }
+}
 
 
 // const admin = require('firebase-admin');
@@ -142,4 +156,4 @@ async function checkDuplicateGiaTriThuocTinh(res, KetHopThuocTinh) {
 //     console.log('Error sending message:', error);
 //   });
 
-module.exports = { sendVerificationEmail, createNewRequest, checkDuplicateGiaTriThuocTinh }
+module.exports = { sendVerificationEmail, createNewRequest, checkDuplicateGiaTriThuocTinh, createThongBaoNoreq }

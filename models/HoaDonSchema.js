@@ -30,7 +30,7 @@ const HoaDonSchema = new Schema({
   tienDaCong: { type: Boolean, default: false }, // danh dau viec da thanh toan
   TrangThai: Number, // 0đặt hàng ,1đóng gói , 2bắt đầug giao , 3hoàn thành đơn hàng , 4huy
   ThanhToan: { type: Boolean, default: false },
-  transactionId: { type: Number, default: 0 },
+  transactionId: { type: Number, default: 0 },//111 la tien mat ///151 bao kiem /// 0 la chua co phuong thuc thanh toan
   chiTietHoaDon: [
     {
       idBienThe: { type: mongoose.Schema.Types.ObjectId, ref: "BienThe" },

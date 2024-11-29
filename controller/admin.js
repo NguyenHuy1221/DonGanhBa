@@ -5,6 +5,7 @@ const ThongBaoModel = require("../models/thongbaoSchema")
 const YeuCauRutTienSchema = require('../models/YeuCauRutTienSchema');
 const ThuocTinh = require('../models/ThuocTinhSchema'); // Đảm bảo đường dẫn đúng tới model của bạn
 const giatrithuoctinhmodel = require("../models/GiaTriThuocTinhSchema")
+const { createThongBaoNoreq } = require("../helpers/helpers")
 
 async function UpdateRole(req, res, next) {
     const { userId } = req.params;
@@ -128,7 +129,7 @@ async function updateUserRoleAndPermissions(req, res, next) {
                 // res.status(200).json(updatedUser);
             }
         }
-
+        await createThongBaoNoreq(userId, "Cập nhập quyền", "quyền của bạn đã được cập nhập")
         const updatedUser = await user.save();
         res.status(200).json(updatedUser);
     } catch (error) {
@@ -285,21 +286,38 @@ async function createThongBao(req, res) {
     }
 }
 
-async function createThongBaoNoreq(userId, tieude, noidung) {
-    try {
-        const newThongBao = new ThongBaoModel({
-            userId,
-            tieude,
-            noidung,
-        });
+// async function createThongBaoNoreq(userId, tieude, noidung) {
+//     try {
+//         const newThongBao = new ThongBaoModel({
+//             userId,
+//             tieude,
+//             noidung,
+//         });
 
-        await newThongBao.save();
-        return { success: true, message: 'Tạo thông báo thành công', thongBao: newThongBao };
-    } catch (error) {
-        console.error('Lỗi khi tạo thông báo:', error);
-        return { success: false, message: 'Đã xảy ra lỗi khi tạo thông báo' };
-    }
-}
+//         await newThongBao.save();
+//         return true;
+//     } catch (error) {
+//         console.error('Lỗi khi tạo thông báo:', error);
+//         return false;
+//     }
+// }
+
+// async function createThongBaoNoreq(userId, tieude, noidung) {
+//     try {
+//         const newThongBao = new ThongBaoModel({
+//             userId,
+//             tieude,
+//             noidung,
+//         });
+
+//         await newThongBao.save();
+//         return true;
+//     } catch (error) {
+//         console.error('Lỗi khi tạo thông báo:', error);
+//         return false;
+//     }
+// }
+
 
 
 async function updateDaDoc(req, res) {
@@ -379,9 +397,18 @@ async function updateYeuCauRutTien(req, res) {
                 { daXuLy: true },
                 { new: true }
             );
+
             if (!request) {
                 return res.status(404).json({ message: 'Không tìm thấy yêu cầu rút tiền' });
             }
+            const user = await NguoiDungModel.findById(checkrequest.userId);
+            if (!user) {
+                console.error('Không tìm thấy người dùng');
+                return false;
+            } // Kiểm tra số dư hiện tại 
+
+            user.soTienHienTai -= amount;
+            await user.save()
             return res.status(200).json({ message: 'Yêu cầu rút tiền đã được cập nhật', request });
 
         } else if (trangThai === "huy") {
