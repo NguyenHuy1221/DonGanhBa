@@ -12,7 +12,7 @@ thuoctinhRouter.get('/getlistThuocTinh/:userId', async function (req, res) {
 })
 
 
-thuoctinhRouter.get('/findThuocTinh/:userId', async function (req, res) {
+thuoctinhRouter.get('/findThuocTinh', async function (req, res) {
     return findThuocTinh(req, res);
 })
 
