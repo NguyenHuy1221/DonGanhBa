@@ -113,13 +113,12 @@ async function createThuocTinh(req, res, next) {
 async function updateThuocTinh(req, res, next) {
     const { id, userId } = req.params;
     const { TenThuocTinh, ThuocTinhID } = req.body;
-
     if (!userId) {
         return res.status(404).json({ message: 'chưa có userId' });
     }
     try {
         const updatedThuocTinh = await ThuocTinhModel.findByIdAndUpdate(
-            { id },
+            id,
             { TenThuocTinh, ThuocTinhID, userId },
             { new: true }
         );
