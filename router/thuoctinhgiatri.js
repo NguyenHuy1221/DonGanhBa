@@ -5,14 +5,14 @@ const {
     createThuocTinhGiaTri,
     updateThuocTinhGiaTri,
     deleteThuocTinhGiaTri,
-    findThuocTinhGiaTri,} = require("../controller/thuoctinhgiatri-controller")
+    findThuocTinhGiaTri, } = require("../controller/thuoctinhgiatri-controller")
 
-    thuoctinhgiatriRouter.get('/getlistThuocTinhGiaTri', async function (req, res) {
-        return getlistThuocTinhGiaTri(req, res);
-    })
-    
+thuoctinhgiatriRouter.get('/getlistThuocTinhGiaTri', async function (req, res) {
+    return getlistThuocTinhGiaTri(req, res);
+})
 
-    thuoctinhgiatriRouter.get('/findThuocTinhGiaTri/:ThuocTinhID', async function (req, res) {
+
+thuoctinhgiatriRouter.get('/findThuocTinhGiaTri/:ThuocTinhID', async function (req, res) {
     return findThuocTinhGiaTri(req, res);
 })
 
@@ -23,7 +23,7 @@ thuoctinhgiatriRouter.post('/createThuocTinhGiaTri', async function (req, res) {
 thuoctinhgiatriRouter.put('/updateThuocTinhGiaTri', async function (req, res) {
     return updateThuocTinhGiaTri(req, res);
 })
-thuoctinhgiatriRouter.delete('/deleteThuocTinhGiaTri', async function (req, res) {
+thuoctinhgiatriRouter.delete('/deleteThuocTinhGiaTri/:IDGiaTriThuocTinh', async function (req, res) {
     return deleteThuocTinhGiaTri(req, res);
 })
 
