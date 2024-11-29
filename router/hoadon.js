@@ -2,7 +2,9 @@ const express = require('express');
 const hoadonRouter = express.Router();
 const { getlistHoaDon,
     getHoaDonByUserId,
+    getHoaDonByHoKinhDoanhId,
     getHoaDonByHoaDonId,
+    getHoaDonByHoaDonForHoKinhDoanhId,
     createUserDiaChivaThongTinGiaoHang,
     updateTransactionHoaDon,
     updateTransactionlistHoaDon,
@@ -26,9 +28,17 @@ hoadonRouter.get('/getlistHoaDon', async function (req, res) {
 hoadonRouter.get("/getHoaDonByUserId/:userId", function (req, res) {
     return getHoaDonByUserId(req, res);
 });
+hoadonRouter.get("/getHoaDonByHoKinhDoanhId/:userId", function (req, res) {
+    return getHoaDonByHoKinhDoanhId(req, res);
+});
+
 hoadonRouter.get("/getHoaDonByHoaDonId/:hoadonId", function (req, res) {
     return getHoaDonByHoaDonId(req, res);
 });
+hoadonRouter.get("/getHoaDonByHoaDonForHoKinhDoanhId/:hoadonId", function (req, res) {
+    return getHoaDonByHoaDonForHoKinhDoanhId(req, res);
+});
+
 hoadonRouter.get("/getHoaDonByHoaDonIdFullVersion/:hoadonId", function (req, res) {
     return getHoaDonByHoaDonIdFullVersion(req, res);
 });

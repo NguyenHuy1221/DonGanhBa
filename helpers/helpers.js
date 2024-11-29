@@ -54,20 +54,51 @@ const createNewRequest = async (userId, tenNganHang, soTaiKhoan, soTien, ghiChu,
 };
 
 
-async function checkDuplicateGiaTriThuocTinh(res, giaTriThuocTinhIds) {
-  // Kiểm tra sự trùng lặp trong mảng giaTriThuocTinhIds
+// async function checkDuplicateGiaTriThuocTinh(res, giaTriThuocTinhIds) {
+//   // Kiểm tra sự trùng lặp trong mảng giaTriThuocTinhIds
+//   const seen = new Set();
+//   for (const id of giaTriThuocTinhIds) {
+//     if (seen.has(id)) {
+//       res.status(400).json({ message: 'Có giá trị thuộc tính trùng lặp trong mảng giaTriThuocTinhIds' });
+//       throw new Error('Duplicate giaTriThuocTinhId found'); // Ngăn chặn tiếp tục thực hiện
+//     }
+//     seen.add(id);
+//   }
+
+//   // Kiểm tra sự trùng lặp của thuocTinhId
+//   const thuocTinhIds = [];
+//   for (const giaTriThuocTinhId of giaTriThuocTinhIds) {
+//     try {
+//       const giaTriThuocTinh = await GiaTriThuocTinhSchema.findById(giaTriThuocTinhId);
+//       if (!giaTriThuocTinh) {
+//         return res.status(404).json({ message: `Không tìm thấy giá trị thuộc tính với ID: ${giaTriThuocTinhId}` });
+//       }
+
+//       if (thuocTinhIds.includes(giaTriThuocTinh.ThuocTinhID.toString())) {
+//         return res.status(400).json({ message: 'Thuộc tính đã tồn tại trùng lặp' });
+//       }
+//       thuocTinhIds.push(giaTriThuocTinh.ThuocTinhID.toString());
+//     } catch (error) {
+//       console.error(`Lỗi khi kiểm tra giá trị thuộc tính với ID: ${giaTriThuocTinhId}`, error);
+//       return res.status(500).json({ message: 'Lỗi hệ thống' });
+//     }
+//   }
+// }
+async function checkDuplicateGiaTriThuocTinh(res, KetHopThuocTinh) {
+  // Kiểm tra sự trùng lặp trong mảng KetHopThuocTinh
   const seen = new Set();
-  for (const id of giaTriThuocTinhIds) {
+  for (const item of KetHopThuocTinh) {
+    const id = item.IDGiaTriThuocTinh;
     if (seen.has(id)) {
-      res.status(400).json({ message: 'Có giá trị thuộc tính trùng lặp trong mảng giaTriThuocTinhIds' });
-      throw new Error('Duplicate giaTriThuocTinhId found'); // Ngăn chặn tiếp tục thực hiện
+      res.status(400).json({ message: 'Có giá trị thuộc tính trùng lặp trong mảng KetHopThuocTinh' });
     }
     seen.add(id);
   }
 
   // Kiểm tra sự trùng lặp của thuocTinhId
   const thuocTinhIds = [];
-  for (const giaTriThuocTinhId of giaTriThuocTinhIds) {
+  for (const item of KetHopThuocTinh) {
+    const giaTriThuocTinhId = item.IDGiaTriThuocTinh;
     try {
       const giaTriThuocTinh = await GiaTriThuocTinhSchema.findById(giaTriThuocTinhId);
       if (!giaTriThuocTinh) {

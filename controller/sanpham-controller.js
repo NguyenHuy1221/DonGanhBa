@@ -898,7 +898,7 @@ async function createBienTheThuCong(req, res, next) {
           await bientheisDelete.save();
           return res.status(200).json({ message: 'Biến thể đã được khôi phục' });
         }
-        return res.status(400).json({ error: 'Kết hợp thuộc tính đã tồn tại' });
+        return res.status(400).json({ message: 'Kết hợp thuộc tính đã tồn tại' });
       }
     }
 

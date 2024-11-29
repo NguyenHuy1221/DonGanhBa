@@ -14,19 +14,13 @@ const NguoiDungSchema = new Schema({
   hoKinhDoanh: { type: Boolean, default: false },
   tinhTrang: { type: Number, default: 0 },
   IDYeuThich: { type: Schema.Types.ObjectId, ref: 'YeuThich' },
-  phuongThucThanhToan: [
-    { type: Schema.Types.ObjectId, ref: "PhuongThucThanhToan" },
-  ],
-
-  //phan quyen cho admin
+  // phuongThucThanhToan: [
+  //   { type: Schema.Types.ObjectId, ref: "PhuongThucThanhToan" },
+  // ],
   role: {
     type: String, enum: ['khachhang', 'hokinhdoanh', 'nhanvien', 'admin'], required: true,
     default: 'khachhang' // Thiết lập giá trị mặc định là 'khachhang'
   },
-  // permissions: [{
-  //   entity: { type: String, enum: ['sanpham', 'khuyenmai', 'hoadon'], required: true },
-  //   actions: [{ type: String, enum: ['them', 'xoa', 'sua', 'update'] }]
-  // }],
   permissions: [{
     entity: { type: String, enum: ['sanpham', 'khuyenmai', 'hoadon'], required: true },
     actions: [{ type: String, enum: ['them', 'xoa', 'sua', 'update'] }]
@@ -38,7 +32,7 @@ const NguoiDungSchema = new Schema({
   otpExpiry: { type: Date },
   isVerified: { type: Boolean, default: false },
   googleId: { type: String, unique: true, sparse: true },
-  facebookId: { type: String, unique: true, sparse: true },
+  // facebookId: { type: String, unique: true, sparse: true },
 }, {
   timestamps: true
 });

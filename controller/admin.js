@@ -4,6 +4,7 @@ const NguoiDungModel = require("../models/NguoiDungSchema")
 const ThongBaoModel = require("../models/thongbaoSchema")
 const YeuCauRutTienSchema = require('../models/YeuCauRutTienSchema');
 const ThuocTinh = require('../models/ThuocTinhSchema'); // Đảm bảo đường dẫn đúng tới model của bạn
+const giatrithuoctinhmodel = require("../models/GiaTriThuocTinhSchema")
 
 async function UpdateRole(req, res, next) {
     const { userId } = req.params;
@@ -467,11 +468,11 @@ async function demoUploadimageviettel(req, res) {
 async function FixadminupdateThuocTinhIsDeleted(req, res) {
     try {
         // Tìm tất cả các thuộc tính không có trường `isDeleted`
-        const thuocTinhs = await ThuocTinh.find({ isDeleted: { $exists: false } });
+        const thuocTinhs = await giatrithuoctinhmodel.find({ isDeleted: { $exists: false } });
 
         // Cập nhật trường `isDeleted` với giá trị `false`
         const updatePromises = thuocTinhs.map(thuocTinh =>
-            ThuocTinh.updateOne({ _id: thuocTinh._id }, { $set: { isDeleted: false } })
+            giatrithuoctinhmodel.updateOne({ _id: thuocTinh._id }, { $set: { isDeleted: false } })
         );
 
         // Đợi tất cả các cập nhật hoàn thành
