@@ -1,9 +1,45 @@
 const DanhGiamodel = require("../models/DanhGiaSchema");
 const LoaiKhuyenMaiModel = require("../models/LoaiKhuyenMaiSchema")
+const UserModel = require("../models/NguoiDungSchema")
+const sanPhamModel = require("../models/SanPhamSchema")
 require("dotenv").config();
 const { upload } = require("../untils/index");
 const fs = require('fs');
 //ham lay danh sach thuoc tinh
+// async function getListDanhGiaAdmin(req, res, next) {
+//     const { startDate, endDate } = req.query;
+//     const { userId } = req.params;
+
+//     try {
+//         let query = {};
+
+//         if (startDate && endDate) {
+//             // Chuyển đổi các ngày từ query sang dạng Date object
+//             const start = startDate ? new Date(startDate) : new Date('1970-01-01');
+//             const end = endDate ? new Date(endDate) : new Date();
+
+//             // Thiết lập bộ lọc ngày
+//             query.NgayTao = {
+//                 $gte: start,
+//                 $lte: end
+//             };
+//         }
+//         // Tìm kiếm đánh giá với hoặc không có bộ lọc ngày
+//         const Danhgias = await DanhGiamodel.find(query)
+//             .populate("userId")
+//             .populate("sanphamId")
+//             .populate({
+//                 path: 'PhanHoi.userId',
+//             });
+
+//         res.status(200).json(Danhgias);
+//     } catch (error) {
+//         console.error('Lỗi khi lấy danh sách đánh giá:', error);
+//         res.status(500).json({ message: 'Lỗi khi lấy danh sách đánh giá' });
+//     }
+// }
+
+
 async function getListDanhGiaAdmin(req, res, next) {
     const { startDate, endDate } = req.query;
     const { userId } = req.params;
@@ -11,17 +47,46 @@ async function getListDanhGiaAdmin(req, res, next) {
     try {
         let query = {};
 
+        // Kiểm tra userId và tìm người dùng
+        if (!userId) {
+            return res.status(400).json({ message: 'Chưa có userId' });
+        }
+
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "Không tìm thấy user bằng userid" });
+        }
+
+        // Thiết lập điều kiện truy vấn dựa trên vai trò của người dùng
+        if (user.role === "admin" || user.role === "nhanvien") {
+            // Admin và nhân viên có thể xem tất cả các đánh giá
+        } else if (user.role === "hokinhdoanh") {
+            // Lấy tất cả sản phẩm của hộ kinh doanh
+            const sanPhams = await sanPhamModel.find({ userId: user._id });
+
+            if (!sanPhams.length) {
+                return res.status(404).json({ message: "Không có sản phẩm nào được tìm thấy" });
+            }
+
+            // Lấy danh sách các sản phẩm IDs
+            const sanPhamIds = sanPhams.map(sanPham => sanPham._id);
+
+            // Thêm điều kiện lọc theo danh sách sản phẩm IDs
+            query.sanphamId = { $in: sanPhamIds };
+        } else {
+            return res.status(403).json({ message: "Không có quyền truy cập" });
+        }
+
+        // Thiết lập bộ lọc ngày nếu có
         if (startDate && endDate) {
-            // Chuyển đổi các ngày từ query sang dạng Date object
             const start = startDate ? new Date(startDate) : new Date('1970-01-01');
             const end = endDate ? new Date(endDate) : new Date();
-
-            // Thiết lập bộ lọc ngày
             query.NgayTao = {
                 $gte: start,
                 $lte: end
             };
         }
+
         // Tìm kiếm đánh giá với hoặc không có bộ lọc ngày
         const Danhgias = await DanhGiamodel.find(query)
             .populate("userId")

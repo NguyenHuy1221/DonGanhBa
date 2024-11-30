@@ -20,7 +20,7 @@ const { getlistHoaDon,
     updatetrangthaiHoaDOn,
 } = require("../controller/HoaDon-controller")
 
-hoadonRouter.get('/getlistHoaDon', async function (req, res) {
+hoadonRouter.get('/getlistHoaDon/:userId', async function (req, res) {
     return getlistHoaDon(req, res);
 })
 

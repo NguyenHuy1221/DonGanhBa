@@ -34,17 +34,48 @@ const { createThongBaoNoreq } = require("../helpers/helpers")
 
 
 
-//ham lay danh sach thuoc tinh
+
 async function getlistHoaDon(req, res, next) {
+  const { userId } = req.params;
+  const { trangThai } = req.query; // Nhận trangThai từ query string
+  let user = {};
+  let query = {};
 
   try {
-    const HoaDon = await HoaDonModel.find();
-    res.status(200).json(HoaDon);
+    // Kiểm tra userId và tìm người dùng
+    if (userId) {
+      user = await UserModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Không tìm thấy user bằng userid" });
+      }
+    } else {
+      return res.status(400).json({ message: 'Chưa có userId' });
+    }
+
+    if (user.role === "admin" || user.role === "nhanvien") {
+    } else if (user.role === "hokinhdoanh") {
+      query.hoKinhDoanhId = userId;
+    } else {
+      return res.status(403).json({ message: "Không có quyền truy cập" });
+    }
+
+    // Thêm điều kiện lọc theo trạng thái nếu có
+    if (trangThai) {
+      query.TrangThai = trangThai;
+    }
+
+    // Tìm kiếm và sắp xếp hóa đơn theo NgayTao từ mới nhất đến cũ nhất
+    const hoaDons = await HoaDonModel.find(query).sort({ NgayTao: -1 });
+
+    return res.status(200).json(hoaDons);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Lỗi khi tìm kiếm thuộc tính' });
+    return res.status(500).json({ message: 'Lỗi khi tìm kiếm hóa đơn' });
   }
 }
+
+
+
 async function getHoaDonByUserId(req, res) {
   try {
     const { userId } = req.params;
@@ -174,7 +205,7 @@ async function getHoaDonByHoaDonIdFullVersion(req, res) {
     const { hoadonId } = req.params;
 
     if (!hoadonId) {
-      return res.status(400).json({ message: "Thiếu thông tin userid" });
+      return res.status(400).json({ message: "Thiếu thông tin hoadonid" });
     }
 
     const hoadon = await HoaDonModel.findById(hoadonId)
@@ -782,7 +813,7 @@ async function updatetrangthaiHoaDOn(req, res, next) {
         tongTienThucTe -= hoadon.SoTienKhuyenMai;
       }
 
-      if (!hoadon.tienDaCong && checkrole.role === "admin") {
+      if (!hoadon.tienDaCong && hoadon.transactionId === 151) {
         let sellerIdList = [];
         for (const chiTiet of hoadon.chiTietHoaDon) {
           const bienThe = chiTiet.idBienThe;

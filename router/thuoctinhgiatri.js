@@ -7,7 +7,7 @@ const {
     deleteThuocTinhGiaTri,
     findThuocTinhGiaTri, } = require("../controller/thuoctinhgiatri-controller")
 
-thuoctinhgiatriRouter.get('/getlistThuocTinhGiaTri', async function (req, res) {
+thuoctinhgiatriRouter.get('/getlistThuocTinhGiaTri/:userId', async function (req, res) {
     return getlistThuocTinhGiaTri(req, res);
 })
 

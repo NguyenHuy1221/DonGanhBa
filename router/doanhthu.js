@@ -13,10 +13,10 @@ doanhthuRouter.get("/GetDoanhThu", function (req, res) {
     return GetDoanhThu(req, res);
 });
 
-doanhthuRouter.get("/GetDoanhThu12", function (req, res) {
+doanhthuRouter.get("/GetDoanhThu12/:userId", function (req, res) {
     return GetDoanhThu12(req, res);
 });
-doanhthuRouter.get("/getData", function (req, res) {
+doanhthuRouter.get("/getData/:userId", function (req, res) {
     return getData(req, res);
 });
 doanhthuRouter.get("/getProductStatistics", function (req, res) {

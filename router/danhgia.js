@@ -12,7 +12,7 @@ const {
     updateLike, } = require("../controller/danhgia-controller")
 
 
-DanhGiaRouter.get('/getListDanhGiaAdmin', async function (req, res) {
+DanhGiaRouter.get('/getListDanhGiaAdmin/:userId', async function (req, res) {
     return getListDanhGiaAdmin(req, res);
 })
 

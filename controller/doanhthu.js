@@ -64,20 +64,46 @@ async function GetDoanhThu(req, res, next) {
 
 async function GetDoanhThu12(req, res, next) {
     const { fromDate, toDate, filter } = req.query;
+    const { userId } = req.params;
+    let user = {};
+    let query = {};
     try {
-        let query = {};
+        // let query = {};
 
-        // Kiểm tra và xử lý ngày bắt đầu và ngày kết thúc
-        const startDate = fromDate ? new Date(fromDate) : new Date('1970-01-01');  // Đảm bảo startDate đã được khai báo
+        // // Kiểm tra và xử lý ngày bắt đầu và ngày kết thúc
+        // const startDate = fromDate ? new Date(fromDate) : new Date('1970-01-01');  // Đảm bảo startDate đã được khai báo
+        // const endDate = toDate ? new Date(toDate) : new Date();
+
+        // if (fromDate && toDate) {
+        //     query.NgayTao = {
+        //         $gte: startDate,
+        //         $lte: endDate
+        //     };
+        // }
+
+        // Kiểm tra userId và tìm người dùng 
+        if (userId) {
+            user = await NguoiDungModel.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: "Không tìm thấy user bằng userid" });
+            }
+        }
+        else {
+            return res.status(400).json({ message: 'Chưa có userId' });
+        } // Thiết lập điều kiện truy vấn dựa trên vai trò của người dùng 
+        if (user.role === "admin" || user.role === "nhanvien") { // Admin và nhân viên có thể xem tất cả các hóa đơn 
+        } else if (user.role === "hokinhdoanh") { query.hoKinhDoanhId = userId; }
+        else {
+            return res.status(403).json({ message: "Không có quyền truy cập" });
+        } // Kiểm tra và xử lý ngày bắt đầu và ngày kết thúc 
+        const startDate = fromDate ? new Date(fromDate) : new Date('1970-01-01');
         const endDate = toDate ? new Date(toDate) : new Date();
-
         if (fromDate && toDate) {
             query.NgayTao = {
                 $gte: startDate,
                 $lte: endDate
             };
         }
-
 
         const hoaDons = await HoaDonSchema.find(query);
 
@@ -122,21 +148,42 @@ async function GetDoanhThu12(req, res, next) {
 
 async function getData(req, res) {
     const { fromDate, toDate, filter } = req.query;
-
+    const { userId } = req.params;
+    let user = {};
+    let query = {};
     try {
-        let query = {};
-
         // Kiểm tra và xử lý ngày bắt đầu và ngày kết thúc
+        // const startDate = fromDate ? new Date(fromDate) : new Date('1970-01-01');
+        // const endDate = toDate ? new Date(toDate) : new Date();
+
+        // if (fromDate && toDate) {
+        //     query.NgayTao = {
+        //         $gte: startDate,
+        //         $lte: endDate
+        //     };
+        // }
+        if (userId) {
+            user = await NguoiDungModel.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: "Không tìm thấy user bằng userid" });
+            }
+        }
+        else {
+            return res.status(400).json({ message: 'Chưa có userId' });
+        } // Thiết lập điều kiện truy vấn dựa trên vai trò của người dùng 
+        if (user.role === "admin" || user.role === "nhanvien") { // Admin và nhân viên có thể xem tất cả các hóa đơn 
+        } else if (user.role === "hokinhdoanh") { query.hoKinhDoanhId = userId; }
+        else {
+            return res.status(403).json({ message: "Không có quyền truy cập" });
+        } // Kiểm tra và xử lý ngày bắt đầu và ngày kết thúc 
         const startDate = fromDate ? new Date(fromDate) : new Date('1970-01-01');
         const endDate = toDate ? new Date(toDate) : new Date();
-
         if (fromDate && toDate) {
             query.NgayTao = {
                 $gte: startDate,
                 $lte: endDate
             };
         }
-
         const hoaDons = await HoaDonSchema.find(query);
 
         let totalData = {
