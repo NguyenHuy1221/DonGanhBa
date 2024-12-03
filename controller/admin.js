@@ -407,7 +407,7 @@ async function updateYeuCauRutTien(req, res) {
                 return false;
             } // Kiểm tra số dư hiện tại 
 
-            user.soTienHienTai -= amount;
+            user.soTienHienTai -= checkrequest.soTien;
             await user.save()
             return res.status(200).json({ message: 'Yêu cầu rút tiền đã được cập nhật', request });
 

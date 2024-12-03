@@ -233,9 +233,29 @@ async function findthuoctinhInsanpham(req, res) {
         res.status(500).json({ message: 'Lỗi hệ thống' });
     }
 }
+async function getDatabientheByid(req, res) {
+    const idbienthe = req.params.idbienthe
+    try {
+        const bienThe = await BienTheSchema.findById(idbienthe)
+            .populate('IDSanPham')
+            .populate({
+                path: 'KetHopThuocTinh.IDGiaTriThuocTinh',
+                model: 'GiaTriThuocTinh'
+            });
+
+        if (!bienThe) {
+            return res.status(404).json({ error: 'Biến thể không tìm thấy' });
+        }
+        res.status(200).json(bienThe);
+    } catch (error) {
+        console.error('Lỗi khi tìm biến thể:', error);
+        res.status(500).json({ error: 'Lỗi hệ thống' });
+    }
+}
 module.exports = {
     addThuocTinhForSanPham,
     updateGiaTriThuocTinhForSanPham,
     deleteThuocTinhForSanPham,
     findthuoctinhInsanpham,
+    getDatabientheByid,
 };

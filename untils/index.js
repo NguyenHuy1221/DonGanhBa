@@ -103,6 +103,20 @@ function decodeToken(token) {
   }
 }
 
+// function decodeToken(token) {
+//   const secretKey = process.env.SECRET_KEY;
+//   if (!secretKey) {
+//     throw new Error("SECRET_KEY is not defined");
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, secretKey);
+//     return { data: decoded, error: null };
+//   } catch (error) {
+//     return { data: null, error: "Token verification failed: " + error.message };
+//   }
+// }
+
 
 const express = require('express');
 const { S3Client, PutObjectCommand, DeleteBucketCorsCommand } = require('@aws-sdk/client-s3');

@@ -24,7 +24,7 @@ const http = require("http"); // Needed to set up a server with socket.io
 var server = http.createServer(app); // Use http server
 var io = require("socket.io")(server, {
   cors: {
-    origin: "*",
+    origin: ["https://peacock-wealthy-vaguely.ngrok-free.app", "http://61.14.233.64:3000"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -141,15 +141,25 @@ io.on("connection", (socket) => {
 
   socket.on("join", async ({ conversationId, token }) => {
     try {
-
+      // const tokeninfo = decodeToken(token)
+      // if (tokeninfo.error) {
+      //   console.error('Invalid token:', tokeninfo.error);
+      //   socket.disconnect(true); return;
+      // }
+      // if (!tokeninfo.data) {
+      //   console.error("User ID is not defined");
+      //   socket.emit("error",
+      //     { message: "User not authenticated" });
+      //   socket.disconnect(true); return;
+      // }
       const tokeninfo = decodeToken(token)
       if (tokeninfo.error) {
         console.error('Token không hợp lệ:', decoded.error);
         socket.disconnect(true); // Ngắt kết nối
       }
-      console.log(tokeninfo.data)
-      console.log(token)
-      console.log("0", tokeninfo.data)
+      // console.log(tokeninfo.data)
+      // console.log(token)
+      // console.log("0", tokeninfo.data)
 
       if (!tokeninfo.data) {
         console.error("User ID is not defined");
@@ -158,36 +168,32 @@ io.on("connection", (socket) => {
 
         return;
       }
+
       const userID = tokeninfo.data
 
       // Tìm cuộc trò chuyện và populate các tin nhắn
       const conversation = await ConversationModel.findById(
         conversationId
-      ).populate({
-        path: 'messages',
-        populate: {
-          path: 'IDSanPham',
-          model: 'SanPham',
+      )
+        .populate({
+          path: 'messages',
           populate: {
-            path: 'userId',
-            model: 'User' // Name of the Product model
+            path: 'IDSanPham',
+            model: 'SanPham',
+            populate: {
+              path: 'userId',
+              model: 'User' // Name of the Product model
+            }
           }
-        }
-      })
+        })
         .populate("sender_id")
         .populate("receiver_id");
 
-
-      // console.log("conversation", conversation)
       if (conversation) {
         socket.join(conversationId);
-        //console.log(`User ${userid} joined conversation ${conversationId}`);
-
-        // Sắp xếp các tin nhắn theo thứ tự thời gian
         const sortedMessages = conversation.messages.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
-
         socket.emit("Joined", {
           conversationId,
           messages: sortedMessages,
@@ -219,6 +225,10 @@ io.on("connection", (socket) => {
         return;
       }
       const userID = tokeninfo.data
+      // console.log(tokeninfo.data)
+
+      // console.log(tokeninfo)
+      // console.log(userID)
       const MIN_TIME_BETWEEN_MESSAGES = 1000;
       const message = new MessageModel({
         text,

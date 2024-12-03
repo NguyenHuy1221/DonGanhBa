@@ -319,13 +319,14 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
 
   try {
     const user = await UserModel.findById(userId);
-    console.log(removeAccents(user.tenNguoiDung));
+    // console.log(removeAccents(user.tenNguoiDung));
     const hoaDonMap = {};
-    console.log("mergedCart2", mergedCart)
+    const bienTheIds = []
+    // console.log("mergedCart2", mergedCart)
     for (const item of mergedCart.mergedCart) {
-      console.log("item", item)
-      console.log("user", item.user)
-      console.log("sanpham", item.sanPhamList)
+      // console.log("item", item)
+      // console.log("user", item.user)
+      // console.log("sanpham", item.sanPhamList)
 
       const hoKinhDoanhId = item.user._id;
 
@@ -349,6 +350,7 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
             donGia: chiTiet.donGia
           });
           hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
+          bienTheIds.push(chiTiet._id); // Lưu trữ ID của chi tiết giỏ hàng để xóa sau này
         });
       });
 
@@ -377,11 +379,12 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
         );
       }
     }
+    await GioHangModel.updateOne({ userId }, { $pull: { chiTietGioHang: { _id: { $in: bienTheIds } } } });
     // console.log({ message: 'Tạo hóa đơn thành công', hoadon })
-    res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon });
+    return res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Lỗi khi tạo đơn hàng' });
+    return res.status(500).json({ message: 'Lỗi khi tạo đơn hàng' });
   }
 }
 
