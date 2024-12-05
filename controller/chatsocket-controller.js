@@ -15,6 +15,7 @@ async function Createconversation(req, res, next) {
         { sender_id: receiver_id, receiver_id: sender_id },
       ]
     }).populate("sender_id").populate("receiver_id");
+
     if (!conversation) {
       conversation = new ConversationModel({ sender_id, receiver_id });
       await conversation.save();

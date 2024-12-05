@@ -15,7 +15,7 @@ function refreshToken() {
     iss: process.env.API_KEY, // Issuer (replace API_KEY with your actual API key)
     nbf: notBefore, // Not before
     exp: expire, // Expire
-    
+
   };
 
 
@@ -43,7 +43,7 @@ function refreshTokenUser(user) {
     phoneNumber: user.soDienThoai,
   };
   // Encode the array to a JWT string
-  const jwtTokenUser = jwt.sign(tokenData,process.env.SECRET_KEY,{ expiresIn : '1d'}, {
+  const jwtTokenUser = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' }, {
     algorithm: "HS256",
   });
 

@@ -1270,7 +1270,34 @@ async function saveFcmTokenFireBase(req, res) {
     return res.status(500).json({ message: 'Đã xảy ra lỗi khi lưu token fcm' });
   }
 }
+async function loginXacMinh(req, res) {
+  const userId = req.params.userId
+  const { gmail, matKhau } = req.body;
+  try {
+    const user = await UserModel.findOne({ gmail });
+    if (!user) {
+      return res.status(400).json({ message: "Email không tồn tại" });
+    }
 
+    if (!user.isVerified) {
+      return res.status(400).json({ message: "Tài khoản chưa được xác nhận" });
+    }
+    if (user.role !== "hokinhdoanh") {
+      return res.status(400).json({ message: "Bạn không có quyền truy cập" });
+    }
+    if (!user.matKhau || user.matKhau === undefined) {
+      return res.status(404).json({ message: "Mật khẩu không tồn tại , vui lòng sử dụng tính năng quên mật khẩu để tạo mật khẩu mới" });
+    }
+    const check = await comparePassword(matKhau, user.matKhau);
+    if (!check) {
+      return res.status(400).json({ message: "Mật khẩu không đúng" });
+    }
+    return res.status(200).json({ message: "Vào thành công" });
+  } catch (error) {
+    console.error("Lỗi khi đăng nhập:", error);
+    return res.status(500).json({ message: "Đã xảy ra lỗi khi đăng nhập" });
+  }
+}
 // app.post('/send-notification', async (req, res) => { const { userId, title, body } = req.body; try { const user = await User.findOne({ userId }); if (!user) { return res.status(404).json({ message: 'Không tìm thấy người dùng' }); } const message = { notification: { title, body, }, token: user.fcmToken, }; const response = await admin.messaging().send(message); return res.status(200).json({ message: 'Thông báo đã được gửi đi', response }); } catch (error) { console.error('Lỗi khi gửi thông báo:', error); return res.status(500).json({ message: 'Đã xảy ra lỗi khi gửi thông báo' }); } });
 
 module.exports = {
@@ -1304,4 +1331,5 @@ module.exports = {
   resendYeuCauRutTien,
   deleteYeuCauRutTienCoDieuKien,
   saveFcmTokenFireBase,
+  loginXacMinh,
 };

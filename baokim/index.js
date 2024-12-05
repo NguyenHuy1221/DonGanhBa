@@ -9,16 +9,17 @@ const { refreshToken } = require('../jwt/index');
 
 async function getPaymentMethods(req, res) {
   const token = refreshToken();
+  console.log(token)
   try {
-      const response = await axios.get(process.env.API_URL_PaymentMethods, {
-          params: {
-              jwt: token
-          }
-      });
-      res.status(200).json(response.data);
+    const response = await axios.get(process.env.API_URL_PaymentMethods, {
+      params: {
+        jwt: token
+      }
+    });
+    res.status(200).json(response.data);
   } catch (error) {
-      console.error('Error fetching payment methods:', error);
-      res.status(500).json({ message: 'Error fetching payment methods', error: error.message });
+    console.error('Error fetching payment methods:', error);
+    res.status(500).json({ message: 'Error fetching payment methods', error: error.message });
   }
 }
 
@@ -30,7 +31,7 @@ async function createOrder(orderData) {
     const response = await axios.post(process.env.API_URL_createOrder, orderData, {
       params: {
         jwt: token
-    },
+      },
       headers: {
         'Content-Type': 'application/json',
       },
@@ -49,17 +50,17 @@ async function createOrder(orderData) {
 async function getCheckOrder(req, res) {
   const token = refreshToken();
   try {
-      const response = await axios.get(process.env.API_URL_getCheckOrder, {
-          params: {
-              jwt: token,
-              id: 177636	,
-              mrc_order_id :"Bc203412",
-          }
-      });
-      res.status(200).json(response.data);
+    const response = await axios.get(process.env.API_URL_getCheckOrder, {
+      params: {
+        jwt: token,
+        id: 177636,
+        mrc_order_id: "Bc203412",
+      }
+    });
+    res.status(200).json(response.data);
   } catch (error) {
-      console.error('Error  check Order methods:', error);
-      res.status(500).json({ message: 'Error  check Order methods', error: error.message });
+    console.error('Error  check Order methods:', error);
+    res.status(500).json({ message: 'Error  check Order methods', error: error.message });
   }
 }
 
@@ -67,22 +68,22 @@ async function getCheckOrder(req, res) {
 async function deleteCannelOrder(req, res) {
   const token = refreshToken();
   const cannel = {
-    id : 177607
+    id: 177607
   }
   // const id = 177607;
   try {
-      const response = await axios.post(process.env.API_URL_deleteCannelOrder,cannel, {
-          params: {
-              jwt: token,
-          },
-          headers: {
-            'Content-Type': 'application/json',
-          },
-      });
-      res.status(200).json(response.data);
+    const response = await axios.post(process.env.API_URL_deleteCannelOrder, cannel, {
+      params: {
+        jwt: token,
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    res.status(200).json(response.data);
   } catch (error) {
-      console.error('Error  cannel order methods:', error);
-      res.status(500).json({ message: 'Error cannel order methods', error: error.message });
+    console.error('Error  cannel order methods:', error);
+    res.status(500).json({ message: 'Error cannel order methods', error: error.message });
   }
 }
 
@@ -95,18 +96,18 @@ async function getPayfee(req, res) {
   }
   // const id = 177607;
   try {
-      const response = await axios.post("https://dev-api.baokim.vn/paymentapi/v5/refund/create",fee, {
-          params: {
-              jwt: token,
-          },
-          headers: {
-            'Content-Type': 'application/json',
-          },
-      });
-      res.status(200).json(response.data);
+    const response = await axios.post("https://dev-api.baokim.vn/paymentapi/v5/refund/create", fee, {
+      params: {
+        jwt: token,
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    res.status(200).json(response.data);
   } catch (error) {
-      console.error('Error  fee methods:', error);
-      res.status(500).json({ message: 'Error  fee methods', error: error.message });
+    console.error('Error  fee methods:', error);
+    res.status(500).json({ message: 'Error  fee methods', error: error.message });
   }
 }
 
@@ -116,16 +117,16 @@ async function checkToken(req, res) {
   const token = refreshToken();
   try {
     const decipher = crypto.createDecipher('aes-256-cbc', process.env.API_SECRET);
-let decrypted = decipher.update('51234516847402740000', 'hex', 'utf8');
-decrypted += decipher.final('utf8');
+    let decrypted = decipher.update('51234516847402740000', 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
     const decoded = jwt.decode(token);
     console.log(decrypted);
-    res.status(201).json(decoded,decrypted);
+    res.status(201).json(decoded, decrypted);
     return decoded;
-} catch (error) {
+  } catch (error) {
     console.error('Error decoding token:', error);
     return null;
-}
+  }
 }
 
 
@@ -150,7 +151,7 @@ decrypted += decipher.final('utf8');
 //               // 'Authorization': `Bearer ${token}`,
 //               'Content-Type': 'application/json'
 //           }
-            
+
 //         });
 //         res.status(200).json(response.data);
 //     } catch (error) {
@@ -168,4 +169,4 @@ apiBaokim.post('/getPayfee', getPayfee);
 
 // apiBaokim.post('/calculateBankFee', calculateBankFee);
 
-  module.exports = apiBaokim;
+module.exports = apiBaokim;

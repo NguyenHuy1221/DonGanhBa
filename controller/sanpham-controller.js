@@ -29,13 +29,10 @@ const { v4: uuidv4 } = require('uuid');
 
 
 async function getlistSanPham(req, res, next) {
-
   try {
-
     const sanphams = await SanPhamModel.find()// Lọc và sắp xếp
     if (!sanphams) {
       res.status(404).json({ message: 'Khong thay san pham nao' });
-
     }
     res.status(200).json(sanphams);
   } catch (error) {
@@ -1160,18 +1157,17 @@ async function getlistBienTheAdmin(req, res, next) {
   const { IDSanPham } = req.params;
 
   try {
-    const BienThe = await BienTheSchema.find({ IDSanPham: IDSanPham }).populate('KetHopThuocTinh.IDGiaTriThuocTinh');
-    const sanpham = await SanPhamModel.findById(IDSanPham)
+    const BienThe = await BienTheSchema.find({ IDSanPham: IDSanPham })
+      .populate({ path: 'KetHopThuocTinh.IDGiaTriThuocTinh', populate: { path: 'ThuocTinhID', model: 'ThuocTinh', } });
+
     if (!BienThe) {
-      res.status(404).json({ message: "không tìm thấy biến thể nào" });
+      return res.status(404).json({ message: "không tìm thấy biến thể nào" });
     }
-    if (!sanpham) {
-      res.status(404).json({ message: "không tìm thấy sản phẩm" });
-    }
-    res.status(200).json({ BienThe, sanpham });
+
+    return res.status(200).json(BienThe);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Lỗi khi truy xuat san pham" });
+    return res.status(500).json({ message: "Lỗi khi truy xuat san pham" });
   }
 }
 async function findSanPhamByDanhMuc(req, res, next) {

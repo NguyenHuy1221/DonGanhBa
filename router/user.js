@@ -51,6 +51,7 @@ const {
   getListYeuCauRutTienByuserId,
   deleteYeuCauRutTienCoDieuKien,
   saveFcmTokenFireBase,
+  loginXacMinh,
 } = require("../controller/user-controller");
 
 userRoute.get("/showAllUser/:userId", function (req, res) {
@@ -215,6 +216,10 @@ userRoute.get("/verify/:token", async function (req, res) {
     console.error("Lỗi khi xác nhận tài khoản:", error);
     return res.render('dashboard/thankyou', { message: "Lỗi xác thực.", icon: "fa-times", info: "Rất tiếc! Yêu cầu rút tiền của bạn xác thực thất bại , vui lòng thử lại hoặc liên hệ với bên chăm sóc khách hàng của Đòn Gánh." });
   }
+});
+
+userRoute.post("/loginXacMinh/:userId", async function (req, res) {
+  return loginXacMinh(req, res);
 });
 
 
