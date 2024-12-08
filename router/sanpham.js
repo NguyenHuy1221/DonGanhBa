@@ -27,6 +27,7 @@ const { getlistSanPham, getlistSanPhamAdmin, toggleSanPhamMoi, getSanPhamListNew
   checkNumberProductvaBienthe,
   searchSanPhamtest,
   updateMissingUserIds,
+  ToHopBienThePhienBanBangTay,
 } = require("../controller/sanpham-controller");
 sanphamRouter.post("/createSanPhamtest", async function (req, res) {
   return createSanPhamtest(req, res);
@@ -47,6 +48,9 @@ sanphamRouter.post("/toggleSanPhamMoi/:IDSanPham", async function (req, res) {
 });
 sanphamRouter.post("/createSanPham", uploadmemory.any(), async function (req, res) {
   return createSanPham(req, res);
+});
+sanphamRouter.post("/ToHopBienThePhienBanBangTay", uploadmemory.any(), async function (req, res) {
+  return ToHopBienThePhienBanBangTay(req, res);
 });
 sanphamRouter.post("/updateHinhBoSung/:IDSanPham", async function (req, res) {
   return updateHinhBoSung(req, res);
@@ -194,6 +198,7 @@ const { addThuocTinhForSanPham,
   deleteThuocTinhForSanPham,
   findthuoctinhInsanpham,
   getDatabientheByid,
+  createVariants,
 } = require("../controller/sanpham-controller-v2");
 
 
@@ -212,6 +217,9 @@ sanphamRouter.get("/findthuoctinhInsanpham/:IDSanPham", async function (req, res
 });
 sanphamRouter.get("/getDatabientheByid/:idbienthe", async function (req, res) {
   return getDatabientheByid(req, res);
+});
+sanphamRouter.post("/createVariants/:IDSanPham", async function (req, res) {
+  return createVariants(req, res);
 });
 
 module.exports = sanphamRouter;

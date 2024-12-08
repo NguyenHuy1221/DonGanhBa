@@ -1240,36 +1240,64 @@ async function getListYeuCauRutTienByuserId(req, res) {
 }
 
 
-
 async function saveFcmTokenFireBase(req, res) {
   const { userId, fcmToken } = req.body;
 
+  if (!userId || !fcmToken) {
+    return res.status(400).json({ message: 'User ID hoặc Token FCM không được để trống' });
+  }
+
   try {
-    // Kiểm tra xem fcmToken đã tồn tại chưa
-    const existingToken = await FirebaseSchema.findOne({ firebaseToken });
-    if (existingToken) {
-      // Nếu fcmToken đã tồn tại, cập nhật userId
-      existingToken.userId = userId;
-      await existingToken.save();
-      return res.status(200).json({ message: 'Token FCM đã được cập nhật với userId mới' });
+    // Kiểm tra và cập nhật token hoặc tạo mới bằng upsert
+    const updatedToken = await FirebaseSchema.findOneAndUpdate(
+      { $or: [{ firebaseToken: fcmToken }, { userId }] },
+      { userId, firebaseToken: fcmToken },
+      { new: true, upsert: true } // Nếu không tìm thấy, tự động tạo mới
+    );
+
+    if (!updatedToken) {
+      return res.status(500).json({ message: 'Không thể lưu token FCM' });
     }
 
-    // Kiểm tra xem userId đã tồn tại chưa
-    const existingUser = await FirebaseSchema.findOne({ userId });
-    if (existingUser) {
-      existingToken.firebaseToken = fcmToken;
-      await existingToken.save();
-      return res.status(200).json({ message: 'Token FCM đã được cập nhật với userId mới' });
-    }
-
-    // Nếu không tồn tại fcmToken và userId, tạo mới
-    await FirebaseSchema.create({ userId, firebaseToken: fcmToken });
-    return res.status(201).json({ message: 'Lưu thành công' });
+    return res.status(200).json({ message: 'Token FCM đã được lưu thành công' });
   } catch (error) {
     console.error('Lỗi khi lưu token:', error);
-    return res.status(500).json({ message: 'Đã xảy ra lỗi khi lưu token fcm' });
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi lưu token FCM' });
   }
 }
+
+// async function saveFcmTokenFireBase(req, res) {
+//   const { userId, fcmToken } = req.body;
+//   if (!fcmToken) {
+//     return res.status(404).json({ message: 'Token fcm null' });
+
+//   }
+//   try {
+//     // Kiểm tra xem fcmToken đã tồn tại chưa
+//     const existingToken = await FirebaseSchema.findOne({ firebaseToken: fcmToken });
+//     if (existingToken) {
+//       // Nếu fcmToken đã tồn tại, cập nhật userId
+//       existingToken.userId = userId;
+//       await existingToken.save();
+//       return res.status(200).json({ message: 'Token FCM đã được cập nhật với userId mới' });
+//     }
+
+//     // Kiểm tra xem userId đã tồn tại chưa
+//     const existingUser = await FirebaseSchema.findOne({ userId });
+//     if (existingUser) {
+//       existingToken.firebaseToken = fcmToken;
+//       await existingToken.save();
+//       return res.status(200).json({ message: 'Token FCM đã được cập nhật với userId mới' });
+//     }
+
+//     // Nếu không tồn tại fcmToken và userId, tạo mới
+//     await FirebaseSchema.create({ userId, firebaseToken: fcmToken });
+//     return res.status(200).json({ message: 'Lưu thành công' });
+//   } catch (error) {
+//     console.error('Lỗi khi lưu token:', error);
+//     return res.status(500).json({ message: 'Đã xảy ra lỗi khi lưu token fcm' });
+//   }
+// }
 async function loginXacMinh(req, res) {
   const userId = req.params.userId
   const { gmail, matKhau } = req.body;

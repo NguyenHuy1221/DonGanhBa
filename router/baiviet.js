@@ -11,8 +11,12 @@ const {
     addBinhLuan,
     updateBinhLuan,
     deleteBinhLuan,
+    getListBaiVietAdmin,
 } = require("../controller/baiviet-controller");
 
+baivietRouter.get("/getListBaiVietAdmin/:userId", function (req, res) {
+    return getListBaiVietAdmin(req, res);
+});
 baivietRouter.get("/getListBaiViet/:userId", function (req, res) {
     return getListBaiViet(req, res);
 });

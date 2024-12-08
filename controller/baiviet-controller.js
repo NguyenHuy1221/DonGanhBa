@@ -1,6 +1,7 @@
 const DanhGiamodel = require("../models/DanhGiaSchema");
 const LoaiKhuyenMaiModel = require("../models/LoaiKhuyenMaiSchema")
 const BaiVietSchema = require("../models/baivietSchema")
+const UserModel = require("../models/NguoiDungSchema")
 require("dotenv").config();
 const { upload } = require("../untils/index");
 const fs = require('fs');
@@ -19,8 +20,56 @@ const path = require('path');
 async function getListBaiViet(req, res, next) {
     const { userId } = req.params;
 
+
     try {
         const baiviets = await BaiVietSchema.find()
+            .populate("userId")
+            .populate({
+                path: 'binhluan.userId', // Populate userId của binhluan 
+                // select: 'name email' // Chỉ chọn các trường cần thiết 
+            })
+
+        if (userId) {
+            const baivietsWithLikeInfo = baiviets.map(baiViet => {
+                const isLiked = baiViet.likes.includes(userId);
+                return { ...baiViet._doc, isLiked };
+            });
+
+            return res.status(200).json(baivietsWithLikeInfo);
+        }
+        return res.status(200).json(baiviets);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi khi lấy Bài viết đánh giá' });
+    }
+}
+async function getListBaiVietAdmin(req, res, next) {
+    const { userId } = req.params;
+    let user = {}
+    let query = {};
+
+    try {
+        if (userId) {
+            user = await UserModel.findById(userId);
+            if (!user) {
+                return res.status(200).json({
+                    message: "Không tìm thấy user bằng userid"
+                });
+            }
+        }
+        else {
+            return res.status(404).json({ message: 'Chưa có userId' });
+        }
+
+        if (user.role === "admin" || user.role === "nhanvien") {
+
+        } else if (user.role === "hokinhdoanh") {
+            query.userId = userId
+        } else {
+            return res.status(200).json({ message: "Không có quyền " });
+        }
+        const baiviets = await BaiVietSchema.find(query)
             .populate("userId")
             .populate({
                 path: 'binhluan.userId', // Populate userId của binhluan 
@@ -410,4 +459,5 @@ module.exports = {
     deleteBinhLuan,
     updateLike,
     getBaiVietById,
+    getListBaiVietAdmin,
 };

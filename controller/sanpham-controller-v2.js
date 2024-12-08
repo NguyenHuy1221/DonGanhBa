@@ -252,10 +252,92 @@ async function getDatabientheByid(req, res) {
         res.status(500).json({ error: 'Lỗi hệ thống' });
     }
 }
+
+
+// Hàm kết hợp các thuộc tính
+function combineAttributes(attributesList) {
+    if (!attributesList.length) return [[]];
+    const [currentAttr, ...rest] = attributesList;
+    const combinations = combineAttributes(rest);
+    return currentAttr.giaTriThuocTinh.flatMap(attrValue =>
+        combinations.map(combination => [attrValue, ...combination])
+    );
+}
+
+// Hàm kiểm tra biến thể tồn tại
+async function isVariantExists(IDSanPham, combination) {
+    // Truy vấn kiểm tra xem tổ hợp đã tồn tại hay chưa
+    const existingVariant = await BienTheSchema.findOne({
+        IDSanPham,
+        $and: combination.map(value => ({
+            'KetHopThuocTinh.IDGiaTriThuocTinh': value
+        }))
+    });
+
+    return existingVariant; // Trả về null nếu không tồn tại
+}
+
+// Hàm tạo biến thể
+async function createVariants(req, res) {
+    const { IDSanPham } = req.params;
+
+    try {
+        // Lấy sản phẩm
+        const sanPham = await SanPhamModel.findById(IDSanPham).populate('DanhSachThuocTinh.thuocTinh DanhSachThuocTinh.giaTriThuocTinh');
+        if (!sanPham) {
+            return res.status(404).json({ error: 'Sản phẩm không tồn tại.' });
+        }
+
+        const { DanhSachThuocTinh } = sanPham;
+
+        // Tạo tổ hợp các giá trị thuộc tính
+        const combinations = combineAttributes(DanhSachThuocTinh);
+
+        let createdCount = 0;
+        for (const combination of combinations) {
+            // Kiểm tra biến thể đã tồn tại
+            const existingVariant = await isVariantExists(IDSanPham, combination);
+
+            if (existingVariant) {
+                // Nếu biến thể tồn tại và đã bị xóa, khôi phục lại
+                if (existingVariant.isDeleted) {
+                    existingVariant.isDeleted = false;
+                    await existingVariant.save();
+                }
+                // Nếu biến thể không bị xóa, bỏ qua
+                continue;
+            }
+
+            // Nếu không trùng lặp, tạo mới
+            const newVariant = new BienTheSchema({
+                IDSanPham,
+                KetHopThuocTinh: combination.map(value => ({ IDGiaTriThuocTinh: value })),
+                gia: sanPham.DonGiaBan, // Giá mặc định từ sản phẩm (có thể điều chỉnh)
+                soLuong: 0 // Số lượng mặc định
+            });
+            await newVariant.save();
+            createdCount++;
+        }
+
+        res.status(200).json({
+            message: 'Tạo biến thể thành công.',
+            createdCount,
+            totalCombinations: combinations.length
+        });
+    } catch (error) {
+        console.error('Lỗi khi tạo biến thể:', error);
+        res.status(500).json({ error: 'Lỗi hệ thống' });
+    }
+}
+
+
+
+
 module.exports = {
     addThuocTinhForSanPham,
     updateGiaTriThuocTinhForSanPham,
     deleteThuocTinhForSanPham,
     findthuoctinhInsanpham,
     getDatabientheByid,
+    createVariants,
 };
