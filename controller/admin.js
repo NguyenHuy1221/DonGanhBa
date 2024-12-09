@@ -5,13 +5,13 @@ const ThongBaoModel = require("../models/thongbaoSchema")
 const YeuCauRutTienSchema = require('../models/YeuCauRutTienSchema');
 const ThuocTinh = require('../models/ThuocTinhSchema'); // Đảm bảo đường dẫn đúng tới model của bạn
 const giatrithuoctinhmodel = require("../models/GiaTriThuocTinhSchema")
+const YeuCauDangKySchema = require("../models/YeuCauDangKy")
 const { createThongBaoNoreq } = require("../helpers/helpers")
 
 async function UpdateRole(req, res, next) {
     const { userId } = req.params;
     const { role } = req.body
     try {
-
         if (!['khachhang', 'hokinhdoanh', 'nhanvien', 'admin'].includes(role)) {
             return res.status(400).json({ message: "Quyền không tồn tại" });
         }
@@ -117,6 +117,13 @@ async function updateUserRoleAndPermissions(req, res, next) {
                 if (user.permissions) {
                     user.permissions = [];
                 }
+                const yeuCauDangKy = await YeuCauDangKySchema.findOne({
+                    userId: mongoose.Types.ObjectId(userId),
+                    trangThai: 'xacnhan'
+                });
+                if (!yeuCauDangKy) {
+                    return res.status(404).json({ message: 'User này chưa tạo yêu cầu đăng ký làm hộ kinh doanh , user phải tạo yêu cầu đăng ký và admin phải xác nhận thì mới được phân quyền' });
+                }
                 // const updatedUser = await user.save()
                 // res.status(200).json(updatedUser);
             }
@@ -165,6 +172,13 @@ async function updateUserRoleAndPermissionsforuser(req, res, next) {
                 user.role = role;
                 if (user.permissions) {
                     user.permissions = [];
+                }
+                const yeuCauDangKy = await YeuCauDangKySchema.findOne({
+                    userId: mongoose.Types.ObjectId(userId),
+                    trangThai: 'xacnhan'
+                });
+                if (!yeuCauDangKy) {
+                    return res.status(404).json({ message: 'User này chưa tạo yêu cầu đăng ký làm hộ kinh doanh , user phải tạo yêu cầu đăng ký và admin phải xác nhận thì mới được phân quyền' });
                 }
                 // const updatedUser = await user.save()
                 // res.status(200).json(updatedUser);

@@ -7,6 +7,7 @@ const axios = require('axios');
 const { refreshToken } = require('../jwt/index');
 const transporter = require("./mailer");
 //xoa dau tieng viet 
+const crypto = require('crypto');
 const removeAccents = require('remove-accents');
 const BienThe = require("../models/BienTheSchema");
 const SanPham = require("../models/SanPhamSchema");
@@ -456,12 +457,12 @@ async function updateTransactionHoaDon(req, res, next) {
       mrc_order_id: orderIdbaokim,
       total_amount: total_tien,
       description: hoadon.GhiChu,
-      url_success: `${process.env.MAIN_BASE_URL}api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
+      url_success: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
       merchant_id: parseInt(process.env.MERCHANT_ID),
       url_detail: "https://baokim.vn/",
       lang: "en",
       bpm_id: transactionId,
-      webhooks: "https://baokim.vn/",
+      webhooks: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
       customer_email: hoadon.userId.gmail,
       customer_phone: "0358748103",
       customer_name: "ho duc hau",
@@ -476,7 +477,7 @@ async function updateTransactionHoaDon(req, res, next) {
       }))),
 
     };
-    console.log(hoadon.TongTien - giaTriGiam)
+    console.log(orderData2.url_success)
     // Kiểm tra thời gian hết hạn của đơn hàng
 
     if (!hoadon) {
@@ -537,7 +538,7 @@ async function updateTransactionHoaDon(req, res, next) {
 //       mrc_order_id: orderIdbaokim,
 //       total_amount: total_tien,
 //       description: hoadon.GhiChu,
-//       url_success: `${process.env.MAIN_BASE_URL}api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
+//       url_success: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
 //       merchant_id: parseInt(process.env.MERCHANT_ID),
 //       url_detail: "https://baokim.vn/",
 //       lang: "en",
@@ -620,7 +621,7 @@ async function updateTransactionlistHoaDon(req, res, next) {
         mrc_order_id: orderIdbaokim,
         total_amount: total_tien,
         description: hoadon.GhiChu,
-        url_success: `${process.env.MAIN_BASE_URL}api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
+        url_success: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
         merchant_id: parseInt(process.env.MERCHANT_ID),
         url_detail: "https://baokim.vn/",
         lang: "en",
@@ -686,7 +687,7 @@ async function Checkdonhangbaokim(req, res, next) {
   //   mrc_order_id: orderIdbaokim,
   //   total_amount: order.TongTien,
   //   description: order.GhiChu,
-  //   url_success: `${process.env.MAIN_BASE_URL}api/hoadon/NhanThanhToanTuBaoKim/${order._id}`,
+  //   url_success: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${order._id}`,
   //   merchant_id: parseInt(process.env.MERCHANT_ID),
   //   url_detail: "https://baokim.vn/",
   //   lang: "en",
@@ -809,7 +810,8 @@ async function updatetrangthaiHoaDOn(req, res, next) {
     if (TrangThai == 3) {
       const checkrole = await UserModel.findById(hoadon.hoKinhDoanhId)
 
-      hoadon.DaThanhToan = true;
+      // hoadon.DaThanhToan = true;
+      hoadon.tienDaCong = true;
       let tongTienThucTe = hoadon.TongTien;
 
       if (hoadon.SoTienKhuyenMai && hoadon.SoTienKhuyenMai > 1) {
@@ -978,19 +980,47 @@ async function updateTransactionListHoaDonCOD(req, res, next) {
 
 async function NhanThanhToanTuBaoKim(req, res) {
   try {
+    const data = req.body;
     const { hoadonId } = req.params;
-    const hoadon = await HoaDonModel.findById(hoadonId).populate("userId").populate("hoKinhDoanhId")
+
+    // Kiểm tra chữ ký
+    const receivedSign = data.sign; // Chữ ký nhận được từ Bảo Kim
+    const dataToSign = JSON.stringify(data); // Dữ liệu cần ký
+    const yourSign = crypto.createHmac('sha256', process.env.SECRET_KEY).update(dataToSign).digest('hex');
+
+    if (yourSign !== receivedSign) {
+      console.log('Chữ ký không hợp lệ');
+      return res.status(400).json({ err_code: "1", message: "Chữ ký không hợp lệ" });
+    }
+
+    // Tìm hóa đơn theo ID
+    const hoadon = await HoaDonModel.findById(hoadonId).populate("userId").populate("hoKinhDoanhId");
     if (!hoadon) {
       return res.status(404).json({ message: "Đơn hàng không tồn tại" });
     }
-    hoadon.TrangThai = 1
-    hoadon.DaThanhToan = true
+    let totalAmount = hoadon.TongTien;
+    if (hoadon.SoTienKhuyenMai > 0) { totalAmount -= hoadon.SoTienKhuyenMai; }
+    if (totalAmount < 0) {
+      totalAmount = 0;
+    }
+    // Cập nhật trạng thái thanh toán
+    if (!hoadon.tienDaCong) {
+      hoadon.DaThanhToan = true;
+      hoadon.tienDaCong = true;
+      await UserModel.findOneAndUpdate(
+        { _id: hoadon.hoKinhDoanhId._id },
+        { $inc: { soTienHienTai: totalAmount } },
+        { new: true }
+      );
+    }
 
     await hoadon.save();
+
+    // Gửi email cho khách hàng
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: hoadon.userId.gmail,
-      subject: "Xác nhận khôi phục mật khẩu",
+      subject: "Thanh toán thành công",
       text: `Chào ${hoadon.userId.tenNguoiDung},\n\nĐơn hàng của bạn đã được thanh toán thành công\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
     };
     transporter.sendMail(mailOptions, (error, info) => {
@@ -1001,13 +1031,13 @@ async function NhanThanhToanTuBaoKim(req, res) {
       }
     });
 
+    // Gửi email cho admin
     const mailOptionForAdmin = {
       from: process.env.EMAIL_USER,
       to: hoadon.hoKinhDoanhId.gmail,
       subject: "Đã Thanh toán bảo kim",
       text: `Chào Admin,\n\nĐơn hàng ${hoadon._id} đã được thanh toán tổng số ${hoadon.TongTien - hoadon.SoTienKhuyenMai}. VND\n\nTrân trọng,\nĐội ngũ hỗ trợ`,
     };
-
     transporter.sendMail(mailOptionForAdmin, (error, info) => {
       if (error) {
         console.error("Lỗi khi gửi email admin:", error);
@@ -1016,14 +1046,13 @@ async function NhanThanhToanTuBaoKim(req, res) {
       }
     });
 
-
-    return res.json("đơn hàng đã được thanh toán thành công");
+    // Trả về phản hồi thành công cho Bảo Kim
+    return res.status(200).json({ err_code: "0", message: "Đã nhận thông báo thành công" });
   } catch (error) {
-    console.error("Lỗi khi lấy thông tin người dùng:", error);
-    return res
-      .status(500)
-      .json({ message: "Đã xảy ra lỗi khi lấy thông tin người dùng" });
+    console.error("Lỗi khi xử lý webhook:", error);
+    return res.status(500).json({ message: "Đã xảy ra lỗi khi xử lý webhook" });
   }
+
 }
 async function HuyDonHang(req, res, next) {
   const hoadonId = req.params.hoadonId

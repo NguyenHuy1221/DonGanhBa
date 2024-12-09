@@ -5,6 +5,8 @@ const {
     getListYeuCauDangKy,
     getYeuCauDangKyByUserId,
     updateYeuCauDangKy,
+    getYeuCauDangKyDiaChiByUserId,
+    updateDiaChiHoKinhDoanh,
 } = require("../controller/yeucaudangky")
 
 yeucaudangkyRouter.post('/createYeuCauDangKy', async function (req, res) {
@@ -21,7 +23,12 @@ yeucaudangkyRouter.put('/updateYeuCauDangKy/:yeuCauDangKyId', async function (re
     return updateYeuCauDangKy(req, res);
 })
 
+yeucaudangkyRouter.get('/getYeuCauDangKyDiaChiByUserId/:userId', async function (req, res) {
+    return getYeuCauDangKyDiaChiByUserId(req, res);
+})
 
-
+yeucaudangkyRouter.post('/updateDiaChiHoKinhDoanh/:yeucaudangkyId', async function (req, res) {
+    return updateDiaChiHoKinhDoanh(req, res);
+})
 
 module.exports = yeucaudangkyRouter;

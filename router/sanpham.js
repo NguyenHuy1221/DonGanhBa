@@ -49,7 +49,7 @@ sanphamRouter.post("/toggleSanPhamMoi/:IDSanPham", async function (req, res) {
 sanphamRouter.post("/createSanPham", uploadmemory.any(), async function (req, res) {
   return createSanPham(req, res);
 });
-sanphamRouter.post("/ToHopBienThePhienBanBangTay", uploadmemory.any(), async function (req, res) {
+sanphamRouter.post("/ToHopBienThePhienBanBangTay", async function (req, res) {
   return ToHopBienThePhienBanBangTay(req, res);
 });
 sanphamRouter.post("/updateHinhBoSung/:IDSanPham", async function (req, res) {

@@ -113,9 +113,59 @@ async function updateYeuCauDangKy(req, res, next) {
 }
 
 
+async function getYeuCauDangKyDiaChiByUserId(req, res, next) {
+    const { userId } = req.params;
+
+    try {
+        const yeuCauDangKy = await YeuCauDangKySchema.findOne({
+            userId: userId,
+            trangThai: 'xacnhan'
+        });
+
+        if (!yeuCauDangKy) {
+            return res.status(404).json({ message: 'Không tìm thấy Yêu cầu đăng ký với trạng thái xác nhận' });
+        }
+
+        return res.status(200).json(yeuCauDangKy);
+    } catch (error) {
+        console.error('Lỗi khi lấy Yêu cầu đăng ký:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy Yêu cầu đăng ký' });
+    }
+}
+
+
+async function updateDiaChiHoKinhDoanh(req, res, next) {
+    const { yeucaudangkyId } = req.params;
+    const { diachimoi } = req.body;
+
+    try {
+        const yeucaudangky = await YeuCauDangKySchema.findById(yeucaudangkyId);
+
+        if (!yeucaudangky) {
+            return res.status(404).json({ message: 'Không tìm thấy Yêu cầu đăng ký' });
+        }
+
+        if (diachimoi && diachimoi.trim() !== "") {
+            yeucaudangky.diaChi = diachimoi;
+        } else {
+            return res.status(400).json({ message: 'Địa chỉ mới không hợp lệ' });
+        }
+        await yeucaudangky.save();
+        // Trả về kết quả cho client
+        return res.status(200).json(yeucaudangky);
+
+    } catch (error) {
+        console.error("Lỗi update địa chỉ :", error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi lưu địa chỉ mới' });
+    }
+}
+
+
 module.exports = {
     createYeuCauDangKy,
     getListYeuCauDangKy,
     getYeuCauDangKyByUserId,
     updateYeuCauDangKy,
+    getYeuCauDangKyDiaChiByUserId,
+    updateDiaChiHoKinhDoanh,
 };

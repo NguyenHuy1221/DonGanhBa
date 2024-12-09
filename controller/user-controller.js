@@ -1326,7 +1326,6 @@ async function loginXacMinh(req, res) {
     return res.status(500).json({ message: "Đã xảy ra lỗi khi đăng nhập" });
   }
 }
-// app.post('/send-notification', async (req, res) => { const { userId, title, body } = req.body; try { const user = await User.findOne({ userId }); if (!user) { return res.status(404).json({ message: 'Không tìm thấy người dùng' }); } const message = { notification: { title, body, }, token: user.fcmToken, }; const response = await admin.messaging().send(message); return res.status(200).json({ message: 'Thông báo đã được gửi đi', response }); } catch (error) { console.error('Lỗi khi gửi thông báo:', error); return res.status(500).json({ message: 'Đã xảy ra lỗi khi gửi thông báo' }); } });
 
 module.exports = {
   RegisterUser,
