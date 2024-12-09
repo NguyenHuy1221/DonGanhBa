@@ -145,7 +145,7 @@ async function updateDiaChiHoKinhDoanh(req, res, next) {
             return res.status(404).json({ message: 'Không tìm thấy Yêu cầu đăng ký' });
         }
 
-        if (diachimoi && diachimoi.trim() !== "") {
+        if (diachimoi) {
             yeucaudangky.diaChi = diachimoi;
         } else {
             return res.status(400).json({ message: 'Địa chỉ mới không hợp lệ' });

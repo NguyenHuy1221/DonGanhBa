@@ -592,7 +592,7 @@ async function updateTransactionHoaDon(req, res, next) {
 
 async function updateTransactionlistHoaDon(req, res, next) {
   const { transactionId, khuyenmaiId, giaTriGiam = 0, hoadon } = req.body;
-
+  console.log("transactionId", transactionId)
   try {
     const updatedHoadons = [];
     for (const hoadonId of hoadon) {
@@ -669,10 +669,6 @@ async function updateTransactionlistHoaDon(req, res, next) {
     return res.status(500).json({ message: 'Lỗi khi cập nhật hóa đơn', error });
   }
 }
-
-module.exports = {
-  updateTransactionlistHoaDon,
-};
 
 
 async function Checkdonhangbaokim(req, res, next) {
@@ -982,11 +978,13 @@ async function NhanThanhToanTuBaoKim(req, res) {
   try {
     const data = req.body;
     const { hoadonId } = req.params;
+    console.log(data)
 
     // Kiểm tra chữ ký
     const receivedSign = data.sign; // Chữ ký nhận được từ Bảo Kim
     const dataToSign = JSON.stringify(data); // Dữ liệu cần ký
     const yourSign = crypto.createHmac('sha256', process.env.SECRET_KEY).update(dataToSign).digest('hex');
+    console.log(yourSign)
 
     if (yourSign !== receivedSign) {
       console.log('Chữ ký không hợp lệ');

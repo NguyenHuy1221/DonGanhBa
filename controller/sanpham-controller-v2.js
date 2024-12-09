@@ -330,7 +330,87 @@ async function createVariants(req, res) {
     }
 }
 
+async function createSanPhamExcel(req, res, next) {
+    const { products } = req.body;
 
+    if (!products || !products.length) {
+        return res.status(400).json({ message: "Danh sách sản phẩm không hợp lệ." });
+    }
+
+    try {
+        // Chuẩn bị dữ liệu để lưu
+        const newProducts = products.map((product) => {
+            // Xử lý hình bổ sung
+            let hinhBoSung = [];
+            try {
+                if (product.col_14 && typeof product.col_14 === "string") {
+                    // Thay thế ký tự không chuẩn JSON
+                    const parsedData = product.col_14.replace(/'/g, '"');
+                    hinhBoSung = JSON.parse(parsedData);
+                    if (!Array.isArray(hinhBoSung)) {
+                        throw new Error("HinhBoSung phải là mảng JSON.");
+                    }
+                }
+            } catch (error) {
+                console.warn(
+                    `Lỗi khi parse HinhBoSung tại sản phẩm: ${product.col_0}. Giá trị: "${product.col_14}". Sử dụng giá trị mặc định.`
+                );
+                hinhBoSung = [];
+            }
+
+            // Xử lý danh sách thuộc tính
+            let danhSachThuocTinh = [];
+            try {
+                if (product.col_15 && typeof product.col_15 === "string") {
+                    // Thay thế ký tự không chuẩn JSON
+                    const parsedData = product.col_15.replace(/'/g, '"');
+                    danhSachThuocTinh = JSON.parse(parsedData);
+                    if (!Array.isArray(danhSachThuocTinh)) {
+                        throw new Error("DanhSachThuocTinh phải là mảng JSON.");
+                    }
+                }
+            } catch (error) {
+                console.warn(
+                    `Lỗi khi parse DanhSachThuocTinh tại sản phẩm: ${product.col_0}. Giá trị: "${product.col_15}". Sử dụng giá trị mặc định.`
+                );
+                danhSachThuocTinh = [];
+            }
+
+            return {
+                IDSanPham: product.col_0, // Mã sản phẩm
+                userId: product.col_1,
+                TenSanPham: product.col_2, // Tên sản phẩm
+                HinhSanPham: product.col_3, // Đường dẫn hình ảnh
+                DonGiaNhap: parseFloat(product.col_4) || 0, // Giá nhập
+                DonGiaBan: parseFloat(product.col_5) || 0, // Giá bán
+                SoLuongNhap: parseInt(product.col_6, 10) || 0, // Số lượng nhập
+                SoLuongHienTai: parseInt(product.col_7, 10) || 0, // Số lượng hiện tại
+                PhanTramGiamGia: parseFloat(product.col_8) || 0, // Phần trăm giảm giá
+                NgayTao: new Date(), // Ngày tạo
+                SanPhamMoi: product.col_10 || false, // Sản phẩm vừa tạo chưa được phép bán
+                TinhTrang: product.col_11 || "Còn hàng", // Tình trạng mặc định
+                MoTa: product.col_12 || "", // Mô tả
+                Unit: product.col_13 || "1", // Đơn vị tính
+                HinhBoSung: hinhBoSung, // Hình bổ sung
+                DanhSachThuocTinh: danhSachThuocTinh, // Danh sách thuộc tính
+                IDDanhMuc: product.col_16 || "1", // Đơn vị tính
+                IDDanhMucCon: product.col_17 || "1", // Đơn vị tính
+
+            };
+        });
+
+        // Lưu tất cả sản phẩm vào database
+        const savedProducts = await SanPhamModel.insertMany(newProducts);
+
+        return res.status(201).json({
+            message: `${savedProducts.length} sản phẩm đã được thêm thành công.`,
+            products: savedProducts,
+        });
+    } catch (error) {
+        console.error("Lỗi khi thêm sản phẩm từ Excel:", error);
+        return res.status(500).json({ message: "Lỗi server. Vui lòng thử lại sau." });
+    }
+}
 
 
 module.exports = {
@@ -340,4 +420,5 @@ module.exports = {
     findthuoctinhInsanpham,
     getDatabientheByid,
     createVariants,
+    createSanPhamExcel,
 };

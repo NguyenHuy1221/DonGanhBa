@@ -199,6 +199,7 @@ const { addThuocTinhForSanPham,
   findthuoctinhInsanpham,
   getDatabientheByid,
   createVariants,
+  createSanPhamExcel,
 } = require("../controller/sanpham-controller-v2");
 
 
@@ -220,6 +221,10 @@ sanphamRouter.get("/getDatabientheByid/:idbienthe", async function (req, res) {
 });
 sanphamRouter.post("/createVariants/:IDSanPham", async function (req, res) {
   return createVariants(req, res);
+});
+
+sanphamRouter.post("/createSanPhamExcel", async function (req, res) {
+  return createSanPhamExcel(req, res);
 });
 
 module.exports = sanphamRouter;
