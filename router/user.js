@@ -9,6 +9,9 @@ userRoute.use(express.static('public'));
 const path = require('path')
 const multer = require('multer');
 const { uploadFiles } = require("../untils/index.js")
+const { uploadmemory, uploadFileToViettelCloud } = require("../untils/index")
+const { v4: uuidv4 } = require('uuid');
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, '../public/images'));
@@ -100,7 +103,7 @@ userRoute.post("/ResetPassword", async function (req, res) {
 });
 
 //update image user
-userRoute.post("/createAnhDaiDien/:IDNguoiDung", async function (req, res) {
+userRoute.post("/createAnhDaiDien/:IDNguoiDung", uploadmemory.single("file", 1), async function (req, res) {
   return createAnhDaiDien(req, res);
 });
 
@@ -120,31 +123,89 @@ userRoute.post("/saveChat", async function (req, res) {
   return saveChat(req, res);
 });
 
-userRoute.post('/upload_ImageOrVideo', uploadFiles, (req, res) => {
+// userRoute.post('/upload_ImageOrVideo', uploadFiles, (req, res) => {
+//   try {
+//     if (!req.files || (!req.files['image'] && !req.files['video'])) {
+//       return res.status(400).json({ message: 'File is required, thieu image hoac video' });
+//     }
+//     console.log("dulieu upload", req.files)
+//     let imageUrl = null;
+//     let videoUrl = null;
+
+//     if (req.files['image'] && req.files['image'][0].path) {
+//       imageUrl = req.files['image'][0].path.replace("public", process.env.URL_IMAGE);
+//     }
+//     if (req.files['video'] && req.files['video'][0].path) {
+//       videoUrl = req.files['video'][0].path.replace("public", process.env.URL_IMAGE);
+//     }
+
+//     // const imageUrl = req.files['image'] ? req.files['image'][0].path.replace("public", process.env.URL_IMAGE) : null;
+//     // const videoUrl = req.files['video'] ? req.files['video'][0].path.replace("public", process.env.URL_VIDEO) : null;
+//     console.log("link url", imageUrl, videoUrl)
+//     res.status(200).json({ imageUrl, videoUrl });
+//   } catch (error) {
+//     console.error('Error uploading file:', error);
+//     res.status(500).json({ message: 'An error occurred while uploading the file' });
+//   }
+// })
+
+
+const uploadFile = uploadmemory.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'video', maxCount: 1 }
+]);
+
+userRoute.post('/upload_ImageOrVideo', uploadFile, async (req, res) => {
   try {
     if (!req.files || (!req.files['image'] && !req.files['video'])) {
-      return res.status(400).json({ message: 'File is required, thieu image hoac video' });
+      return res.status(400).json({ message: 'File is required, thiếu image hoặc video' });
     }
-    console.log("dulieu upload", req.files)
+    console.log("dulieu upload", req.files);
     let imageUrl = null;
     let videoUrl = null;
 
-    if (req.files['image'] && req.files['image'][0].path) {
-      imageUrl = req.files['image'][0].path.replace("public", process.env.URL_IMAGE);
-    }
-    if (req.files['video'] && req.files['video'][0].path) {
-      videoUrl = req.files['video'][0].path.replace("public", process.env.URL_IMAGE);
+    const bucketName = process.env.VIETTEL_BUCKET;
+
+    // Upload ảnh nếu có
+    if (req.files['image'] && req.files['image'][0]) {
+      const imageFile = req.files['image'][0];
+      if (imageFile.mimetype.startsWith('image/')) {
+        const objectKey = `images/${uuidv4()}-${imageFile.originalname}`;
+        try {
+          imageUrl = await uploadFileToViettelCloud(imageFile.buffer, bucketName, objectKey, imageFile.mimetype);
+        } catch (error) {
+          console.error('Lỗi khi tải lên ảnh:', error);
+          return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh' });
+        }
+      } else {
+        return res.status(400).json({ message: 'Chỉ được upload image' });
+      }
     }
 
-    // const imageUrl = req.files['image'] ? req.files['image'][0].path.replace("public", process.env.URL_IMAGE) : null;
-    // const videoUrl = req.files['video'] ? req.files['video'][0].path.replace("public", process.env.URL_VIDEO) : null;
-    console.log("link url", imageUrl, videoUrl)
+    // Upload video nếu có
+    if (req.files['video'] && req.files['video'][0]) {
+      const videoFile = req.files['video'][0];
+      if (videoFile.mimetype.startsWith('video/')) {
+        const objectKey = `videos/${uuidv4()}-${videoFile.originalname}`;
+        try {
+          videoUrl = await uploadFileToViettelCloud(videoFile.buffer, bucketName, objectKey, videoFile.mimetype);
+        } catch (error) {
+          console.error('Lỗi khi tải lên video:', error);
+          return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên video' });
+        }
+      } else {
+        return res.status(400).json({ message: 'Chỉ được upload video' });
+      }
+    }
+
+    console.log("link url", imageUrl, videoUrl);
     res.status(200).json({ imageUrl, videoUrl });
   } catch (error) {
     console.error('Error uploading file:', error);
-    res.status(500).json({ message: 'An error occurred while uploading the file' });
+    res.status(500).json({ message: 'lỗi sever khi upload' });
   }
-})
+});
+
 userRoute.post("/RegisterUserGG", async function (req, res) {
   return RegisterUserGG(req, res);
 });

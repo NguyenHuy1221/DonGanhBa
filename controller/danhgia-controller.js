@@ -1,10 +1,14 @@
 const DanhGiamodel = require("../models/DanhGiaSchema");
 const LoaiKhuyenMaiModel = require("../models/LoaiKhuyenMaiSchema")
 const UserModel = require("../models/NguoiDungSchema")
+const HoaDonSchema = require("../models/HoaDonSchema")
 const sanPhamModel = require("../models/SanPhamSchema")
 require("dotenv").config();
+const { uploadFileToViettelCloud } = require("../untils/index")
+const { v4: uuidv4 } = require('uuid');
 const { upload } = require("../untils/index");
 const fs = require('fs');
+const BienThe = require("../models/BienTheSchema");
 //ham lay danh sach thuoc tinh
 // async function getListDanhGiaAdmin(req, res, next) {
 //     const { startDate, endDate } = req.query;
@@ -126,7 +130,7 @@ async function getListDanhGiaInSanPhamById(req, res, next) {
             const isLiked = danhGia.likes.includes(userId);
             return { ...danhGia._doc, isLiked };
         });
-        console.log(danhGiasWithLikeInfo)
+        // console.log(danhGiasWithLikeInfo)
         res.status(200).json(danhGiasWithLikeInfo);
     } catch (error) {
         console.error(error);
@@ -134,85 +138,281 @@ async function getListDanhGiaInSanPhamById(req, res, next) {
     }
 }
 
+// async function createDanhGia(req, res) {
+//     try {
+//         await upload.array('files')(req, res, async (err) => {
+//             if (err) {
+//                 return res.status(400).json({ message: 'Error uploading image', error: err });
+//             }
+//             const { userId, sanphamId, XepHang, BinhLuan } = req.body;
+
+//             // const hinhAnh = req.file ? req.file.path.replace('public', process.env.URL_IMAGE) : null;
+
+//             const newDanhGia = new DanhGiamodel({
+//                 userId,
+//                 sanphamId,
+//                 XepHang,
+//                 BinhLuan,
+//                 NgayTao: new Date()
+//             });
+//             // if (req.file) {
+
+//             //     // Lưu đường dẫn ảnh vào cơ sở dữ liệu
+//             //     newDanhGia.HinhAnh = req.file.path.replace('public', process.env.URL_IMAGE);
+//             // }
+//             let imagePaths = [];
+
+//             if (req.files) {
+//                 console.log(req.files)
+//                 req.files.forEach(file => {
+//                     imagePaths.push(file.path.replace('public', process.env.URL_IMAGE));
+//                 });
+//                 newDanhGia.HinhAnh = imagePaths
+//             }
+//             await newDanhGia.save();
+//             res.status(201).json(newDanhGia);
+//         });
+//     } catch (error) {
+//         console.error('Lỗi khi tạo đánh giá:', error);
+//         res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đánh giá' });
+//     }
+// }
+
+// async function createDanhGia(req, res) {
+//     try {
+//         const { userId, sanphamId, XepHang, BinhLuan } = req.body;
+
+//         const newDanhGia = new DanhGiamodel({
+//             userId,
+//             sanphamId,
+//             XepHang,
+//             BinhLuan,
+//             NgayTao: new Date()
+//         });
+//         // const newDanhGia = new DanhGiamodel({
+//         //     userId: "671119c9d0d9827319590cbe",
+//         //     sanphamId: "6723ad5b5a4b83ab35e6344b",
+//         //     XepHang: 5,
+//         //     BinhLuan: "kkkk",
+//         //     NgayTao: new Date()
+//         // });
+//         if (req.files && req.files.length > 0) {
+//             console.log(req.files)
+//             const bucketName = process.env.VIETTEL_BUCKET;
+//             const detailFiles = req.files.filter(file => file.fieldname === 'files');
+
+//             let detailUrls = [];
+
+//             if (detailFiles && detailFiles.length > 0) {
+//                 const uploadPromises = detailFiles.map(file => {
+//                     let objectKey = "";
+//                     if (file.mimetype.startsWith('image/')) {
+//                         objectKey = `images/${uuidv4()}-${file.originalname}`;
+//                     } else {
+//                         return Promise.reject(new Error('Chỉ được upload image'));
+//                     }
+//                     return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+//                 });
+
+//                 try {
+//                     detailUrls = await Promise.all(uploadPromises);
+//                 } catch (error) {
+//                     console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+//                     return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
+//                 }
+//             }
+
+//             newDanhGia.HinhAnh = detailUrls;
+//         }
+
+//         await newDanhGia.save();
+//         res.status(201).json(newDanhGia);
+//     } catch (error) {
+//         console.error('Lỗi khi tạo đánh giá:', error);
+//         res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đánh giá' });
+//     }
+// }
 async function createDanhGia(req, res) {
     try {
-        await upload.array('files')(req, res, async (err) => {
-            if (err) {
-                return res.status(400).json({ message: 'Error uploading image', error: err });
+        const { userId, sanphamId, XepHang, BinhLuan } = req.body;
+
+        // Kiểm tra xem người dùng đã mua sản phẩm chưa
+        const hoaDons = await HoaDonSchema.find({
+            userId,
+            TrangThai: 3
+        }).populate('chiTietHoaDon.idBienThe'); // Populate idBienThe để lấy thông tin sản phẩm
+
+        let hasPurchased = false;
+
+        for (const hoaDon of hoaDons) {
+            for (const chiTiet of hoaDon.chiTietHoaDon) {
+                const bienThe = await BienThe.findById(chiTiet.idBienThe).populate('IDSanPham');
+                if (bienThe && bienThe.IDSanPham.toString() === sanphamId) {
+                    hasPurchased = true;
+                    break;
+                }
             }
-            const { userId, sanphamId, XepHang, BinhLuan } = req.body;
+            if (hasPurchased) break;
+        }
 
-            // const hinhAnh = req.file ? req.file.path.replace('public', process.env.URL_IMAGE) : null;
+        if (!hasPurchased) {
+            return res.status(400).json({ message: 'Bạn chưa mua sản phẩm này, không thể đánh giá.' });
+        }
 
-            const newDanhGia = new DanhGiamodel({
-                userId,
-                sanphamId,
-                XepHang,
-                BinhLuan,
-                NgayTao: new Date()
-            });
-            // if (req.file) {
+        // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+        const existingDanhGia = await DanhGiamodel.findOne({ userId, sanphamId });
+        if (existingDanhGia) {
+            return res.status(400).json({ message: 'Bạn đã đánh giá sản phẩm này rồi.' });
+        }
 
-            //     // Lưu đường dẫn ảnh vào cơ sở dữ liệu
-            //     newDanhGia.HinhAnh = req.file.path.replace('public', process.env.URL_IMAGE);
-            // }
-            let imagePaths = [];
-
-            if (req.files) {
-                console.log(req.files)
-                req.files.forEach(file => {
-                    imagePaths.push(file.path.replace('public', process.env.URL_IMAGE));
-                });
-                newDanhGia.HinhAnh = imagePaths
-            }
-            await newDanhGia.save();
-            res.status(201).json(newDanhGia);
+        // Tạo đánh giá mới
+        const newDanhGia = new DanhGiamodel({
+            userId,
+            sanphamId,
+            XepHang,
+            BinhLuan,
+            NgayTao: new Date(),
         });
+
+        // Xử lý upload hình ảnh nếu có
+        if (req.files && req.files.length > 0) {
+            const bucketName = process.env.VIETTEL_BUCKET;
+            const detailFiles = req.files.filter(file => file.fieldname === 'files');
+
+            let detailUrls = [];
+
+            if (detailFiles && detailFiles.length > 0) {
+                const uploadPromises = detailFiles.map(file => {
+                    let objectKey = "";
+                    if (file.mimetype.startsWith('image/')) {
+                        objectKey = `images/${uuidv4()}-${file.originalname}`;
+                    } else {
+                        return Promise.reject(new Error('Chỉ được upload image'));
+                    }
+                    return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+                });
+
+                try {
+                    detailUrls = await Promise.all(uploadPromises);
+                } catch (error) {
+                    console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+                    return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
+                }
+            }
+
+            newDanhGia.HinhAnh = detailUrls;
+        }
+
+        await newDanhGia.save();
+        return res.status(201).json(newDanhGia);
     } catch (error) {
         console.error('Lỗi khi tạo đánh giá:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đánh giá' });
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đánh giá' });
     }
 }
 
+
+// async function updateDanhGia(req, res) {
+//     try {
+//         await upload.single('file')(req, res, async (err) => {
+//             if (err) {
+//                 return res.status(400).json({ message: 'Error uploading image', error: err });
+//             }
+//             const { danhGiaId } = req.params;
+//             const { XepHang, BinhLuan } = req.body;
+//             //const hinhAnh = req.file ? req.file.path.replace('public', process.env.URL_IMAGE) : null;
+//             // Tìm đánh giá để cập nhật
+//             console.log(danhGiaId, XepHang, BinhLuan)
+//             let updatedDanhGia = await DanhGiamodel.findById(danhGiaId);
+//             if (!updatedDanhGia) {
+//                 return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
+//             }
+
+//             // Cập nhật đánh giá
+//             updatedDanhGia.XepHang = XepHang;
+//             updatedDanhGia.BinhLuan = BinhLuan;
+//             updatedDanhGia.NgayTao = new Date();
+
+//             if (req.file) {
+//                 // Xóa ảnh cũ (nếu có)
+//                 if (updatedDanhGia.HinhAnh) {
+//                     await deleteImage(updatedDanhGia.HinhAnh);
+//                 }
+//                 // Cập nhật đường dẫn ảnh mới
+//                 updatedDanhGia.HinhAnh = req.file.path.replace('public', process.env.URL_IMAGE);
+//             }
+
+//             // Lưu đánh giá đã cập nhật
+//             await updatedDanhGia.save();
+//             res.status(200).json(updatedDanhGia);
+//         });
+//     } catch (error) {
+//         console.error('Lỗi khi cập nhật đánh giá:', error);
+//         res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật đánh giá' });
+//     }
+// }
+
 async function updateDanhGia(req, res) {
     try {
-        await upload.single('file')(req, res, async (err) => {
-            if (err) {
-                return res.status(400).json({ message: 'Error uploading image', error: err });
-            }
-            const { danhGiaId } = req.params;
-            const { XepHang, BinhLuan } = req.body;
-            //const hinhAnh = req.file ? req.file.path.replace('public', process.env.URL_IMAGE) : null;
-            // Tìm đánh giá để cập nhật
-            console.log(danhGiaId, XepHang, BinhLuan)
-            let updatedDanhGia = await DanhGiamodel.findById(danhGiaId);
-            if (!updatedDanhGia) {
-                return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
-            }
+        const { danhGiaId } = req.params;
+        const { XepHang, BinhLuan } = req.body;
 
-            // Cập nhật đánh giá
-            updatedDanhGia.XepHang = XepHang;
-            updatedDanhGia.BinhLuan = BinhLuan;
-            updatedDanhGia.NgayTao = new Date();
+        let updatedDanhGia = await DanhGiamodel.findById(danhGiaId);
+        if (!updatedDanhGia) {
+            return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
+        }
 
-            if (req.file) {
-                // Xóa ảnh cũ (nếu có)
-                if (updatedDanhGia.HinhAnh) {
-                    await deleteImage(updatedDanhGia.HinhAnh);
+        // Cập nhật đánh giá
+        updatedDanhGia.XepHang = XepHang;
+        updatedDanhGia.BinhLuan = BinhLuan;
+        updatedDanhGia.NgayTao = new Date();
+
+        if (req.files && req.files.length > 0) {
+            const bucketName = process.env.VIETTEL_BUCKET;
+            const detailFiles = req.files.filter(file => file.fieldname === 'files');
+
+            let detailUrls = [];
+
+            if (detailFiles && detailFiles.length > 0) {
+                const uploadPromises = detailFiles.map(file => {
+                    let objectKey = "";
+                    if (file.mimetype.startsWith('image/')) {
+                        objectKey = `images/${uuidv4()}-${file.originalname}`;
+                    } else {
+                        return Promise.reject(new Error('Chỉ được upload image'));
+                    }
+                    return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+                });
+
+                try {
+                    detailUrls = await Promise.all(uploadPromises);
+                } catch (error) {
+                    console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+                    return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
                 }
-                // Cập nhật đường dẫn ảnh mới
-                updatedDanhGia.HinhAnh = req.file.path.replace('public', process.env.URL_IMAGE);
             }
 
-            // Lưu đánh giá đã cập nhật
-            await updatedDanhGia.save();
-            res.status(200).json(updatedDanhGia);
-        });
+            const oldImages = updatedDanhGia.HinhAnh || [];
+            const newImages = detailUrls;
+
+            const combinedImages = [...new Set([...oldImages, ...newImages])];
+            const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
+
+            for (const image of imagesToDelete) {
+                await deleteImage(image);
+            }
+
+            updatedDanhGia.HinhAnh = combinedImages.filter(image => !imagesToDelete.includes(image));
+        }
+
+        await updatedDanhGia.save();
+        res.status(200).json({ message: 'Cập nhật đánh giá thành công', updatedDanhGia });
     } catch (error) {
         console.error('Lỗi khi cập nhật đánh giá:', error);
         res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật đánh giá' });
     }
-}
+};
+
 
 
 async function updateLike(req, res) {

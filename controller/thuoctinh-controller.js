@@ -132,18 +132,49 @@ async function updateThuocTinh(req, res, next) {
     }
 }
 
+// async function deleteThuocTinh(req, res, next) {
+//     const { ThuocTinhID } = req.params;
+//     try {
+//         const updatedThuocTinh = await ThuocTinhModel.findByIdAndUpdate(
+//             ThuocTinhID,
+//             { isDeleted: true },
+//             { new: true }
+//         );
+//         if (!updatedThuocTinh) {
+//             return res.status(404).json({ message: 'Không tìm thấy thuộc tính' });
+//         }
+//         await ThuocTinhGiaTriModel.updateMany({ ThuocTinhID }, { isDeleted: true });
+
+//         return res.status(200).json({ message: 'Xóa thuộc tính thành công' });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Lỗi khi xóa thuộc tính' });
+//     }
+// }
 async function deleteThuocTinh(req, res, next) {
-    const { ThuocTinhID } = req.params;
+    const { ThuocTinhID } = req.params; // Lấy _id từ params
     try {
+        // Tìm thuộc tính theo _id
+        const thuocTinh = await ThuocTinhModel.findById(_id);
+
+        // Kiểm tra xem có tồn tại và ThuocTinhID có phải là "SPspimple" không
+        if (!thuocTinh) {
+            return res.status(404).json({ message: 'Không tìm thấy thuộc tính' });
+        }
+
+        if (thuocTinh.ThuocTinhID === 'SPspimple') {
+            return res.status(400).json({ message: 'Thuộc tính với ThuocTinhID "SPspimple" không được phép xóa.' });
+        }
+
+        // Cập nhật isDeleted cho thuộc tính
         const updatedThuocTinh = await ThuocTinhModel.findByIdAndUpdate(
             ThuocTinhID,
             { isDeleted: true },
             { new: true }
         );
-        if (!updatedThuocTinh) {
-            return res.status(404).json({ message: 'Không tìm thấy thuộc tính' });
-        }
-        await ThuocTinhGiaTriModel.updateMany({ ThuocTinhID }, { isDeleted: true });
+
+        // Cập nhật isDeleted cho tất cả các giá trị thuộc tính liên quan
+        await ThuocTinhGiaTriModel.updateMany({ ThuocTinhID: ThuocTinhID }, { isDeleted: true });
 
         return res.status(200).json({ message: 'Xóa thuộc tính thành công' });
     } catch (error) {

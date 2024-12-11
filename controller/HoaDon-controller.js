@@ -114,7 +114,7 @@ async function getHoaDonByHoKinhDoanhId(req, res) {
       return res.status(400).json({ message: "Thiếu thông tin hokinhdoanhid" });
     }
 
-    const hoadon = await HoaDonModel.find({ hoKinhDoanhId: userId })
+    const hoadon = await HoaDonModel.find({ hoKinhDoanhId: userId }).sort({ NgayTao: -1 })
       // .populate("userId")
       // .populate('khuyenmaiId')
       // .populate('transactionId')
@@ -143,7 +143,7 @@ async function getHoaDonByHoaDonId(req, res) {
       return res.status(400).json({ message: "Thiếu thông tin userid" });
     }
 
-    const hoadon = await HoaDonModel.findById(hoadonId)
+    const hoadon = await HoaDonModel.findById(hoadonId).sort({ NgayTao: -1 })
     // .populate("userId")
     //.populate('khuyenmaiId')
     // .populate({
@@ -188,7 +188,7 @@ async function getHoaDonByHoaDonForHoKinhDoanhId(req, res) {
             },
           },
         ],
-      });
+      }).sort({ NgayTao: -1 });
     if (!hoadon) {
       return res.status(404).json({ message: "Không tìm thấy hoa don" });
     }
@@ -218,7 +218,7 @@ async function getHoaDonByHoaDonIdFullVersion(req, res) {
           path: 'IDSanPham',
           model: 'SanPham' // Thay 'SanPham' bằng tên model của bạn
         }
-      });
+      }).sort({ NgayTao: -1 });
     if (!hoadon) {
       return res.status(404).json({ message: "Không tìm thấy hoa don" });
     }
@@ -314,6 +314,80 @@ async function getHoaDonByHoaDonIdFullVersion(req, res) {
 // }
 
 
+// async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
+//   const { userId, diaChiMoi, ghiChu = "no", TongTien, mergedCart } = req.body;
+//   const TrangThai = 0;
+
+//   try {
+//     const user = await UserModel.findById(userId);
+//     // console.log(removeAccents(user.tenNguoiDung));
+//     const hoaDonMap = {};
+//     const bienTheIds = []
+//     // console.log("mergedCart2", mergedCart)
+//     for (const item of mergedCart.mergedCart) {
+//       // console.log("item", item)
+//       // console.log("user", item.user)
+//       // console.log("sanpham", item.sanPhamList)
+
+//       const hoKinhDoanhId = item.user._id;
+
+//       if (!hoaDonMap[hoKinhDoanhId]) {
+//         hoaDonMap[hoKinhDoanhId] = {
+//           hoKinhDoanhId,
+//           userId,
+//           diaChi: diaChiMoi,
+//           TrangThai,
+//           chiTietHoaDon: [],
+//           TongTien: 0,
+//           GhiChu: ghiChu
+//         };
+//       }
+
+//       item.sanPhamList.forEach(sanPhamItem => {
+//         sanPhamItem.chiTietGioHangs.forEach(chiTiet => {
+//           hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
+//             idBienThe: chiTiet.idBienThe._id,
+//             soLuong: chiTiet.soLuong,
+//             donGia: chiTiet.donGia
+//           });
+//           hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
+//           bienTheIds.push(chiTiet._id); // Lưu trữ ID của chi tiết giỏ hàng để xóa sau này
+//         });
+//       });
+
+//     }
+
+//     // Lưu từng hóa đơn và cập nhật số lượng sản phẩm
+//     let hoadon = [];
+//     for (const hoKinhDoanhId in hoaDonMap) {
+//       const hoaDonData = hoaDonMap[hoKinhDoanhId];
+//       const newHoaDon = new HoaDonModel(hoaDonData);
+//       const dulieuhoadon = await newHoaDon.save();
+//       hoadon.push(dulieuhoadon)
+
+//       for (const chiTiet of hoaDonData.chiTietHoaDon) {
+//         await BienThe.findOneAndUpdate(
+//           { _id: chiTiet.idBienThe },
+//           { $inc: { soLuong: -chiTiet.soLuong } }
+//         );
+
+//         await SanPham.findOneAndUpdate(
+//           { _id: chiTiet.idBienThe.IDSanPham },
+//           {
+//             $inc: { soLuongDaBan: chiTiet.soLuong },
+//             $inc: { SoLuongHienTai: -chiTiet.soLuong }
+//           }
+//         );
+//       }
+//     }
+//     await GioHangModel.updateOne({ userId }, { $pull: { chiTietGioHang: { _id: { $in: bienTheIds } } } });
+//     // console.log({ message: 'Tạo hóa đơn thành công', hoadon })
+//     return res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Lỗi khi tạo đơn hàng' });
+//   }
+// }
 async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
   const { userId, diaChiMoi, ghiChu = "no", TongTien, mergedCart } = req.body;
   const TrangThai = 0;
@@ -323,6 +397,8 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     // console.log(removeAccents(user.tenNguoiDung));
     const hoaDonMap = {};
     const bienTheIds = []
+    console.log("Dữ liệu giỏ hàng mergedCart: ", mergedCart);
+
     // console.log("mergedCart2", mergedCart)
     for (const item of mergedCart.mergedCart) {
       // console.log("item", item)
@@ -352,6 +428,8 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
           });
           hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
           bienTheIds.push(chiTiet._id); // Lưu trữ ID của chi tiết giỏ hàng để xóa sau này
+
+          console.log("ID cần xóa từ giỏ hàng: ", chiTiet._id);
         });
       });
 
@@ -380,6 +458,7 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
         );
       }
     }
+    console.log("Các chi tiết giỏ hàng sẽ bị xóa: ", bienTheIds);
     await GioHangModel.updateOne({ userId }, { $pull: { chiTietGioHang: { _id: { $in: bienTheIds } } } });
     // console.log({ message: 'Tạo hóa đơn thành công', hoadon })
     return res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon });
@@ -388,7 +467,6 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     return res.status(500).json({ message: 'Lỗi khi tạo đơn hàng' });
   }
 }
-
 
 
 
@@ -413,12 +491,8 @@ async function createOrder(orderData) {
     });
     return response.data;
   } catch (error) {
-    console.error('Error creating order:', error);
-    let errorMessage = 'Error creating order';
-    if (error.response) {
-      errorMessage = error.response.data.message || error.response.statusText;
-    }
-    throw new Error(errorMessage);
+    console.error(error);
+    return res.status(500).json({ message: 'Lỗi khi tạo thanh toán' });
   }
 }
 function calculateDiscountedItems(items, discountValue, totalQuantity) {
@@ -435,6 +509,10 @@ function calculateDiscountedItems(items, discountValue, totalQuantity) {
 async function updateTransactionHoaDon(req, res, next) {
   const hoadonId = req.params.hoadonId
   const { transactionId, khuyenmaiId, giaTriGiam = 0 } = req.body;
+  let transactionIdSave_inMongoodb = transactionId
+  if (transactionId !== 0 || transactionId !== 111) {
+    transactionIdSave_inMongoodb = 999
+  }
   console.log(khuyenmaiId, giaTriGiam)
   try {
     const hoadon = await HoaDonModel.findById(hoadonId).populate("userId"); // Lấy thông tin đơn hàng từ DB
@@ -495,7 +573,7 @@ async function updateTransactionHoaDon(req, res, next) {
         { $inc: { SoLuongHienTai: -1 } }
       );
     }
-    hoadon.transactionId = transactionId;
+    hoadon.transactionId = transactionIdSave_inMongoodb;
     hoadon.payment_url = donhangmoi.data.payment_url
     hoadon.mrc_order_id = orderIdbaokim
     hoadon.order_id = donhangmoi.data.order_id
@@ -592,7 +670,10 @@ async function updateTransactionHoaDon(req, res, next) {
 
 async function updateTransactionlistHoaDon(req, res, next) {
   const { transactionId, khuyenmaiId, giaTriGiam = 0, hoadon } = req.body;
-  console.log("transactionId", transactionId)
+  let transactionIdSave_inMongoodb = transactionId
+  if (transactionId !== 0 || transactionId !== 111) {
+    transactionIdSave_inMongoodb = 999
+  }
   try {
     const updatedHoadons = [];
     for (const hoadonId of hoadon) {
@@ -652,7 +733,7 @@ async function updateTransactionlistHoaDon(req, res, next) {
         );
       }
 
-      hoadon.transactionId = transactionId;
+      hoadon.transactionId = transactionIdSave_inMongoodb;
       hoadon.payment_url = donhangmoi.data.payment_url;
       hoadon.mrc_order_id = orderIdbaokim;
       hoadon.order_id = donhangmoi.data.order_id;

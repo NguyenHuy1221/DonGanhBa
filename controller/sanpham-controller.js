@@ -21,7 +21,7 @@ const HoaDon = require("../models/HoaDonSchema");
 
 const GiohangModel = require("../models/GioHangSchema")
 
-const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
+const { uploadFileToViettelCloud } = require("../untils/index")
 const { checkDuplicateGiaTriThuocTinh } = require("../helpers/helpers")
 const { v4: uuidv4 } = require('uuid');
 // const { upload } = require("../untils/index");
@@ -1029,7 +1029,7 @@ async function getlistBienThe(req, res, next) {
   const { IDSanPham } = req.params;
 
   try {
-    const BienThe = await BienTheSchema.find({ IDSanPham: IDSanPham }).populate('KetHopThuocTinh.IDGiaTriThuocTinh');
+    const BienThe = await BienTheSchema.find({ IDSanPham: IDSanPham, isDeleted: false }).populate('KetHopThuocTinh.IDGiaTriThuocTinh');
 
     res.status(200).json(BienThe);
   } catch (error) {
@@ -1180,7 +1180,7 @@ async function deleteBienTheThuCong(req, res, next) {
     });
 
     const gioHangs = await GiohangModel.find({
-      'chiTietHoaDon.idBienThe': IDBienThe
+      'chiTietGioHang.idBienThe': IDBienThe
     });
     // Kiểm tra xem có hóa đơn nào chứa biến thể cần xóa
     if (hoaDons.length > 0 || gioHangs.length > 0) {
@@ -1274,8 +1274,8 @@ async function getlistPageSanPham(req, res, next) {
     const page = parseInt(req.params.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
-    const sanphams = await SanPhamModel.find().skip(skip).limit(limit).populate("userId");
+    //true chi hien sp ok
+    const sanphams = await SanPhamModel.find({ SanPhamMoi: false, TinhTrang: "Còn hàng" }).skip(skip).limit(limit).populate("userId");
     const totalProducts = await SanPhamModel.countDocuments();
 
     let favoritedProductIds = [];
@@ -1304,7 +1304,7 @@ async function getlistBienTheInSanPham(req, res, next) {
   const { IDSanPham } = req.params;
   console.log(IDSanPham);
   try {
-    const bienThe = await BienTheSchema.find({ IDSanPham: IDSanPham }).populate(
+    const bienThe = await BienTheSchema.find({ IDSanPham: IDSanPham, isDeleted: false }).populate(
       "KetHopThuocTinh.IDGiaTriThuocTinh"
     );
 
@@ -1336,7 +1336,7 @@ async function findSanPhamByDanhMuc(req, res, next) {
   const { IDDanhMuc } = req.params;
 
   try {
-    const sanphams = await SanPhamModel.find({ IDDanhMuc });
+    const sanphams = await SanPhamModel.find({ SanPhamMoi: false, TinhTrang: "Còn hàng", IDDanhMuc });
 
     if (!sanphams || sanphams.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
@@ -1353,7 +1353,7 @@ async function findSanPhamByDanhMuc(req, res, next) {
 
 async function sapXepSanPhamTheoGia(req, res, next) {
   try {
-    const sanPhams = await SanPhamModel.find().sort({ DonGiaBan: 1 }); // Sắp xếp tăng dần
+    const sanPhams = await SanPhamModel.find({ SanPhamMoi: false, TinhTrang: "Còn hàng" }).sort({ DonGiaBan: 1 }); // Sắp xếp tăng dần
 
     return res.status(200).json(sanPhams);
   } catch (error) {
@@ -1363,7 +1363,7 @@ async function sapXepSanPhamTheoGia(req, res, next) {
 }
 async function sapXepSanPhamTheoGiaGiamDan(req, res, next) {
   try {
-    const sanPhams = await SanPhamModel.find().sort({ DonGiaBan: -1 }); // Sắp xếp tăng dần
+    const sanPhams = await SanPhamModel.find({ SanPhamMoi: false, TinhTrang: "Còn hàng", }).sort({ DonGiaBan: -1 }); // Sắp xếp tăng dần
 
     return res.status(200).json(sanPhams);
   } catch (error) {
@@ -1374,7 +1374,7 @@ async function sapXepSanPhamTheoGiaGiamDan(req, res, next) {
 
 async function sapXepSanPhamTheoNgayTao(req, res, next) {
   try {
-    const sanPhams = await SanPhamModel.find().sort({ NgayTao: 1 }); // Sắp xếp tăng dần
+    const sanPhams = await SanPhamModel.find({ SanPhamMoi: false, TinhTrang: "Còn hàng" }).sort({ NgayTao: 1 }); // Sắp xếp tăng dần
 
     return res.status(200).json(sanPhams);
   } catch (error) {
@@ -1384,7 +1384,7 @@ async function sapXepSanPhamTheoNgayTao(req, res, next) {
 }
 async function sapXepSanPhamNgayTaoGiamDan(req, res, next) {
   try {
-    const sanPhams = await SanPhamModel.find().sort({ NgayTao: -1 }); // Sắp xếp tăng dần
+    const sanPhams = await SanPhamModel.find({ SanPhamMoi: false, TinhTrang: "Còn hàng", }).sort({ NgayTao: -1 }); // Sắp xếp tăng dần
 
     return res.status(200).json(sanPhams);
   } catch (error) {
@@ -1397,7 +1397,14 @@ async function sapXepSanPhamBanChayNhat(req, res, next) {
   try {
     const sanPhams = await SanPhamModel.aggregate([
       {
+        $match: {
+          SanPhamMoi: false,
+          TinhTrang: "Còn hàng",
+        },
+      },
+      {
         $addFields: {
+
           SoLuongDaBan: { $subtract: ["$SoLuongNhap", "$SoLuongHienTai"] },
         },
       },
@@ -1413,7 +1420,9 @@ async function sapXepSanPhamBanChayNhat(req, res, next) {
 }
 async function sapXepSanPhamCoGiamGia(req, res, next) {
   try {
-    const sanPhams = await SanPhamModel.find({ PhanTramGiamGia: { $gt: 0 } });
+    const sanPhams = await SanPhamModel.find({
+      SanPhamMoi: false, TinhTrang: "Còn hàng", PhanTramGiamGia: { $gt: 0 }
+    });
 
     return res.status(200).json(sanPhams);
   } catch (error) {
@@ -1443,16 +1452,17 @@ async function findSanPhamByDanhMuc(req, res, next) {
 async function searchSanPham(req, res, next) {
   try {
     const { TenSanPham, userId, yeuThichId } = req.query;
-    const tenSanPhamKhongDau = removeAccents(TenSanPham.toLowerCase());
+    // const tenSanPhamKhongDau = removeAccents(TenSanPham.toLowerCase());
 
     // Biểu thức chính quy linh hoạt hơn, bao gồm khoảng trắng và các ký tự đặc biệt
-    const regex = new RegExp(`.*${tenSanPhamKhongDau}.*`, 'gi');
+    const regex = new RegExp(`.*${TenSanPham}.*`, 'gi');
 
     // Tìm kiếm, thêm index nếu chưa có
     const sanphams = await SanPhamModel.find({
+      SanPhamMoi: false, TinhTrang: "Còn hàng",
       TenSanPham: { $regex: regex }
     }).collation({ locale: 'vi' })
-      .populate("userId"); // Sử dụng collation cho tiếng Việt
+      .populate("userId").exec(); // Sử dụng collation cho tiếng Việt
 
     let favoritedProductIds = [];
     if (userId && yeuThichId) {

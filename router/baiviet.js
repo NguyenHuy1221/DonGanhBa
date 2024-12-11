@@ -1,5 +1,6 @@
 const express = require("express");
 const baivietRouter = express.Router();
+const { uploadmemory } = require("../untils/index")
 
 const {
     getListBaiViet,
@@ -24,11 +25,11 @@ baivietRouter.get("/getBaiVietById/:userId", function (req, res) {
     return getBaiVietById(req, res);
 });
 
-baivietRouter.post("/createBaiViet", function (req, res) {
+baivietRouter.post("/createBaiViet", uploadmemory.array("files", 10), function (req, res) {
     return createBaiViet(req, res);
 });
 
-baivietRouter.put("/updateBaiViet/:baivietId", function (req, res) {
+baivietRouter.put("/updateBaiViet/:baivietId", uploadmemory.array("files", 10), function (req, res) {
     return updateBaiViet(req, res);
 });
 baivietRouter.put("/updateLike/:baivietId/:userId", function (req, res) {

@@ -1,5 +1,7 @@
 const express = require('express');
 const yeucaudangkyRouter = express.Router();
+const { uploadmemory } = require("../untils/index")
+
 const {
     createYeuCauDangKy,
     getListYeuCauDangKy,
@@ -9,7 +11,7 @@ const {
     updateDiaChiHoKinhDoanh,
 } = require("../controller/yeucaudangky")
 
-yeucaudangkyRouter.post('/createYeuCauDangKy', async function (req, res) {
+yeucaudangkyRouter.post('/createYeuCauDangKy', uploadmemory.single("file", 1), async function (req, res) {
     return createYeuCauDangKy(req, res);
 })
 

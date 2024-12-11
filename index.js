@@ -24,7 +24,7 @@ const http = require("http"); // Needed to set up a server with socket.io
 var server = http.createServer(app); // Use http server
 var io = require("socket.io")(server, {
   cors: {
-    origin: ["https://peacock-wealthy-vaguely.ngrok-free.app", "http://61.14.233.64:3000"],
+    origin: ["https://peacock-wealthy-vaguely.ngrok-free.app", "http://61.14.233.64:3000", "https://resolved-thankfully-collie.ngrok-free.app"],
     methods: ["GET", "POST"],
     credentials: true,
   },

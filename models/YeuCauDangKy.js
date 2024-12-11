@@ -7,6 +7,8 @@ const YeuCauDangKySchema = new Schema({
     soluongloaisanpham: { type: Number },
     soluongsanpham: { type: Number },
     ghiChu: { type: String },
+    maSoThue: { type: String },
+    anhGiayPhepHoKinhDoanh: { type: String },
     diaChi: {
         tinhThanhPho: String,
         quanHuyen: String,

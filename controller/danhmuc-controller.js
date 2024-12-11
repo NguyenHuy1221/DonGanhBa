@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 require("dotenv").config();
 const multer = require("multer");
+const { uploadFileToViettelCloud } = require("../untils/index")
 
 
 //ham lay danh sach thuoc tinh
@@ -189,85 +190,192 @@ const { upload } = require("../untils/index");
 
 
 
-async function createDanhMucCha(req, res, next) {
+// async function createDanhMucCha(req, res, next) {
+//   try {
+//     upload.single('file')(req, res, async (err) => {
+//       if (err instanceof multer.MulterError) {
+//         return res.status(500).json({ error: err });
+//       } else if (err) {
+//         return res.status(500).json({
+//           error: err
+//         });
+//       }
+
+//       const { IDDanhMuc, TenDanhMuc } = req.body;
+//       console.log(IDDanhMuc, TenDanhMuc)
+//       if (!IDDanhMuc || !TenDanhMuc || !req.file) {
+//         return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+//       }
+
+
+//       const newPath = req.file.path.replace(
+//         "public",
+//         process.env.URL_IMAGE
+//       );
+//       try {
+//         const newDanhMuc = await DanhMucModel.create({
+//           IDDanhMuc,
+//           TenDanhMuc,
+//           AnhDanhMuc: newPath,
+//           DanhMucCon: []
+//         });
+
+//         res.status(201).json(newDanhMuc);
+//       } catch (error) {
+//         console.error('Lỗi khi tạo danh mục:', error);
+//         // Xử lý lỗi cụ thể của Mongoose (ví dụ: ValidationError, DuplicateKeyError)
+//         res.status(500).json({ message: 'Lỗi server', error });
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Lỗi chung:', error);
+//     res.status(500).json({ message: 'Lỗi server', error });
+//   }
+// }
+
+async function createDanhMucCha(req, res) {
   try {
-    upload.single('file')(req, res, async (err) => {
-      if (err instanceof multer.MulterError) {
-        return res.status(500).json({ error: err });
-      } else if (err) {
-        return res.status(500).json({
-          error: err
-        });
+    const { IDDanhMuc, TenDanhMuc } = req.body;
+
+    if (!IDDanhMuc || !TenDanhMuc || !req.file) {
+      return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+    }
+
+    const bucketName = process.env.VIETTEL_BUCKET;
+    const file = req.file;
+
+    let imageUrl = "";
+
+    if (file) {
+      let objectKey = "";
+      if (file.mimetype.startsWith('image/')) {
+        objectKey = `images/${uuidv4()}-${file.originalname}`;
+      } else {
+        return res.status(400).json({ message: 'Chỉ được upload image' });
       }
-
-      const { IDDanhMuc, TenDanhMuc } = req.body;
-      console.log(IDDanhMuc, TenDanhMuc)
-      if (!IDDanhMuc || !TenDanhMuc || !req.file) {
-        return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
-      }
-
-
-      const newPath = req.file.path.replace(
-        "public",
-        process.env.URL_IMAGE
-      );
       try {
-        const newDanhMuc = await DanhMucModel.create({
-          IDDanhMuc,
-          TenDanhMuc,
-          AnhDanhMuc: newPath,
-          DanhMucCon: []
-        });
-
-        res.status(201).json(newDanhMuc);
+        imageUrl = await uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
       } catch (error) {
-        console.error('Lỗi khi tạo danh mục:', error);
-        // Xử lý lỗi cụ thể của Mongoose (ví dụ: ValidationError, DuplicateKeyError)
-        res.status(500).json({ message: 'Lỗi server', error });
+        console.error('Lỗi khi tải lên ảnh:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh' });
       }
-    });
+
+    }
+
+    try {
+      const newDanhMuc = await DanhMucModel.create({
+        IDDanhMuc,
+        TenDanhMuc,
+        AnhDanhMuc: imageUrl,
+        DanhMucCon: []
+      });
+
+      res.status(201).json(newDanhMuc);
+    } catch (error) {
+      console.error('Lỗi khi tạo danh mục:', error);
+      res.status(500).json({ message: 'Lỗi server', error });
+    }
   } catch (error) {
     console.error('Lỗi chung:', error);
     res.status(500).json({ message: 'Lỗi server', error });
   }
-}
-async function updateDanhMucCha(req, res, next) {
+};
+
+
+async function updateDanhMucCha(req, res) {
   try {
-    upload.single('file')(req, res, async (err) => {
-      if (err instanceof multer.MulterError) {
-        return res.status(500).json({ error: err });
-      } else if (err) {
-        return res.status(500).json({ error: err });
-      }
+    const { id } = req.params;
+    const { IDDanhMuc, TenDanhMuc } = req.body;
+    let imageUrl = danhmuc.AnhDanhMuc;
 
-      const { id } = req.params;
-      const { IDDanhMuc, TenDanhMuc } = req.body;
-      let updateData = { IDDanhMuc, TenDanhMuc };
+    const danhmuc = await DanhMucModel.findById(id)
+    if (!danhmuc) {
+      return res.status(404).json({ message: 'Danh mục không tồn tại' });
+    }
 
-      if (req.file) {
-        const newPath = req.file.path.replace("public", process.env.URL_IMAGE);
-        updateData.AnhDanhMuc = newPath;
+    // Kiểm tra và tải lên ảnh mới nếu có
+    if (req.file) {
+      const bucketName = process.env.VIETTEL_BUCKET;
+      const file = req.file;
 
-        // Xóa ảnh cũ
-        const danhMuc = await DanhMucModel.findById(id);
-        if (danhMuc && danhMuc.AnhDanhMuc) {
-          const oldImagePath = path.join(__dirname, '..', 'public', danhMuc.AnhDanhMuc.replace(process.env.URL_IMAGE, ''));
-          fs.unlink(oldImagePath, (err) => {
-            if (err) {
-              console.error('Lỗi khi xóa ảnh cũ:', err);
-            }
-          });
+
+      // Kiểm tra loại tệp tin
+      if (file.mimetype.startsWith('image/')) {
+        const objectKey = `images/${uuidv4()}-${file.originalname}`;
+        try {
+          imageUrl = await uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+        } catch (error) {
+          console.error('Lỗi khi tải lên ảnh:', error);
+          return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh' });
         }
+      } else {
+        return res.status(400).json({ message: 'Chỉ được upload image' });
       }
+      danhmuc.AnhDanhMuc = imageUrl
+      //updateData.AnhDanhMuc = imageUrl;
 
-      const updatedDanhMucCha = await DanhMucModel.findByIdAndUpdate(id, updateData, { new: true });
-      res.status(200).json(updatedDanhMucCha);
-    });
+      // // Xóa ảnh cũ từ Viettel Cloud
+      // const danhMuc = await DanhMucModel.findById(id);
+      // if (danhMuc && danhMuc.AnhDanhMuc) {
+      //   const oldImagePath = danhMuc.AnhDanhMuc.replace(process.env.URL_IMAGE, '');
+      //   try {
+      //     await deleteImageFromViettelCloud(oldImagePath);
+      //   } catch (err) {
+      //     console.error('Lỗi khi xóa ảnh cũ:', err);
+      //   }
+      // }
+    }
+    if (IDDanhMuc != undefined) { danhmuc.IDDanhMuc = IDDanhMuc }
+    if (TenDanhMuc != undefined) { danhmuc.TenDanhMuc = TenDanhMuc }
+    await danhmuc.save()
+    // Cập nhật thông tin danh mục
+    //const updatedDanhMucCha = await DanhMucModel.findByIdAndUpdate(id, updateData, { new: true });
+    res.status(200).json(danhmuc);
   } catch (error) {
     console.error('Lỗi khi sửa danh mục cha:', error);
     res.status(500).json({ message: 'Lỗi server', error });
   }
 }
+
+
+
+// async function updateDanhMucCha(req, res, next) {
+//   try {
+//     upload.single('file')(req, res, async (err) => {
+//       if (err instanceof multer.MulterError) {
+//         return res.status(500).json({ error: err });
+//       } else if (err) {
+//         return res.status(500).json({ error: err });
+//       }
+
+//       const { id } = req.params;
+//       const { IDDanhMuc, TenDanhMuc } = req.body;
+//       let updateData = { IDDanhMuc, TenDanhMuc };
+
+//       if (req.file) {
+//         const newPath = req.file.path.replace("public", process.env.URL_IMAGE);
+//         updateData.AnhDanhMuc = newPath;
+
+//         // Xóa ảnh cũ
+//         const danhMuc = await DanhMucModel.findById(id);
+//         if (danhMuc && danhMuc.AnhDanhMuc) {
+//           const oldImagePath = path.join(__dirname, '..', 'public', danhMuc.AnhDanhMuc.replace(process.env.URL_IMAGE, ''));
+//           fs.unlink(oldImagePath, (err) => {
+//             if (err) {
+//               console.error('Lỗi khi xóa ảnh cũ:', err);
+//             }
+//           });
+//         }
+//       }
+
+//       const updatedDanhMucCha = await DanhMucModel.findByIdAndUpdate(id, updateData, { new: true });
+//       res.status(200).json(updatedDanhMucCha);
+//     });
+//   } catch (error) {
+//     console.error('Lỗi khi sửa danh mục cha:', error);
+//     res.status(500).json({ message: 'Lỗi server', error });
+//   }
+// }
 async function deleteDanhMucCha(req, res, next) {
   try {
     const { id } = req.params;

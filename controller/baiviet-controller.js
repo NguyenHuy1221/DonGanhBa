@@ -4,6 +4,8 @@ const BaiVietSchema = require("../models/baivietSchema")
 const UserModel = require("../models/NguoiDungSchema")
 require("dotenv").config();
 const { upload } = require("../untils/index");
+const { uploadFileToViettelCloud } = require("../untils/index")
+const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 //ham lay danh sach thuoc tinh
@@ -121,95 +123,185 @@ async function getBaiVietById(req, res, next) {
 
 
 async function createBaiViet(req, res) {
+    const { userId, tieude, noidung } = req.body;
     try {
-        await upload.array('files')(req, res, async (err) => {
-            if (err) {
-                return res.status(400).json({ message: 'Error uploading image', error: err });
-            }
-            const { userId, tieude, noidung, tags } = req.body;
+        // await upload.array('files')(req, res, async (err) => {
+        //     if (err) {
+        //         return res.status(400).json({ message: 'Error uploading image', error: err });
+        //     }
+        //     //code upload
+        //     if (req.files) {
+        //         req.files.forEach(file => {
+        //             imagePaths.push(file.path.replace('public', process.env.URL_IMAGE));
+        //         });
+        //         newBaiViet.image = imagePaths
+        //     }
+        // });
+        const bucketName = process.env.VIETTEL_BUCKET;
+        const detailFiles = req.files && req.files.filter(file => file.fieldname === 'files');
 
-            const newBaiViet = new BaiVietSchema({
-                userId,
-                tieude,
-                noidung,
-                tags,
-                image: [],
-                binhluan: []
+        let detailUrls = []; // Upload ảnh đại diện nếu có 
+
+        if (detailFiles && detailFiles.length > 0) {
+            const uploadPromises = detailFiles.map(file => {
+                let objectKey = ""
+                if (file.mimetype.startsWith('image/')) {
+                    objectKey = `images/${uuidv4()}-${file.originalname}`;
+                } else {
+                    return res.status(400).json({ message: 'Chỉ được upload image' });
+                }
+                return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
             });
-            let imagePaths = [];
-
-            if (req.files) {
-                req.files.forEach(file => {
-                    imagePaths.push(file.path.replace('public', process.env.URL_IMAGE));
-                });
-                newBaiViet.image = imagePaths
+            try { detailUrls = await Promise.all(uploadPromises); } catch (error) {
+                console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+                return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
             }
-            const taobaiviet = await newBaiViet.save();
-            //const baiviet = await BaiVietSchema.findById(taobaiviet._id).populate("userId")
-            res.status(201).json({ message: 'Tạo bài viết thành công' });
+        }
+        // const hinhBoSungData = detailUrls.map((url) => ({
+        //     url, // URL đã tải lên
+        // }));
+        console.log(detailUrls)
+        const newBaiViet = new BaiVietSchema({
+            userId,
+            tieude,
+            noidung,
+            image: [],
+            binhluan: []
         });
+
+        if (detailUrls) {
+            newBaiViet.image = detailUrls
+        }
+
+        const taobaiviet = await newBaiViet.save();
+        //const baiviet = await BaiVietSchema.findById(taobaiviet._id).populate("userId")
+        res.status(201).json({ message: 'Tạo bài viết thành công' });
     } catch (error) {
         console.error('Lỗi khi tạo Bài viết:', error);
         res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo Bài viết' });
     }
 }
 
+// async function updateBaiViet(req, res) {
+//     try {
+//         await upload.array('files')(req, res, async (err) => {
+//             if (err) {
+//                 return res.status(400).json({ message: 'Error uploading image', error: err });
+//             }
+//             const { baivietId } = req.params;
+//             const { tieude, tags, noidung, userId } = req.body;
+//             let updatedBaiViet = await BaiVietSchema.findById(baivietId);
+//             if (!updatedBaiViet) {
+//                 return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
+//             } else if (userId != updatedBaiViet.userId) {
+//                 return res.status(404).json({ message: 'Bạn không phải người viết bài viết này' });
+
+//             }
+//             if (tieude !== undefined) updatedBaiViet.tieude = tieude;
+//             if (tags !== undefined) updatedBaiViet.tags = tags;
+//             if (noidung !== undefined) updatedBaiViet.noidung = noidung;
+
+
+
+//             updatedBaiViet.isUpdate = "true"
+//             if (req.files) {
+//                 console.log(req.files)
+//                 // req.files.forEach(file => {
+//                 //     imagePaths.push(file.path.replace('public', process.env.URL_IMAGE));
+//                 // });
+//                 // newBaiViet.image = imagePaths
+//                 // Lấy hình ảnh cũ từ bài viết 
+//                 const oldImages = updatedBaiViet.image || [];
+//                 // Lấy danh sách đường dẫn hình ảnh mới 
+//                 const newImages = req.files.map(file => file.path.replace('public', process.env.URL_IMAGE));
+//                 console.log("kiem tra du lieu", newImages)
+//                 // Kết hợp hình ảnh cũ và mới 
+//                 const combinedImages = [...new Set([...oldImages, ...newImages])];
+//                 // Xác định hình ảnh cũ cần xóa 
+//                 const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
+//                 for (const image of imagesToDelete) {
+//                     await deleteImage(image);
+//                     // Hàm xóa hình ảnh 
+//                 }
+//                 // Cập nhật mảng hình ảnh của bài viết 
+//                 updatedBaiViet.image = [...new Set([...combinedImages.filter(image => !imagesToDelete.includes(image)), ...newImages])];                // Lưu bài viết đã cập nhật 
+//                 //await updatedBaiViet.save(); res.status(200).json(updatedBaiViet);
+//             }
+
+//             // Lưu đánh giá đã cập nhật
+//             await updatedBaiViet.save();
+//             //res.status(200).json(updatedDanhGia);
+//             res.status(201).json({ message: 'cập nhập bài viết thành công' });
+//         });
+//     } catch (error) {
+//         console.error('Lỗi khi cập nhật đánh giá:', error);
+//         res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật đánh giá' });
+//     }
+// }
+
 async function updateBaiViet(req, res) {
     try {
-        await upload.array('files')(req, res, async (err) => {
-            if (err) {
-                return res.status(400).json({ message: 'Error uploading image', error: err });
-            }
-            const { baivietId } = req.params;
-            const { tieude, tags, noidung, userId } = req.body;
-            let updatedBaiViet = await BaiVietSchema.findById(baivietId);
-            if (!updatedBaiViet) {
-                return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
-            } else if (userId != updatedBaiViet.userId) {
-                return res.status(404).json({ message: 'Bạn không phải người viết bài viết này' });
+        const { baivietId } = req.params;
+        const { tieude, tags, noidung, userId } = req.body;
+        let updatedBaiViet = await BaiVietSchema.findById(baivietId);
 
-            }
-            if (tieude !== undefined) updatedBaiViet.tieude = tieude;
-            if (tags !== undefined) updatedBaiViet.tags = tags;
-            if (noidung !== undefined) updatedBaiViet.noidung = noidung;
+        if (!updatedBaiViet) {
+            return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
+        } else if (userId != updatedBaiViet.userId) {
+            return res.status(403).json({ message: 'Bạn không phải người viết bài viết này' });
+        }
 
+        if (tieude !== undefined) updatedBaiViet.tieude = tieude;
+        if (tags !== undefined) updatedBaiViet.tags = tags;
+        if (noidung !== undefined) updatedBaiViet.noidung = noidung;
 
+        updatedBaiViet.isUpdate = true;
 
-            updatedBaiViet.isUpdate = "true"
-            if (req.files) {
-                console.log(req.files)
-                // req.files.forEach(file => {
-                //     imagePaths.push(file.path.replace('public', process.env.URL_IMAGE));
-                // });
-                // newBaiViet.image = imagePaths
-                // Lấy hình ảnh cũ từ bài viết 
-                const oldImages = updatedBaiViet.image || [];
-                // Lấy danh sách đường dẫn hình ảnh mới 
-                const newImages = req.files.map(file => file.path.replace('public', process.env.URL_IMAGE));
-                console.log("kiem tra du lieu", newImages)
-                // Kết hợp hình ảnh cũ và mới 
-                const combinedImages = [...new Set([...oldImages, ...newImages])];
-                // Xác định hình ảnh cũ cần xóa 
-                const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
-                for (const image of imagesToDelete) {
-                    await deleteImage(image);
-                    // Hàm xóa hình ảnh 
+        if (req.files && req.files.length > 0) {
+            const bucketName = process.env.VIETTEL_BUCKET;
+            const detailFiles = req.files.filter(file => file.fieldname === 'files');
+
+            let detailUrls = [];
+
+            if (detailFiles && detailFiles.length > 0) {
+                const uploadPromises = detailFiles.map(file => {
+                    let objectKey = "";
+                    if (file.mimetype.startsWith('image/')) {
+                        objectKey = `images/${uuidv4()}-${file.originalname}`;
+                    } else {
+                        return Promise.reject(new Error('Chỉ được upload image'));
+                    }
+                    return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+                });
+
+                try {
+                    detailUrls = await Promise.all(uploadPromises);
+                } catch (error) {
+                    console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+                    return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
                 }
-                // Cập nhật mảng hình ảnh của bài viết 
-                updatedBaiViet.image = [...new Set([...combinedImages.filter(image => !imagesToDelete.includes(image)), ...newImages])];                // Lưu bài viết đã cập nhật 
-                //await updatedBaiViet.save(); res.status(200).json(updatedBaiViet);
             }
 
-            // Lưu đánh giá đã cập nhật
-            await updatedBaiViet.save();
-            //res.status(200).json(updatedDanhGia);
-            res.status(201).json({ message: 'cập nhập bài viết thành công' });
-        });
+            const oldImages = updatedBaiViet.image || [];
+            const newImages = detailUrls;
+
+            const combinedImages = [...new Set([...oldImages, ...newImages])];
+            const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
+
+            // for (const image of imagesToDelete) {
+            //     await deleteImage(image);
+            // }
+
+            updatedBaiViet.image = combinedImages.filter(image => !imagesToDelete.includes(image));
+        }
+
+        await updatedBaiViet.save();
+        res.status(200).json({ message: 'Cập nhật bài viết thành công', updatedBaiViet });
     } catch (error) {
-        console.error('Lỗi khi cập nhật đánh giá:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật đánh giá' });
+        console.error('Lỗi khi cập nhật bài viết:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật bài viết' });
     }
-}
+};
 
 
 async function updateLike(req, res) {

@@ -1,5 +1,7 @@
 const express = require('express');
 const danhmucRouter = express.Router();
+const { uploadmemory } = require("../untils/index")
+
 const {
     getlistDanhMuc,
     createDanhMucCha,
@@ -9,14 +11,14 @@ const {
     updateDanhMucCon,
     deleteDanhMucCon,
     getListDanhMucCon,
-    } = require("../controller/danhmuc-controller")
+} = require("../controller/danhmuc-controller")
 
-    danhmucRouter.get('/getlistDanhMuc', async function (req, res) {
-        return getlistDanhMuc(req, res);
-    })
-    
+danhmucRouter.get('/getlistDanhMuc', async function (req, res) {
+    return getlistDanhMuc(req, res);
+})
+
 //danh muc cha
-danhmucRouter.post('/createDanhMucCha', async function (req, res) {
+danhmucRouter.post('/createDanhMucCha', uploadmemory.single('file'), async function (req, res) {
     return createDanhMucCha(req, res);
 })
 

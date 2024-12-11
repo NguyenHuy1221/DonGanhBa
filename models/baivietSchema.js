@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const BaiVietSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     image: [String],
-    tieude: { type: String, required: true },
+    tieude: { type: String, required: false },
     noidung: { type: String },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     binhluan: [{

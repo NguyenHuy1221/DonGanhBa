@@ -181,7 +181,7 @@ async function deleteThuocTinhForSanPham(req, res) {
                 'chiTietHoaDon.idBienThe': bienThe._id
             });
             const gioHangs = await GiohangModel.find({
-                'chiTietHoaDon.idBienThe': bienThe._id
+                'chiTietGioHang.idBienThe': bienThe._id
             });
 
             if (hoaDons.length > 0 || gioHangs.length > 0) {

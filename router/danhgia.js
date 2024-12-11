@@ -1,5 +1,7 @@
 const express = require('express');
 const DanhGiaRouter = express.Router();
+const { uploadmemory } = require("../untils/index")
+
 const {
     getListDanhGiaAdmin,
     getListDanhGiaInSanPhamById,
@@ -21,11 +23,11 @@ DanhGiaRouter.get('/getListDanhGiaInSanPhamById/:IDSanPham/:userId', async funct
 })
 
 
-DanhGiaRouter.post('/createDanhGia', async function (req, res) {
+DanhGiaRouter.post('/createDanhGia', uploadmemory.array("files", 10), async function (req, res) {
     return createDanhGia(req, res);
 })
 
-DanhGiaRouter.post('/updateDanhGia/:danhGiaId', async function (req, res) {
+DanhGiaRouter.post('/updateDanhGia/:danhGiaId', uploadmemory.array("files", 10), async function (req, res) {
     return updateDanhGia(req, res);
 })
 

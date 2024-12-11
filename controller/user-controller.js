@@ -16,7 +16,7 @@ const YeuCauRutTienSchema = require("../models/YeuCauRutTienSchema")
 const FirebaseSchema = require("../models/FirebaseSchema")
 const nodemailer = require('nodemailer');
 const { sendVerificationEmail, createNewRequest, createThongBaoNoreq } = require('../helpers/helpers');
-
+const { uploadFileToViettelCloud } = require("../untils/index")
 
 
 async function verifyGoogleToken(token) {
@@ -570,35 +570,78 @@ async function ResendOTP(req, res) {
 const multer = require("multer");
 const { upload } = require("../untils/index");
 
-async function createAnhDaiDien(req, res, next) {
+// async function createAnhDaiDien(req, res, next) {
+//   try {
+//     upload.single("file")(req, res, async (err) => {
+//       if (err) {
+//         // Handle file upload errors
+//         console.error(err);
+//         return res.status(500).json({ message: "Error uploading file" });
+//       }
+
+//       const { IDNguoiDung } = req.params;
+//       if (!IDNguoiDung || !req.file) {
+//         return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
+//       }
+//       console.log(req.file)
+//       const newPath = req.file.path.replace("public", process.env.URL_IMAGE);
+//       try {
+//         const updateNguoiDung = await UserModel.findOneAndUpdate(
+//           { _id: IDNguoiDung },
+//           { anhDaiDien: newPath },
+//           { new: true }
+//         );
+
+//         res.status(201).json({ message: "Đổi ảnh đại diện thành công" });
+//       } catch (error) {
+//         console.error("Lỗi khi Sửa ảnh đại diện:", error);
+//         // Xử lý lỗi cụ thể của Mongoose (ví dụ: ValidationError, DuplicateKeyError)
+//         res.status(500).json({ message: "Lỗi server", error });
+//       }
+//     });
+//   } catch (error) {
+//     console.error("Lỗi chung:", error);
+//     res.status(500).json({ message: "Lỗi server", error });
+//   }
+// }
+
+async function createAnhDaiDien(req, res) {
   try {
-    upload.single("file")(req, res, async (err) => {
-      if (err) {
-        // Handle file upload errors
-        console.error(err);
-        return res.status(500).json({ message: "Error uploading file" });
-      }
+    const { IDNguoiDung } = req.params;
+    if (!IDNguoiDung || !req.file) {
+      return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
+    }
 
-      const { IDNguoiDung } = req.params;
-      if (!IDNguoiDung || !req.file) {
-        return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
-      }
-      console.log(req.file)
-      const newPath = req.file.path.replace("public", process.env.URL_IMAGE);
+    const bucketName = process.env.VIETTEL_BUCKET;
+    const file = req.file;
+
+    let imageUrl = "";
+
+    // Kiểm tra loại tệp tin
+    if (file.mimetype.startsWith('image/')) {
+      const objectKey = `images/${uuidv4()}-${file.originalname}`;
       try {
-        const updateNguoiDung = await UserModel.findOneAndUpdate(
-          { _id: IDNguoiDung },
-          { anhDaiDien: newPath },
-          { new: true }
-        );
-
-        res.status(201).json({ message: "Đổi ảnh đại diện thành công" });
+        imageUrl = await uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
       } catch (error) {
-        console.error("Lỗi khi Sửa ảnh đại diện:", error);
-        // Xử lý lỗi cụ thể của Mongoose (ví dụ: ValidationError, DuplicateKeyError)
-        res.status(500).json({ message: "Lỗi server", error });
+        console.error('Lỗi khi tải lên ảnh:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh' });
       }
-    });
+    } else {
+      return res.status(400).json({ message: 'Chỉ được upload image' });
+    }
+
+    try {
+      const updateNguoiDung = await UserModel.findOneAndUpdate(
+        { _id: IDNguoiDung },
+        { anhDaiDien: imageUrl },
+        { new: true }
+      );
+
+      res.status(201).json({ message: "Đổi ảnh đại diện thành công" });
+    } catch (error) {
+      console.error("Lỗi khi Sửa ảnh đại diện:", error);
+      res.status(500).json({ message: "Lỗi server", error });
+    }
   } catch (error) {
     console.error("Lỗi chung:", error);
     res.status(500).json({ message: "Lỗi server", error });

@@ -6,6 +6,8 @@ const path = require('path');
 const NguoiDungModel = require("../models/NguoiDungSchema")
 const { createThongBaoNoreq } = require("../helpers/helpers")
 const transporter = require("./mailer");
+const { uploadFileToViettelCloud } = require("../untils/index")
+const { v4: uuidv4 } = require('uuid');
 
 async function getListYeuCauDangKy(req, res, next) {
     try {
@@ -17,7 +19,7 @@ async function getListYeuCauDangKy(req, res, next) {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi lấy Bài viết đánh giá' });
+        return res.status(500).json({ message: 'Lỗi khi lấy Bài viết đánh giá' });
     }
 }
 
@@ -30,19 +32,44 @@ async function getYeuCauDangKyByUserId(req, res, next) {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi lấy Bài viết đánh giá' });
+        return res.status(500).json({ message: 'Lỗi khi lấy Bài viết đánh giá' });
     }
 }
 
 
 async function createYeuCauDangKy(req, res) {
     try {
-        const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang } = req.body;
+        const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang, maSoThue } = req.body;
+
+        if (!maSoThue || !diaChi || !req.file) {
+            return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+        }
         const yeucaudangky = await YeuCauDangKySchema.findOne({ userId: userId })
         if (yeucaudangky) {
             if (yeucaudangky.trangThai === "cho" || yeucaudangky.trangThai === "xacnhan") {
                 return res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
             }
+        }
+
+        const bucketName = process.env.VIETTEL_BUCKET;
+        const file = req.file;
+
+        let imageUrl = "";
+
+        if (file) {
+            let objectKey = "";
+            if (file.mimetype.startsWith('image/')) {
+                objectKey = `images/${uuidv4()}-${file.originalname}`;
+            } else {
+                return res.status(400).json({ message: 'Chỉ được upload image' });
+            }
+            try {
+                imageUrl = await uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+            } catch (error) {
+                console.error('Lỗi khi tải lên ảnh:', error);
+                return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh' });
+            }
+
         }
         const user = await NguoiDungModel.findById(userId)
         const newYeuCauDangKy = new YeuCauDangKySchema({
@@ -51,7 +78,9 @@ async function createYeuCauDangKy(req, res) {
             soluongloaisanpham,
             soluongsanpham,
             diaChi,
-            hinhthucgiaohang
+            hinhthucgiaohang,
+            maSoThue,
+            anhGiayPhepHoKinhDoanh: imageUrl
         });
         const mailOptionForAdmin = {
             from: process.env.EMAIL_USER,
@@ -67,11 +96,12 @@ async function createYeuCauDangKy(req, res) {
                 console.log("Email đã được gửi admin:", info.response);
             }
         });
+
         const taoYeuCauDangKy = await newYeuCauDangKy.save();
-        res.status(201).json({ message: 'Tạo Yêu cầu đăng ký thành công', taoYeuCauDangKy });
+        return res.status(201).json({ message: 'Tạo Yêu cầu đăng ký thành công', taoYeuCauDangKy });
     } catch (error) {
         console.error('Lỗi khi tạo Bài viết:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo Tạo Yêu cầu đăng ký' });
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo Tạo Yêu cầu đăng ký' });
     }
 }
 async function updateYeuCauDangKy(req, res, next) {
@@ -105,10 +135,10 @@ async function updateYeuCauDangKy(req, res, next) {
             await createThongBaoNoreq(yeuCauDangKy.userId, "Yêu cầu đăng ký trở thành hộ kinh doanh", "Rất tiếc , yêu cầu đăng ký của bạn đã bị từ chối")
 
         }
-        res.status(200).json({ message: "Cập nhập trạng thái đăng ký thành công" });
+        return res.status(200).json({ message: "Cập nhập trạng thái đăng ký thành công" });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi cập nhật trang thái hủy Đăng ký' });
+        return res.status(500).json({ message: 'Lỗi khi cập nhật trang thái hủy Đăng ký' });
     }
 }
 

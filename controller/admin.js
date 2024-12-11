@@ -382,7 +382,7 @@ async function getAdminYeuCauRutTien(req, res) {
     //if (Object.keys(filter).length === 0) filter.daXuLy = false;
 
     try {
-        const requests = await YeuCauRutTienSchema.find(filter).populate('userId')().sort({ createdAt: -1 })
+        const requests = await YeuCauRutTienSchema.find(filter).populate('userId').sort({ createdAt: -1 })
 
         return res.status(200).json({ requests });
     } catch (error) {
