@@ -6,6 +6,7 @@ require("dotenv").config();
 const multer = require("multer");
 const { uploadFileToViettelCloud } = require("../untils/index")
 
+const { v4: uuidv4 } = require('uuid');
 
 //ham lay danh sach thuoc tinh
 async function getlistDanhMuc(req, res, next) {
@@ -381,11 +382,9 @@ async function deleteDanhMucCha(req, res, next) {
   try {
     const { id } = req.params;
     const danhMucCha = await DanhMucModel.findByIdAndDelete(id);
-
     if (!danhMucCha) {
       return res.status(404).json({ message: 'Danh mục cha không tồn tại' });
     }
-
     res.status(200).json({ message: 'Xóa danh mục cha thành công' });
   } catch (error) {
     console.error('Lỗi khi xóa danh mục cha:', error);
