@@ -374,7 +374,7 @@ async function addBinhLuan(req, res) {
             });
 
         // Gửi thông báo (bạn có thể bỏ comment này để sử dụng)
-        await createThongBaoNoreq(baiViet.userId, "newCommentbaiviet");
+        await createThongBaoNoreq(baiViet.userId, "newCommentbaiviet", `${BinhLuan}`);
         return res.status(200).json(newbaiViet.binhluan);
     } catch (error) {
         console.error('Lỗi khi thêm Bình luận:', error);

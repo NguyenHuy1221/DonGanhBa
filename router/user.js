@@ -55,10 +55,14 @@ const {
   deleteYeuCauRutTienCoDieuKien,
   saveFcmTokenFireBase,
   loginXacMinh,
+  getHoKinhDoanhInFoNumberById,
 } = require("../controller/user-controller");
 
 userRoute.get("/showAllUser/:userId", function (req, res) {
   return getAllUsers(req, res);
+});
+userRoute.get("/getHoKinhDoanhInFoNumberById/:userId", function (req, res) {
+  return getHoKinhDoanhInFoNumberById(req, res);
 });
 
 // show user

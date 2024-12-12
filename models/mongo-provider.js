@@ -2,7 +2,9 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 // Kết nối MongoDB mà không cần các tùy chọn đã lỗi thời
-mongoose.connect(process.env.MONGO_URI);
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 50000 // Tăng thời gian timeout lên 50 giây
+});
 
 // Xử lý lỗi kết nối
 mongoose.connection.on("error", (err) => {

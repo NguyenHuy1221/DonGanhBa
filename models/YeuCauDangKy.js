@@ -4,7 +4,6 @@ const { convertToVietnamTimezone } = require('../middleware/index');
 
 const YeuCauDangKySchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    name: { type: String },
     soluongloaisanpham: { type: Number },
     soluongsanpham: { type: Number },
     gmail: { type: String },
@@ -18,8 +17,8 @@ const YeuCauDangKySchema = new Schema({
         duongThon: String,
         Name: { type: String },
         SoDienThoai: { type: String },
-        Name: { type: String },
         kinhdo: { type: String },
+        vido: { type: String }
     },
     hinhthucgiaohang: { type: String, enum: ['tugiao', 'denlay'], default: 'tugiao' },
     trangThai: { type: String, enum: ['cho', 'xacnhan', 'huy'], default: 'cho' },

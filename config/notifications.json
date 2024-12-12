@@ -20,8 +20,8 @@
         "noidung": "sản phẩm của bạn có một đánh giá mới"
     },
     "newCommentDanhGiaPhanHoi": {
-        "tieude": "Bài viết",
-        "noidung": "Có một bình luận mới ở bài viết của bạn"
+        "tieude": "Phản hồi đánh giá",
+        "noidung": "Đánh giá của bạn có một phản hồi từ người bán : "
     },
     "updateRole": {
         "tieude": "Cập nhập quyền",

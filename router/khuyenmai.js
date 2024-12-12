@@ -6,10 +6,14 @@ const {
     updateKhuyenMai,
     deleteKhuyenMai,
     getActiveKhuyenMai,
-    getlistKhuyenMaiforadmin, } = require("../controller/khuyenmai-controller")
+    getlistKhuyenMaiforadmin,
+    getlistKhuyenMaiForWeb, } = require("../controller/khuyenmai-controller")
 
 khuyenmaiRouter.get('/getlistKhuyenMai/:tongTien', async function (req, res) {
     return getlistKhuyenMai(req, res);
+})
+khuyenmaiRouter.get('/getlistKhuyenMaiForWeb/:tongTien', async function (req, res) {
+    return getlistKhuyenMaiForWeb(req, res);
 })
 
 khuyenmaiRouter.post('/createKhuyenMai', async function (req, res) {
