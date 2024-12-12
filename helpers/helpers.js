@@ -4,6 +4,15 @@ const YeuCauRutTienSchema = require("../models/YeuCauRutTienSchema")
 const nodemailer = require('nodemailer');
 const GiaTriThuocTinhSchema = require("../models/GiaTriThuocTinhSchema")
 const ThongBaoModel = require("../models/thongbaoSchema")
+const FirebaseSchema = require("../models/FirebaseSchema")
+
+const admin = require('firebase-admin');
+const serviceAccount = require('../don-ganh-firebase-adminsdk-2ldcw-efac841716 (1).json'); // Đường dẫn tới file JSON đã tải về
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+
 const sendVerificationEmail = async (user, verificationToken) => {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -165,6 +174,11 @@ async function createThongBaoNoreq(userId, tieude, noidung) {
       tieude,
       noidung,
     });
+    const sendthongbao = await sendnotification(userId, tieude, noidung)
+    if (!sendthongbao) {
+      console.error('Lỗi khi tạo thông báo:FCM');
+
+    }
     await newThongBao.save();
     return true;
   } catch (error) {
@@ -172,7 +186,31 @@ async function createThongBaoNoreq(userId, tieude, noidung) {
     return false;
   }
 }
-
+async function sendnotification(userId, title, body) {
+  try {
+    const firebase = await FirebaseSchema.findOne({ userId: userId })
+    if (!firebase) {
+      console.error('Không tìm thấy thông tin Firebase cho người dùng:', userId); return false;
+    }
+    const token = firebase.firebaseToken
+    if (!userId || !title || !token || !body) {
+      console.error('Thiếu dữ liệu khi gửi thông báo FCM');
+      return false
+    }
+    const message = {
+      notification: {
+        title,
+        body,
+      },
+      token, // Token của thiết bị nhận
+    };
+    await admin.messaging().send(message);
+    return true
+  } catch (error) {
+    console.error('Lỗi khi gửi thông báo:', error);
+    return false
+  }
+}
 
 // const admin = require('firebase-admin');
 // const serviceAccount = require('./serviceAccountKey.json');

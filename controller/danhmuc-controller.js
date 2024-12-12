@@ -286,9 +286,10 @@ async function updateDanhMucCha(req, res) {
   try {
     const { id } = req.params;
     const { IDDanhMuc, TenDanhMuc } = req.body;
-    let imageUrl = danhmuc.AnhDanhMuc;
 
     const danhmuc = await DanhMucModel.findById(id)
+    let imageUrl = danhmuc.AnhDanhMuc;
+
     if (!danhmuc) {
       return res.status(404).json({ message: 'Danh mục không tồn tại' });
     }

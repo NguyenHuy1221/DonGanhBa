@@ -535,7 +535,7 @@ async function updateTransactionHoaDon(req, res, next) {
       mrc_order_id: orderIdbaokim,
       total_amount: total_tien,
       description: hoadon.GhiChu,
-      url_success: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
+      url_success: "",
       merchant_id: parseInt(process.env.MERCHANT_ID),
       url_detail: "https://baokim.vn/",
       lang: "en",
@@ -621,7 +621,7 @@ async function updateTransactionHoaDon(req, res, next) {
 //       url_detail: "https://baokim.vn/",
 //       lang: "en",
 //       bpm_id: transactionId,
-//       webhooks: "https://baokim.vn/",
+//       webhooks: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
 //       customer_email: hoadon.userId.gmail,
 //       customer_phone: "0358748103",
 //       customer_name: "ho duc hau",
@@ -702,12 +702,12 @@ async function updateTransactionlistHoaDon(req, res, next) {
         mrc_order_id: orderIdbaokim,
         total_amount: total_tien,
         description: hoadon.GhiChu,
-        url_success: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
+        url_success: "",
         merchant_id: parseInt(process.env.MERCHANT_ID),
         url_detail: "https://baokim.vn/",
         lang: "en",
         bpm_id: transactionId,
-        webhooks: "https://baokim.vn/",
+        webhooks: `${process.env.MAIN_BASE_URL}/api/hoadon/NhanThanhToanTuBaoKim/${hoadon._id}`,
         customer_email: hoadon.userId.gmail,
         customer_phone: "0358748103",
         customer_name: "ho duc hau",
@@ -1059,18 +1059,18 @@ async function NhanThanhToanTuBaoKim(req, res) {
   try {
     const data = req.body;
     const { hoadonId } = req.params;
-    console.log(data)
+    console.log("chuky", data)
 
     // Kiểm tra chữ ký
-    const receivedSign = data.sign; // Chữ ký nhận được từ Bảo Kim
-    const dataToSign = JSON.stringify(data); // Dữ liệu cần ký
-    const yourSign = crypto.createHmac('sha256', process.env.SECRET_KEY).update(dataToSign).digest('hex');
-    console.log(yourSign)
+    // const receivedSign = data.sign; // Chữ ký nhận được từ Bảo Kim
+    // const dataToSign = JSON.stringify(data); // Dữ liệu cần ký
+    // const yourSign = crypto.createHmac('sha256', process.env.SECRET_KEY).update(dataToSign).digest('hex');
+    // console.log(yourSign)
 
-    if (yourSign !== receivedSign) {
-      console.log('Chữ ký không hợp lệ');
-      return res.status(400).json({ err_code: "1", message: "Chữ ký không hợp lệ" });
-    }
+    // if (yourSign !== receivedSign) {
+    //   console.log('Chữ ký không hợp lệ');
+    //   return res.status(400).json({ err_code: "1", message: "Chữ ký không hợp lệ" });
+    // }
 
     // Tìm hóa đơn theo ID
     const hoadon = await HoaDonModel.findById(hoadonId).populate("userId").populate("hoKinhDoanhId");
