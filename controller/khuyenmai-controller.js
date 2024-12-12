@@ -1,6 +1,7 @@
 const KhuyenMaiModel = require("../models/KhuyenMaiSchema");
 const LoaiKhuyenMaiModel = require("../models/LoaiKhuyenMaiSchema")
 require("dotenv").config();
+const { createThongBaoNoreq, sendNotificationToAllUsers } = require("../helpers/helpers")
 
 async function getlistKhuyenMai(req, res, next) {
     try {
@@ -130,9 +131,9 @@ async function createKhuyenMai(req, res, next) {
             // Chỉ gán IDDanhMucCon khi có giá trị
             ...(IDDanhMucCon && { IDDanhMucCon })
         });
-
         // Lưu đối tượng vào cơ sở dữ liệu
         const savedKhuyenMai = await newKhuyenMai.save();
+        await sendNotificationToAllUsers("newKhuyenMai")
         res.status(201).json(savedKhuyenMai);
     } catch (error) {
         console.error(error);

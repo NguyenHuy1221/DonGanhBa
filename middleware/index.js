@@ -1,5 +1,7 @@
 var jwt = require("jsonwebtoken");
 const { URL } = require("url");
+const mongoose = require('mongoose');
+
 const authMiddleware = (req, res, next) => {
   if (req.method != "GET") {
     if (req.query.API_KEY === process.env.API_KEY) {
@@ -64,6 +66,30 @@ function convertToVietnamTimezone(schema) {
     return obj;
   };
 }
+
+// function convertToVietnamTimezoneVip(schema, fields) {
+//   schema.methods.toJSON = function () {
+//     const obj = this.toObject();
+
+//     fields.forEach(field => {
+//       if (obj[field]) {
+//         obj[field] = moment(obj[field]).tz('Asia/Ho_Chi_Minh').format();
+//       }
+//     });
+
+//     return obj;
+//   };
+// }
+
+// // Sử dụng hàm này trong Mongoose schema
+// const exampleSchema = new mongoose.Schema({
+//   NgayBatDau: Date,
+//   NgayKetThuc: Date,
+//   NgayTao: Date,
+//   date: Date // Thêm trường 'date'
+// });
+
+
 function checkPermissions(entity, action) {
   return (req, res, next) => {
     const user = req.user; // Giả sử bạn đã có cơ chế xác thực và gán user vào req 

@@ -71,7 +71,7 @@ hoadonRouter.post('/updateTransactionListHoaDonCOD', async function (req, res) {
 //     return updateTransactionHoaDonCOD(req, res);
 // })
 
-hoadonRouter.get('/NhanThanhToanTuBaoKim/:hoadonId', async function (req, res) {
+hoadonRouter.post('/NhanThanhToanTuBaoKim/:hoadonId', async function (req, res) {
     return NhanThanhToanTuBaoKim(req, res);
 })
 hoadonRouter.post('/HuyDonHang/:hoadonId', async function (req, res) {

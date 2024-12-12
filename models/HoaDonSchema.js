@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const { convertToVietnamTimezone } = require('../middleware/index');
 const getCurrentDate = () => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Đặt giờ, phút, giây và mili giây về 0
+  // today.setHours(0, 0, 0, 0); // Đặt giờ, phút, giây và mili giây về 0
   // Điều chỉnh múi giờ
   const timezoneOffset = today.getTimezoneOffset() * 60000; // Chuyển đổi phút sang mili giây
   const localMidnight = new Date(today.getTime() - timezoneOffset);
@@ -30,7 +30,7 @@ const HoaDonSchema = new Schema({
   tienDaCong: { type: Boolean, default: false }, // danh dau viec da thanh toan
   TrangThai: Number, // 0đặt hàng ,1đóng gói , 2bắt đầug giao , 3hoàn thành đơn hàng , 4huy
   ThanhToan: { type: Boolean, default: false },
-  transactionId: { type: Number, default: 0 },//111 la tien mat ///151 bao kiem /// 0 la chua co phuong thuc thanh toan
+  transactionId: { type: Number, default: 0 },//111 la tien mat ///151 bao kiem /// 0 la chua co phuong thuc thanh toan /// 999 là gồm 3 loại bảo kim
   chiTietHoaDon: [
     {
       idBienThe: { type: mongoose.Schema.Types.ObjectId, ref: "BienThe" },
@@ -46,6 +46,7 @@ const HoaDonSchema = new Schema({
   expiresAt: { type: Date, required: true, default: () => new Date(Date.now() + 30 * 60 * 1000) },
   NgayTao: { type: Date, default: getCurrentDate },
 });
+// convertToVietnamTimezone(HoaDonSchema, ['NgayTao', 'expiresAt']);
 convertToVietnamTimezone(HoaDonSchema)
 const HoaDon = mongoose.model('HoaDon', HoaDonSchema);
 module.exports = HoaDon; 

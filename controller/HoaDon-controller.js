@@ -114,15 +114,31 @@ async function getHoaDonByHoKinhDoanhId(req, res) {
       return res.status(400).json({ message: "Thiếu thông tin hokinhdoanhid" });
     }
 
-    const hoadon = await HoaDonModel.find({ hoKinhDoanhId: userId }).sort({ NgayTao: -1 })
-      // .populate("userId")
-      // .populate('khuyenmaiId')
-      // .populate('transactionId')
-      // .populate({
-      //   path: 'chiTietHoaDon.BienThe.IDSanPham',
-      //   model: 'SanPham',
-      // })
-      .exec();
+    const hoadon = await HoaDonModel.find({ hoKinhDoanhId: userId })
+      .populate({
+        path: 'chiTietHoaDon.idBienThe',
+        populate: [
+          {
+            path: "KetHopThuocTinh.IDGiaTriThuocTinh",
+          },
+          {
+            path: "IDSanPham",
+            model: "SanPham",
+            populate: {
+              path: "userId",
+              model: "User",
+            },
+          },
+        ],
+      }).sort({ NgayTao: -1 }).exec();
+    // .populate("userId")
+    // .populate('khuyenmaiId')
+    // .populate('transactionId')
+    // .populate({
+    //   path: 'chiTietHoaDon.BienThe.IDSanPham',
+    //   model: 'SanPham',
+    // })
+
     if (!hoadon) {
       return res.status(404).json({ message: "Không tìm thấy hoa don" });
     }
@@ -509,10 +525,10 @@ function calculateDiscountedItems(items, discountValue, totalQuantity) {
 async function updateTransactionHoaDon(req, res, next) {
   const hoadonId = req.params.hoadonId
   const { transactionId, khuyenmaiId, giaTriGiam = 0 } = req.body;
-  let transactionIdSave_inMongoodb = transactionId
-  if (transactionId !== 0 || transactionId !== 111) {
-    transactionIdSave_inMongoodb = 999
-  }
+  // let transactionIdSave_inMongoodb = transactionId
+  // if (transactionId !== 0 || transactionId !== 111) {
+  //   transactionIdSave_inMongoodb = 999
+  // }
   console.log(khuyenmaiId, giaTriGiam)
   try {
     const hoadon = await HoaDonModel.findById(hoadonId).populate("userId"); // Lấy thông tin đơn hàng từ DB
@@ -573,12 +589,13 @@ async function updateTransactionHoaDon(req, res, next) {
         { $inc: { SoLuongHienTai: -1 } }
       );
     }
-    hoadon.transactionId = transactionIdSave_inMongoodb;
+    hoadon.transactionId = transactionId;
     hoadon.payment_url = donhangmoi.data.payment_url
     hoadon.mrc_order_id = orderIdbaokim
     hoadon.order_id = donhangmoi.data.order_id
     hoadon.redirect_url = donhangmoi.data.redirect_url
     hoadon.expiresAt = expiresAt;
+    await createThongBaoNoreq(hoadon.hoKinhDoanhId, "updatePhuongThucThanhToanBaoKim")
     await hoadon.save();
     res.status(200).json(donhangmoi);
   } catch (error) {
@@ -670,10 +687,10 @@ async function updateTransactionHoaDon(req, res, next) {
 
 async function updateTransactionlistHoaDon(req, res, next) {
   const { transactionId, khuyenmaiId, giaTriGiam = 0, hoadon } = req.body;
-  let transactionIdSave_inMongoodb = transactionId
-  if (transactionId !== 0 || transactionId !== 111) {
-    transactionIdSave_inMongoodb = 999
-  }
+  // let transactionIdSave_inMongoodb = transactionId
+  // if (transactionId !== 0 || transactionId !== 111) {
+  //   transactionIdSave_inMongoodb = 999
+  // }
   try {
     const updatedHoadons = [];
     for (const hoadonId of hoadon) {
@@ -733,7 +750,7 @@ async function updateTransactionlistHoaDon(req, res, next) {
         );
       }
 
-      hoadon.transactionId = transactionIdSave_inMongoodb;
+      hoadon.transactionId = transactionId;
       hoadon.payment_url = donhangmoi.data.payment_url;
       hoadon.mrc_order_id = orderIdbaokim;
       hoadon.order_id = donhangmoi.data.order_id;
@@ -741,6 +758,7 @@ async function updateTransactionlistHoaDon(req, res, next) {
       hoadon.expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
       await hoadon.save();
+      await createThongBaoNoreq(hoadon.hoKinhDoanhId, "newDonHang")
       updatedHoadons.push(hoadon);
     }
 
@@ -877,15 +895,15 @@ async function updatetrangthaiHoaDOn(req, res, next) {
   console.log(TrangThai)
   try {
 
-    const hoadon = await HoaDonModel.findById(hoadonId)
-      .populate({ path: 'chiTietHoaDon.idBienThe', populate: { path: 'IDSanPham', model: 'SanPham' } });
-
+    const hoadon = await HoaDonModel.findById(hoadonId).populate({ path: 'chiTietHoaDon.idBienThe', populate: { path: 'IDSanPham', model: 'SanPham' } });
     if (!hoadon) {
       return res.status(404).json({ message: 'Hóa đơn ko tồn tại' });
-
+    }
+    if (hoadon.TrangThai == 3) {
+      return res.status(400).json({ message: 'Không thể thay đổi trạng thái khi đang ở trạng thái 3' });
     }
     if (TrangThai == 3) {
-      const checkrole = await UserModel.findById(hoadon.hoKinhDoanhId)
+      // const checkrole = await UserModel.findById(hoadon.hoKinhDoanhId)
 
       // hoadon.DaThanhToan = true;
       hoadon.tienDaCong = true;
@@ -895,7 +913,7 @@ async function updatetrangthaiHoaDOn(req, res, next) {
         tongTienThucTe -= hoadon.SoTienKhuyenMai;
       }
 
-      if (!hoadon.tienDaCong && hoadon.transactionId === 151) {
+      if (!hoadon.tienDaCong && (hoadon.transactionId === 151 || hoadon.transactionId === 999 || hoadon.transactionId === 295 || hoadon.transactionId === 297)) {
         let sellerIdList = [];
         for (const chiTiet of hoadon.chiTietHoaDon) {
           const bienThe = chiTiet.idBienThe;
@@ -914,9 +932,10 @@ async function updatetrangthaiHoaDOn(req, res, next) {
         }
         // Cập nhật biến tienDaCong trong hóa đơn
         hoadon.tienDaCong = true;
-      } else {
-        return res.status(400).json({ message: 'Số tiền đã được cộng trước đó hoặc bạn ko có quyền' });
       }
+      // else {
+      //   return res.status(400).json({ message: 'Số tiền đã được cộng trước đó hoặc bạn ko có quyền' });
+      // }
 
     }
     if (TrangThai == 4) {
@@ -943,7 +962,7 @@ async function updatetrangthaiHoaDOn(req, res, next) {
         );
       }
     }
-    await createThongBaoNoreq(hoadon.userId, "đơn hàng của bạn", "trạng thái đơn hàng của bạn vừa được cập nhập")
+    await createThongBaoNoreq(hoadon.userId, "updateTrangThaiDonHang")
     hoadon.TrangThai = TrangThai;
     await hoadon.save();
     return res.status(200).json("Cập nhập đơn hàng thành công");
@@ -953,6 +972,77 @@ async function updatetrangthaiHoaDOn(req, res, next) {
   }
 }
 
+async function updatetrangthaiHoaDOn2(req, res, next) {
+  const hoadonId = req.params.hoadonId;
+  const { TrangThai } = req.body;
+
+  try {
+    const hoadon = await HoaDonModel.findById(hoadonId)
+      .populate({ path: 'chiTietHoaDon.idBienThe', populate: { path: 'IDSanPham', select: 'userId' } });
+
+    if (!hoadon) {
+      return res.status(404).json({ message: 'Hóa đơn không tồn tại' });
+    }
+
+    // Kiểm tra trạng thái thanh toán
+    const { transactionId, tienDaCong } = hoadon;
+
+    if (TrangThai === 3) {
+      if (transactionId === 0) {
+        return res.status(400).json({ message: 'Không thể đổi trạng thái. Phương thức thanh toán không hợp lệ.' });
+      }
+
+      if (transactionId === 111) {
+        // Tiền mặt: chỉ đổi trạng thái
+        hoadon.TrangThai = 3;
+        await hoadon.save();
+        return res.status(200).json({ message: 'Cập nhật trạng thái thành công (tiền mặt).' });
+      }
+
+      if (transactionId === 151 || transactionId === 999) {
+        if (tienDaCong) {
+          // Đã cộng tiền: chỉ đổi trạng thái
+          hoadon.TrangThai = 3;
+          await hoadon.save();
+          return res.status(200).json({ message: 'Cập nhật trạng thái thành công (đã cộng tiền).' });
+        } else {
+          // Chưa cộng tiền: thực hiện cộng tiền cho user
+          const sellerIdList = new Set(); // Sử dụng Set để tránh trùng lặp sellerId
+          for (const chiTiet of hoadon.chiTietHoaDon) {
+            const bienThe = chiTiet.idBienThe;
+            const sanPham = bienThe.IDSanPham;
+            const sellerId = sanPham.userId;
+
+            if (!sellerIdList.has(sellerId.toString())) {
+              sellerIdList.add(sellerId.toString());
+
+              // Cộng tiền vào tài khoản người bán
+              await UserModel.findOneAndUpdate(
+                { _id: sellerId },
+                { $inc: { soTienHienTai: chiTiet.soLuong * chiTiet.donGia } },
+                { new: true }
+              );
+            }
+          }
+
+          // Cập nhật trạng thái tiền đã cộng và trạng thái đơn hàng
+          hoadon.tienDaCong = true;
+          hoadon.TrangThai = 3;
+          await hoadon.save();
+          return res.status(200).json({ message: 'Cập nhật trạng thái và cộng tiền thành công.' });
+        }
+      }
+    }
+
+    // Nếu trạng thái khác 3
+    hoadon.TrangThai = TrangThai;
+    await hoadon.save();
+    return res.status(200).json({ message: 'Cập nhật trạng thái thành công.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Lỗi khi cập nhật trạng thái hóa đơn.' });
+  }
+}
 
 
 
@@ -979,6 +1069,8 @@ async function updateTransactionHoaDonCOD(req, res, next) {
       );
     }
     hoadon.transactionId = transactionId;
+    await createThongBaoNoreq(hoadon.hoKinhDoanhId, "updatePhuongThucThanhToanTienMat")
+
     await hoadon.save();
     //{ message: "Tạo dơn hàng thành công" }
     res.status(200).json({ message: "Tạo dơn hàng thành công", "data": { hoadon } });
@@ -1042,6 +1134,8 @@ async function updateTransactionListHoaDonCOD(req, res, next) {
       // }
 
       hoadon.transactionId = transactionId;
+      await createThongBaoNoreq(hoadon.hoKinhDoanhId, "newDonHang")
+
       await hoadon.save();
       updatedHoadons.push(hoadon);
     }
@@ -1124,7 +1218,7 @@ async function NhanThanhToanTuBaoKim(req, res) {
         console.log("Email đã được gửi admin:", info.response);
       }
     });
-
+    await createThongBaoNoreq(hoadon.hoKinhDoanhId, "updateDonHangNhanDuocTienThanhToanBaoKim")
     // Trả về phản hồi thành công cho Bảo Kim
     return res.status(200).json({ err_code: "0", message: "Đã nhận thông báo thành công" });
   } catch (error) {
@@ -1170,9 +1264,12 @@ async function HuyDonHang(req, res, next) {
       );
     }
     hoadon.TrangThai = 4;
+    await createThongBaoNoreq(hoadon.hoKinhDoanhId, "updateDonHangDaBiHuy")
+    await createThongBaoNoreq(hoadon.userId, "updateDonHangDaBiHuy")
+
     await hoadon.save();
     //{ message: "Tạo dơn hàng thành công" }
-    res.status(200).json({ message: "Tạo dơn hàng thành công", "data": { hoadon } });
+    res.status(200).json({ message: "Hủy đơn hàng thành công", "data": { hoadon } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Lỗi khi cập nhật hoa don' });

@@ -5,6 +5,7 @@ const HoaDonSchema = require("../models/HoaDonSchema")
 const sanPhamModel = require("../models/SanPhamSchema")
 require("dotenv").config();
 const { uploadFileToViettelCloud } = require("../untils/index")
+const { createThongBaoNoreq } = require("../helpers/helpers")
 const { v4: uuidv4 } = require('uuid');
 const { upload } = require("../untils/index");
 const fs = require('fs');
@@ -235,7 +236,11 @@ async function getListDanhGiaInSanPhamById(req, res, next) {
 async function createDanhGia(req, res) {
     try {
         const { userId, sanphamId, XepHang, BinhLuan } = req.body;
+        const sanpham = await sanPhamModel.findById(sanphamId)
+        if (!sanpham) {
+            return res.status(404).json({ message: 'Sản phẩm không tồn tại.' });
 
+        }
         // Kiểm tra xem người dùng đã mua sản phẩm chưa
         const hoaDons = await HoaDonSchema.find({
             userId,
@@ -302,6 +307,7 @@ async function createDanhGia(req, res) {
 
             newDanhGia.HinhAnh = detailUrls;
         }
+        await createThongBaoNoreq(sanpham.userId, "newCommentDanhGia")
 
         await newDanhGia.save();
         return res.status(201).json(newDanhGia);
@@ -482,9 +488,10 @@ async function addPhanHoi(req, res) {
             BinhLuan,
             NgayTao: new Date()
         });
-        await danhGia.save();
+        await createThongBaoNoreq(danhGia.userId, "newCommentDanhGiaPhanHoi")
 
-        res.status(201).json(danhGia);
+        await danhGia.save();
+        res.status(200).json(danhGia);
     } catch (error) {
         console.error('Lỗi khi thêm phản hồi:', error);
         res.status(500).json({ message: 'Đã xảy ra lỗi khi thêm phản hồi' });
