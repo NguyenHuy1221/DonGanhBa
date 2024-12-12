@@ -802,6 +802,28 @@ async function deleteSanPham(req, res, next) {
   }
 }
 
+async function ToggleSanPhamMoi(req, res, next) {
+  const { IDSanPham } = req.params;
+
+  try {
+    const sanPham = await SanPhamModel.findById(IDSanPham);
+    if (!sanPham) {
+      return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+    }
+    // Đảo ngược giá trị SanPhamMoi
+    const newStatus = !sanPham.SanPhamMoi;
+
+    // Cập nhật trạng thái SanPhamMoi
+    sanPham.SanPhamMoi = newStatus;
+    await sanPham.save();
+
+    res.status(200).json({ message: 'Sản phẩm đã được cập nhật trạng thái ' });
+  } catch (error) {
+    console.error("Lỗi cập nhật trạng thái sản phẩm:", error);
+    res.status(500).json({ error: 'Lỗi hệ thống' });
+  }
+}
+
 async function updateTinhTrangSanPham(req, res, next) {
   const { IDSanPham } = req.params;
   const { TinhTrang } = req.body;
@@ -1704,6 +1726,7 @@ module.exports = {
   deleteBienTheThuCong,
   updateSanPham,
   deleteSanPham,
+  ToggleSanPhamMoi,
   updateTinhTrangSanPham,
   findSanPham,
   findSanPhamByDanhMuc,

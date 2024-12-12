@@ -8,6 +8,7 @@ const { getlistSanPham, getlistSanPhamAdmin, toggleSanPhamMoi, getSanPhamListNew
   deleteBienTheThuCong,
   updateSanPham,
   deleteSanPham,
+  ToggleSanPhamMoi,
   updateTinhTrangSanPham,
   findSanPham,
   getlistPageSanPham,
@@ -68,6 +69,9 @@ sanphamRouter.put("/updateSanPham/:id", uploadmemory.any(), async function (req,
 });
 sanphamRouter.put("/deleteSanPham/:IDSanPham", async function (req, res) {
   return deleteSanPham(req, res);
+});
+sanphamRouter.put("/ToggleSanPhamMoi/:IDSanPham", async function (req, res) {
+  return ToggleSanPhamMoi(req, res);
 });
 sanphamRouter.put("/updateTinhTrangSanPham/:IDSanPham", async function (req, res) {
   return updateTinhTrangSanPham(req, res);

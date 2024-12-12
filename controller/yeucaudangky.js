@@ -40,7 +40,7 @@ async function getYeuCauDangKyByUserId(req, res, next) {
 async function createYeuCauDangKy(req, res) {
     try {
         const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang, gmail, maSoThue, name } = req.body;
-        console.log("diachi", diaChi)
+        console.log("diachi", diaChi, diaChi.Name)
         if (!maSoThue || !diaChi || !req.file) {
             return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
         }
@@ -50,7 +50,28 @@ async function createYeuCauDangKy(req, res) {
                 return res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
             }
         }
+        // const diachisave = {
+        //     Name: diaChi.Name,
+        //     SoDienThoai: diaChi.SoDienThoai,
+        //     tinhThanhPho: diaChi.tinhThanhPho,
+        //     quanHuyen: diaChi.quanHuyen,
+        //     phuongXa: diaChi.phuongXa,
+        //     duongThon: diaChi.duongThon,
+        //     kinhdo: "",
+        //     vido: "",
 
+        // }
+        const diachisave = {
+            Name: "diaChi.Name",
+            SoDienThoai: "diaChi.SoDienThoai",
+            tinhThanhPho: "diaChi.tinhThanhPho",
+            quanHuyen: "diaChi.quanHuyen",
+            phuongXa: "diaChi.phuongXa",
+            duongThon: "diaChi.duongThon",
+            kinhdo: "diaChi.kinhdo" || "",
+            vido: "diaChi.vido" || "",
+
+        }// Giữ giá trị hoặc giá trị mặc định vido: diaChi.vido || "" // Giữ giá trị hoặc giá trị mặc định };
         const bucketName = process.env.VIETTEL_BUCKET;
         const file = req.file;
 
@@ -79,7 +100,7 @@ async function createYeuCauDangKy(req, res) {
             name,
             soluongloaisanpham,
             soluongsanpham,
-            diaChi,
+            diaChi: diachisave,
             hinhthucgiaohang,
             maSoThue,
             anhGiayPhepHoKinhDoanh: imageUrl
@@ -169,7 +190,7 @@ async function getYeuCauDangKyDiaChiByUserId(req, res, next) {
 async function updateDiaChiHoKinhDoanh(req, res, next) {
     const { yeucaudangkyId } = req.params;
     const { diachimoi } = req.body;
-
+    console.log("diachi", diachimoi)
     try {
         const yeucaudangky = await YeuCauDangKySchema.findById(yeucaudangkyId);
 
