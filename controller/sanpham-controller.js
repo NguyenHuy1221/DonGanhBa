@@ -30,7 +30,7 @@ const { v4: uuidv4 } = require('uuid');
 
 async function getlistSanPham(req, res, next) {
   try {
-    const sanphams = await SanPhamModel.find()// Lọc và sắp xếp
+    const sanphams = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng" })// Lọc và sắp xếp
     if (!sanphams) {
       res.status(404).json({ message: 'Khong thay san pham nao' });
     }
@@ -1297,7 +1297,7 @@ async function getlistPageSanPham(req, res, next) {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     //true chi hien sp ok
-    const sanphams = await SanPhamModel.find({ SanPhamMoi: false, TinhTrang: "Còn hàng" }).skip(skip).limit(limit).populate("userId");
+    const sanphams = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng" }).skip(skip).limit(limit).populate("userId");
     const totalProducts = await SanPhamModel.countDocuments();
 
     let favoritedProductIds = [];
@@ -1457,7 +1457,7 @@ async function findSanPhamByDanhMuc(req, res, next) {
   const { IDDanhMuc } = req.params;
 
   try {
-    const sanphams = await SanPhamModel.find({ IDDanhMuc });
+    const sanphams = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng", IDDanhMuc });
 
     if (!sanphams || sanphams.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
