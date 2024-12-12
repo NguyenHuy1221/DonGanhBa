@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const GiaTriThuocTinhSchema = require("../models/GiaTriThuocTinhSchema")
 const ThongBaoModel = require("../models/thongbaoSchema")
 const FirebaseSchema = require("../models/FirebaseSchema")
+const notifications = require("../config/notifications.json")
 
 const admin = require('firebase-admin');
 const serviceAccount = require('../don-ganh-firebase-adminsdk-2ldcw-efac841716 (1).json'); // Đường dẫn tới file JSON đã tải về
@@ -167,8 +168,9 @@ async function checkDuplicateGiaTriThuocTinh(res, KetHopThuocTinh) {
   }
 }
 
-async function createThongBaoNoreq(userId, tieude, noidung) {
+async function createThongBaoNoreq(userId, notificationType) {
   try {
+    const { tieude, noidung } = notifications[notificationType]
     const newThongBao = new ThongBaoModel({
       userId,
       tieude,
@@ -190,7 +192,8 @@ async function sendnotification(userId, title, body) {
   try {
     const firebase = await FirebaseSchema.findOne({ userId: userId })
     if (!firebase) {
-      console.error('Không tìm thấy thông tin Firebase cho người dùng:', userId); return false;
+      console.error('Không tìm thấy thông tin Firebase cho người dùng:', userId);
+      return false;
     }
     const token = firebase.firebaseToken
     if (!userId || !title || !token || !body) {
@@ -209,6 +212,50 @@ async function sendnotification(userId, title, body) {
   } catch (error) {
     console.error('Lỗi khi gửi thông báo:', error);
     return false
+  }
+}
+
+async function sendNotificationToAllUsers(notificationType) {
+  try {
+    const firebaseUsers = await FirebaseSchema.find();
+    if (!firebaseUsers || firebaseUsers.length === 0) {
+      console.error('Không tìm thấy người dùng trong Firebase');
+      return false;
+    }
+
+    const { tieude, noidung } = notifications[notificationType];
+
+    let allSuccess = true;
+
+    for (const firebase of firebaseUsers) {
+      const userId = firebase.userId;
+      const token = firebase.firebaseToken;
+
+      if (!userId || !token) {
+        console.error('Thiếu dữ liệu khi gửi thông báo FCM cho người dùng:', userId);
+        allSuccess = false;
+        continue;
+      }
+
+      const newThongBao = new ThongBaoModel({
+        userId,
+        tieude,
+        noidung,
+      });
+
+      const sendthongbao = await sendnotification(userId, tieude, noidung);
+      if (!sendthongbao) {
+        console.error('Lỗi khi tạo thông báo: FCM cho người dùng:', userId);
+        allSuccess = false;
+      } else {
+        await newThongBao.save();
+      }
+    }
+
+    return allSuccess;
+  } catch (error) {
+    console.error('Lỗi khi gửi thông báo cho toàn bộ người dùng:', error);
+    return false;
   }
 }
 
@@ -236,4 +283,4 @@ async function sendnotification(userId, title, body) {
 //     console.log('Error sending message:', error);
 //   });
 
-module.exports = { sendVerificationEmail, createNewRequest, checkDuplicateGiaTriThuocTinh, createThongBaoNoreq }
+module.exports = { sendVerificationEmail, createNewRequest, checkDuplicateGiaTriThuocTinh, createThongBaoNoreq, sendNotificationToAllUsers }

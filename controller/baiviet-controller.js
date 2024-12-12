@@ -22,8 +22,6 @@ const path = require('path');
 // }
 async function getListBaiViet(req, res, next) {
     const { userId } = req.params;
-
-
     try {
         const baiviets = await BaiVietSchema.find()
             .populate("userId")
@@ -31,13 +29,11 @@ async function getListBaiViet(req, res, next) {
                 path: 'binhluan.userId', // Populate userId của binhluan 
                 // select: 'name email' // Chỉ chọn các trường cần thiết 
             })
-
         if (userId) {
             const baivietsWithLikeInfo = baiviets.map(baiViet => {
                 const isLiked = baiViet.likes.includes(userId);
                 return { ...baiViet._doc, isLiked };
             });
-
             return res.status(200).json(baivietsWithLikeInfo);
         }
         return res.status(200).json(baiviets);
@@ -354,30 +350,38 @@ async function addBinhLuan(req, res) {
         const { baivietId } = req.params;
         const { userId, BinhLuan } = req.body;
 
-        const baiViet = await BaiVietSchema.findById(baivietId)
-
+        // Kiểm tra đầu vào
+        if (!baivietId || !userId || !BinhLuan) {
+            return res.status(400).json({ message: 'Thiếu thông tin yêu cầu' });
+        }
+        const baiViet = await BaiVietSchema.findById(baivietId);
         if (!baiViet) {
             return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
         }
-
+        // Thêm bình luận vào bài viết
         baiViet.binhluan.push({
             userId,
             BinhLuan,
             NgayTao: new Date()
         });
-
         await baiViet.save();
-        const newbaiViet = await BaiVietSchema.findById(baivietId).populate("userId")
+        // Populate các thông tin cần thiết
+        const newbaiViet = await BaiVietSchema.findById(baivietId)
+            .populate("userId")
             .populate({
-                path: 'binhluan.userId', // Populate userId của binhluan 
-                // select: 'name email' // Chỉ chọn các trường cần thiết 
+                path: 'binhluan.userId'
+                // select: 'name email' // Chỉ chọn các trường cần thiết nếu cần
             });
-        res.status(201).json(newbaiViet.binhluan);
+
+        // Gửi thông báo (bạn có thể bỏ comment này để sử dụng)
+        await createThongBaoNoreq(baiViet.userId, "newCommentbaiviet");
+        return res.status(200).json(newbaiViet.binhluan);
     } catch (error) {
         console.error('Lỗi khi thêm Bình luận:', error);
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi thêm Bình luận' });
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi thêm Bình luận' });
     }
 }
+
 async function updateBinhLuan(req, res) {
     try {
         const { baivietId, binhLuanId } = req.params;

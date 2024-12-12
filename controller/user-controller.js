@@ -1151,7 +1151,7 @@ async function createYeuCauRutTien(req, res) {
         console.log("Email đã được gửi admin:", info.response);
       }
     });
-    await createThongBaoNoreq(userId, "Yêu cầu rút tiền", "Yêu cầu rút tiền của bạn đã được tạo thành công vui lòng chờ duyệt")
+    await createThongBaoNoreq(userId, "newYeuCauRutTien")
 
     await sendVerificationEmail(user, verificationToken);
     return res.status(200).json({ message: 'Yêu cầu rút tiền mới đã được gửi', request: newRequest });

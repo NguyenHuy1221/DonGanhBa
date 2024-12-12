@@ -118,7 +118,7 @@ async function updateUserRoleAndPermissions(req, res, next) {
                     user.permissions = [];
                 }
                 const yeuCauDangKy = await YeuCauDangKySchema.findOne({
-                    userId: mongoose.Types.ObjectId(userId),
+                    userId: userId,
                     trangThai: 'xacnhan'
                 });
                 if (!yeuCauDangKy) {
@@ -136,7 +136,7 @@ async function updateUserRoleAndPermissions(req, res, next) {
                 // res.status(200).json(updatedUser);
             }
         }
-        await createThongBaoNoreq(userId, "Cập nhập quyền", "quyền của bạn đã được cập nhập")
+        await createThongBaoNoreq(userId, "updateRole")
         const updatedUser = await user.save();
         res.status(200).json(updatedUser);
     } catch (error) {
@@ -149,10 +149,7 @@ async function updateUserRoleAndPermissions(req, res, next) {
 async function updateUserRoleAndPermissionsforuser(req, res, next) {
     const { userId } = req.params;
     const { role } = req.body; // Nhận role và permissions từ body request
-
     const validRoles = ['khachhang', 'hokinhdoanh'];
-
-
     try {
         // Kiểm tra role hợp lệ
         if (role && !validRoles.includes(role)) {

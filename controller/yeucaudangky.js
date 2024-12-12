@@ -39,8 +39,8 @@ async function getYeuCauDangKyByUserId(req, res, next) {
 
 async function createYeuCauDangKy(req, res) {
     try {
-        const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang, maSoThue } = req.body;
-
+        const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang, gmail, maSoThue, name } = req.body;
+        console.log("diachi", diaChi)
         if (!maSoThue || !diaChi || !req.file) {
             return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
         }
@@ -75,6 +75,8 @@ async function createYeuCauDangKy(req, res) {
         const newYeuCauDangKy = new YeuCauDangKySchema({
             userId,
             ghiChu,
+            gmail,
+            name,
             soluongloaisanpham,
             soluongsanpham,
             diaChi,

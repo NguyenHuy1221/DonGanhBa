@@ -1,0 +1,70 @@
+{
+    "LuuYnotifications": {
+        "tieude": "Dữ liệu ở đây không được tùy ý chỉnh sửa",
+        "noidung": "khi chỉnh sửa thì chỉ nên sửa nội dung trong tiêu đề hoặc nội dung . chứ ko đổi tên các biến , nếu đổi thì phải đi lọc check từng cái để thay lại."
+    },
+    "newCommentbaiviet": {
+        "tieude": "Bài viết",
+        "noidung": "Có một bình luận mới ở bài viết của bạn"
+    },
+    "newLike": {
+        "tieude": "Thích",
+        "noidung": "Có ai đó đã thích bài viết của bạn"
+    },
+    "newFollower": {
+        "tieude": "Người theo dõi",
+        "noidung": "Bạn có một người theo dõi mới"
+    },
+    "newCommentDanhGia": {
+        "tieude": "Đánh giá",
+        "noidung": "sản phẩm của bạn có một đánh giá mới"
+    },
+    "newCommentDanhGiaPhanHoi": {
+        "tieude": "Bài viết",
+        "noidung": "Có một bình luận mới ở bài viết của bạn"
+    },
+    "updateRole": {
+        "tieude": "Cập nhập quyền",
+        "noidung": "Quyền của bạn đã được thay đổi"
+    },
+    "updateTrangThaiDonHang": {
+        "tieude": "đơn hàng của bạn",
+        "noidung": "trạng thái đơn hàng của bạn vừa được cập nhập"
+    },
+    "newDonHang": {
+        "tieude": "đơn hàng Mới",
+        "noidung": "Bạn vừa có một đơn hàng mới."
+    },
+    "updatePhuongThucThanhToanBaoKim": {
+        "tieude": "đơn hàng của bạn ",
+        "noidung": "Phương thức thanh toán đã bị thay đổi sang chuyển khoản"
+    },
+    "updatePhuongThucThanhToanTienMat": {
+        "tieude": "đơn hàng của bạn ",
+        "noidung": "Phương thức thanh toán đã bị thay đổi sang Nhận tiền mặt COD"
+    },
+    "updateDonHangNhanDuocTienThanhToanBaoKim": {
+        "tieude": "đơn hàng Được thanh toán",
+        "noidung": "Đơn hàng của bạn đã nhận được thanh toán từ bảo kim."
+    },
+    "updateDonHangDaBiHuy": {
+        "tieude": "đơn hàng Bị Hủy",
+        "noidung": "Đơn hàng của bạn đã bị HỦY."
+    },
+    "newYeuCauRutTien": {
+        "tieude": "Yêu cầu rút tiền mới",
+        "noidung": "Yêu cầu rút tiền của bạn đã được tạo thành công vui lòng chờ duyệt"
+    },
+    "updateYeuCauDangKyHoKinhDoanhPASS": {
+        "tieude": "Yêu cầu đăng ký trở thành hộ kinh doanh",
+        "noidung": "Chúc mừng bạn đã đăng ký thành công trở thành hộ kinh doanh"
+    },
+    "updateYeuCauDangKyHoKinhDoanhFAIL": {
+        "tieude": "Yêu cầu đăng ký trở thành hộ kinh doanh",
+        "noidung": "Rất tiếc , yêu cầu đăng ký của bạn đã bị từ chối"
+    },
+    "newKhuyenMai": {
+        "tieude": "Khuyến mãi mới",
+        "noidung": "Hệ thống vừa có một mã khuyến mãi mới , hãy nhanh tay vào và sử dụng"
+    }
+}

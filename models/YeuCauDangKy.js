@@ -4,8 +4,10 @@ const { convertToVietnamTimezone } = require('../middleware/index');
 
 const YeuCauDangKySchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    name: { type: String },
     soluongloaisanpham: { type: Number },
     soluongsanpham: { type: Number },
+    gmail: { type: String },
     ghiChu: { type: String },
     maSoThue: { type: String },
     anhGiayPhepHoKinhDoanh: { type: String },
