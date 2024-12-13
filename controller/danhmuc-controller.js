@@ -290,7 +290,7 @@ async function updateDanhMucCha(req, res) {
 
     const danhmuc = await DanhMucModel.findById(id)
     let imageUrl = danhmuc.AnhDanhMuc;
-
+    console.log(danhmuc)
     if (!danhmuc) {
       return res.status(404).json({ message: 'Danh mục không tồn tại' });
     }
@@ -327,6 +327,7 @@ async function updateDanhMucCha(req, res) {
       //   }
       // }
     }
+    console.log(IDDanhMuc, TenDanhMuc, imageUrl)
     if (IDDanhMuc != undefined) { danhmuc.IDDanhMuc = IDDanhMuc }
     if (TenDanhMuc != undefined) { danhmuc.TenDanhMuc = TenDanhMuc }
     await danhmuc.save()

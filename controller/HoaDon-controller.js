@@ -419,7 +419,7 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     for (const item of mergedCart.mergedCart) {
       // console.log("item", item)
       // console.log("user", item.user)
-      // console.log("sanpham", item.sanPhamList)
+      console.log("sanpham", item.sanPhamList)
 
       const hoKinhDoanhId = item.user._id;
       const vietnamTime = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
@@ -439,6 +439,7 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
 
       item.sanPhamList.forEach(sanPhamItem => {
         sanPhamItem.chiTietGioHangs.forEach(chiTiet => {
+          console.log("chi tiet", chiTiet)
           hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
             idBienThe: chiTiet.idBienThe._id,
             soLuong: chiTiet.soLuong,
