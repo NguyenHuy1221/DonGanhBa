@@ -22,7 +22,7 @@ danhmucRouter.post('/createDanhMucCha', uploadmemory.single('file'), async funct
     return createDanhMucCha(req, res);
 })
 
-danhmucRouter.put('/updateDanhMucCha/:id', async function (req, res) {
+danhmucRouter.put('/updateDanhMucCha/:id', uploadmemory.single('file'), async function (req, res) {
     return updateDanhMucCha(req, res);
 })
 danhmucRouter.delete('/deleteDanhMucCha/:id', async function (req, res) {
