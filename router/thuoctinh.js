@@ -25,6 +25,9 @@ thuoctinhRouter.put('/updateThuocTinh/:id/:userId', async function (req, res) {
 })
 
 
+thuoctinhRouter.put('/deleteThuocTinh/:id', async function (req, res) {
+    return deleteThuocTinh(req, res);
+})
 
 
 

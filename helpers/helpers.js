@@ -168,18 +168,23 @@ async function checkDuplicateGiaTriThuocTinh(res, KetHopThuocTinh) {
   }
 }
 
-async function createThongBaoNoreq(userId, notificationType) {
+async function createThongBaoNoreq(userId, notificationType, information) {
   try {
     const { tieude, noidung } = notifications[notificationType]
-    const newThongBao = new ThongBaoModel({
+    let noidungkethop = noidung
+    let newThongBao
+    if (information) {
+      noidungkethop = noidungkethop + " " + information
+    }
+    newThongBao = new ThongBaoModel({
       userId,
       tieude,
-      noidung,
+      noidung: noidung,
     });
-    const sendthongbao = await sendnotification(userId, tieude, noidung)
+    console.log(newThongBao)
+    const sendthongbao = await sendnotification(userId, tieude, noidungkethop)
     if (!sendthongbao) {
       console.error('Lỗi khi tạo thông báo:FCM');
-
     }
     await newThongBao.save();
     return true;

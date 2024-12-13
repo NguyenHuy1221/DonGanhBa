@@ -307,7 +307,7 @@ async function createDanhGia(req, res) {
 
             newDanhGia.HinhAnh = detailUrls;
         }
-        await createThongBaoNoreq(sanpham.userId, "newCommentDanhGia")
+        await createThongBaoNoreq(sanpham.userId, "newCommentDanhGia", `${XepHang}+" điểm "+${BinhLuan}`)
 
         await newDanhGia.save();
         return res.status(201).json(newDanhGia);
@@ -488,7 +488,7 @@ async function addPhanHoi(req, res) {
             BinhLuan,
             NgayTao: new Date()
         });
-        await createThongBaoNoreq(danhGia.userId, "newCommentDanhGiaPhanHoi")
+        await createThongBaoNoreq(danhGia.userId, "newCommentDanhGiaPhanHoi", `${BinhLuan}`)
 
         await danhGia.save();
         res.status(200).json(danhGia);

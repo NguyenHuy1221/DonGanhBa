@@ -429,17 +429,68 @@ async function showUserById(req, res) {
   }
 }
 
-// async function getAllUsers(req, res) {
-//   try {
-//     const users = await UserModel.find();
-//     return res.json(users);
-//   } catch (error) {
-//     console.error("Lỗi khi lấy danh sách người dùng:", error);
-//     return res.status(500).json({
-//       message: "Đã xảy ra lỗi khi lấy danh sách người dùng",
-//     });
-//   }
-// }
+async function getHoKinhDoanhInFoNumberById(req, res) {
+  try {
+    const { userId } = req.params;
+
+    // Kiểm tra nếu không có userId
+    if (!userId) {
+      return res.status(400).json({ message: "Thiếu thông tin userId" });
+    }
+
+    // Tìm người dùng theo userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // Số lượng đánh giá của user
+    const soLuongDanhGia = await DanhGia.countDocuments({ userId });
+
+    // Trung bình điểm của các đánh giá mà user nhận được
+    const trungBinhDiem = await DanhGia.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: null, trungBinh: { $avg: "$XepHang" } } },
+    ]).then((result) => (result.length > 0 ? result[0].trungBinh : 0));
+
+    // Số lượng loại sản phẩm của user
+    const soLuongLoaiSanPham = await SanPham.distinct("IDDanhMuc", { userId })
+      .then((data) => data.length);
+
+    // Số lượng sản phẩm hiện tại của user
+    const soLuongSanPhamHienTai = await SanPham.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: null, tongSoLuong: { $sum: "$SoLuongHienTai" } } },
+    ]).then((result) => (result.length > 0 ? result[0].tongSoLuong : 0));
+
+    // Số lượng người theo dõi của user
+    const soLuongNguoiTheoDoi = user.followers.length;
+
+    // Trả về kết quả
+    return res.json({
+      soLuongDanhGia,
+      trungBinhDiem,
+      soLuongLoaiSanPham,
+      soLuongSanPhamHienTai,
+      soLuongNguoiTheoDoi,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy thống kê người dùng:", error);
+    return res.status(500).json({ message: "Đã xảy ra lỗi khi lấy thống kê người dùng" });
+  }
+}
+
+async function getAllUsers(req, res) {
+  try {
+    const users = await UserModel.find();
+    return res.json(users);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách người dùng:", error);
+    return res.status(500).json({
+      message: "Đã xảy ra lỗi khi lấy danh sách người dùng",
+    });
+  }
+}
 
 async function getAllUsers(req, res) {
   try {
@@ -1402,4 +1453,5 @@ module.exports = {
   deleteYeuCauRutTienCoDieuKien,
   saveFcmTokenFireBase,
   loginXacMinh,
+  getHoKinhDoanhInFoNumberById,
 };

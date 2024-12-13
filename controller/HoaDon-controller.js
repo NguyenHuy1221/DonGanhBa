@@ -419,10 +419,11 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     for (const item of mergedCart.mergedCart) {
       // console.log("item", item)
       // console.log("user", item.user)
-      // console.log("sanpham", item.sanPhamList)
+      console.log("sanpham", item.sanPhamList)
 
       const hoKinhDoanhId = item.user._id;
-
+      const vietnamTime = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
+      const orderIdbaokim = `${vietnamTime}`;
       if (!hoaDonMap[hoKinhDoanhId]) {
         hoaDonMap[hoKinhDoanhId] = {
           hoKinhDoanhId,
@@ -431,12 +432,14 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
           TrangThai,
           chiTietHoaDon: [],
           TongTien: 0,
-          GhiChu: ghiChu
+          GhiChu: ghiChu,
+          order_id: orderIdbaokim
         };
       }
 
       item.sanPhamList.forEach(sanPhamItem => {
         sanPhamItem.chiTietGioHangs.forEach(chiTiet => {
+          console.log("chi tiet", chiTiet)
           hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
             idBienThe: chiTiet.idBienThe._id,
             soLuong: chiTiet.soLuong,
@@ -758,7 +761,7 @@ async function updateTransactionlistHoaDon(req, res, next) {
       hoadon.expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
       await hoadon.save();
-      await createThongBaoNoreq(hoadon.hoKinhDoanhId, "newDonHang")
+      await createThongBaoNoreq(hoadon.hoKinhDoanhId, "newDonHang", `"trị giá "+${total_tien}`)
       updatedHoadons.push(hoadon);
     }
 
@@ -939,6 +942,9 @@ async function updatetrangthaiHoaDOn(req, res, next) {
 
     }
     if (TrangThai == 4) {
+      if (hoadon.TrangThai == 2) {
+        return res.status(400).json({ message: 'Không thể thay đổi trạng thái khi Đã bắt đầu giao.' });
+      }
       for (const chiTiet of hoadon.chiTietHoaDon) {
         if (chiTiet.idBienThe) {
           await BienThe.findOneAndUpdate(
@@ -962,7 +968,12 @@ async function updatetrangthaiHoaDOn(req, res, next) {
         );
       }
     }
-    await createThongBaoNoreq(hoadon.userId, "updateTrangThaiDonHang")
+    let trangthaitext = "Đặt hàng"
+    if (TrangThai == 1) { trangthaitext = "đóng gói" }
+    else if (TrangThai == 2) { trangthaitext = "Bắt đầu giao" }
+    else if (TrangThai == 3) { trangthaitext = "Hoàn thành đơn hàng" }
+    else { trangthaitext = "Hủy" }
+    await createThongBaoNoreq(hoadon.userId, "updateTrangThaiDonHang", `"Thành "+${trangthaitext}`)
     hoadon.TrangThai = TrangThai;
     await hoadon.save();
     return res.status(200).json("Cập nhập đơn hàng thành công");
@@ -1123,7 +1134,11 @@ async function updateTransactionListHoaDonCOD(req, res, next) {
       if (!hoadon) {
         return res.status(404).json({ message: `Hóa đơn với ID ${hoadonId} không tồn tại` });
       }
-
+      let total_tien = hoadon.TongTien;
+      if (khuyenmaiId && giaTriGiam > 0) {
+        total_tien = hoadon.TongTien - giaTriGiam;
+        total_tien = Math.max(total_tien, 0);
+      }
       // if (khuyenmaiId && giaTriGiam > 0) {
       //   hoadon.khuyenmaiId = khuyenmaiId;
       //   hoadon.SoTienKhuyenMai = giaTriGiam;
@@ -1134,7 +1149,7 @@ async function updateTransactionListHoaDonCOD(req, res, next) {
       // }
 
       hoadon.transactionId = transactionId;
-      await createThongBaoNoreq(hoadon.hoKinhDoanhId, "newDonHang")
+      await createThongBaoNoreq(hoadon.hoKinhDoanhId, "newDonHang", `"trị giá "+${total_tien}`)
 
       await hoadon.save();
       updatedHoadons.push(hoadon);
@@ -1218,7 +1233,7 @@ async function NhanThanhToanTuBaoKim(req, res) {
         console.log("Email đã được gửi admin:", info.response);
       }
     });
-    await createThongBaoNoreq(hoadon.hoKinhDoanhId, "updateDonHangNhanDuocTienThanhToanBaoKim")
+    await createThongBaoNoreq(hoadon.hoKinhDoanhId, "updateDonHangNhanDuocTienThanhToanBaoKim", `"số tiền "+${totalAmount}`)
     // Trả về phản hồi thành công cho Bảo Kim
     return res.status(200).json({ err_code: "0", message: "Đã nhận thông báo thành công" });
   } catch (error) {
@@ -1237,6 +1252,9 @@ async function HuyDonHang(req, res, next) {
     })// Lấy thông tin đơn hàng từ DB
     if (!hoadon) {
       return 'Đơn hàng không tồn tại';
+    }
+    if (hoadon.TrangThai == 2 || hoadon.TrangThai == 3 || hoadon.TrangThai == 4) {
+      return res.status(400).json({ message: 'Bạn Chỉ có thể thay đổi trạng thái khi đơn hàng mới đặt hoặc đang được chuẩn bị' });
     }
     // if (hoadon.TrangThai !== 2 || hoadon.TrangThai !== 3) {
     //   return res.status(400).json({ message: "Chỉ được phép hủy đơn khi vừa đặt hàng và đóng gói" });

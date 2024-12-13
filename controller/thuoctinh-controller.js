@@ -152,10 +152,10 @@ async function updateThuocTinh(req, res, next) {
 //     }
 // }
 async function deleteThuocTinh(req, res, next) {
-    const { ThuocTinhID } = req.params; // Lấy _id từ params
+    const { id } = req.params; // Lấy _id từ params
     try {
         // Tìm thuộc tính theo _id
-        const thuocTinh = await ThuocTinhModel.findById(_id);
+        const thuocTinh = await ThuocTinhModel.findById(id);
 
         // Kiểm tra xem có tồn tại và ThuocTinhID có phải là "SPspimple" không
         if (!thuocTinh) {
@@ -168,13 +168,13 @@ async function deleteThuocTinh(req, res, next) {
 
         // Cập nhật isDeleted cho thuộc tính
         const updatedThuocTinh = await ThuocTinhModel.findByIdAndUpdate(
-            ThuocTinhID,
+            id,
             { isDeleted: true },
             { new: true }
         );
 
         // Cập nhật isDeleted cho tất cả các giá trị thuộc tính liên quan
-        await ThuocTinhGiaTriModel.updateMany({ ThuocTinhID: ThuocTinhID }, { isDeleted: true });
+        await ThuocTinhGiaTriModel.updateMany({ ThuocTinhID: id }, { isDeleted: true });
 
         return res.status(200).json({ message: 'Xóa thuộc tính thành công' });
     } catch (error) {

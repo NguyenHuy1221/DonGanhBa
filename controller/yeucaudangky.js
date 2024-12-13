@@ -39,8 +39,8 @@ async function getYeuCauDangKyByUserId(req, res, next) {
 
 async function createYeuCauDangKy(req, res) {
     try {
-        const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang, gmail, maSoThue, name } = req.body;
-        console.log("diachi", diaChi, diaChi.Name)
+        const { userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, diachimoi, hinhthucgiaohang, gmail, maSoThue, name } = req.body;
+        console.log("diachi", userId, ghiChu, soluongloaisanpham, soluongsanpham, diaChi, hinhthucgiaohang, gmail, maSoThue, name, diachimoi)
         if (!maSoThue || !diaChi || !req.file) {
             return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
         }
@@ -50,28 +50,39 @@ async function createYeuCauDangKy(req, res) {
                 return res.status(400).json({ message: 'Bạn đã tạo yêu cầu đăng ký rồi.' });
             }
         }
+        const diachisave = {
+            Name: diaChi.Name,
+            SoDienThoai: diaChi.SoDienThoai,
+            tinhThanhPho: diaChi.tinhThanhPho,
+            quanHuyen: diaChi.quanHuyen,
+            phuongXa: diaChi.phuongXa,
+            duongThon: diaChi.duongThon,
+            kinhdo: "",
+            vido: "",
+
+        }
         // const diachisave = {
-        //     Name: diaChi.Name,
-        //     SoDienThoai: diaChi.SoDienThoai,
-        //     tinhThanhPho: diaChi.tinhThanhPho,
-        //     quanHuyen: diaChi.quanHuyen,
-        //     phuongXa: diaChi.phuongXa,
-        //     duongThon: diaChi.duongThon,
-        //     kinhdo: "",
-        //     vido: "",
+        //     Name: "diaChi.Name",
+        //     SoDienThoai: "diaChi.SoDienThoai",
+        //     tinhThanhPho: "diaChi.tinhThanhPho",
+        //     quanHuyen: "diaChi.quanHuyen",
+        //     phuongXa: "diaChi.phuongXa",
+        //     duongThon: "diaChi.duongThon",
+        //     kinhdo: "diaChi.kinhdo" || "",
+        //     vido: "diaChi.vido" || "",
 
         // }
-        const diachisave = {
-            Name: "diaChi.Name",
-            SoDienThoai: "diaChi.SoDienThoai",
-            tinhThanhPho: "diaChi.tinhThanhPho",
-            quanHuyen: "diaChi.quanHuyen",
-            phuongXa: "diaChi.phuongXa",
-            duongThon: "diaChi.duongThon",
-            kinhdo: "diaChi.kinhdo" || "",
-            vido: "diaChi.vido" || "",
-
-        }// Giữ giá trị hoặc giá trị mặc định vido: diaChi.vido || "" // Giữ giá trị hoặc giá trị mặc định };
+        const diaChiParsed = JSON.parse(diaChi);
+        const diaChiToSave = {
+            Name: diaChiParsed.Name,
+            SoDienThoai: diaChiParsed.SoDienThoai,
+            tinhThanhPho: diaChiParsed.tinhThanhPho,
+            quanHuyen: diaChiParsed.quanHuyen,
+            phuongXa: diaChiParsed.phuongXa,
+            duongThon: diaChiParsed.duongThon,
+            kinhdo: diaChiParsed.kinhdo || "",
+            vido: diaChiParsed.vido || "",
+        };
         const bucketName = process.env.VIETTEL_BUCKET;
         const file = req.file;
 
@@ -100,7 +111,7 @@ async function createYeuCauDangKy(req, res) {
             name,
             soluongloaisanpham,
             soluongsanpham,
-            diaChi: diachisave,
+            diaChi: diaChiToSave,
             hinhthucgiaohang,
             maSoThue,
             anhGiayPhepHoKinhDoanh: imageUrl
