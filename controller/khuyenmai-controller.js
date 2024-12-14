@@ -25,7 +25,8 @@ async function getlistKhuyenMai(req, res, next) {
         // });
         const activePromotions = await KhuyenMaiModel.find({
             SoLuongHienTai: { $gt: 0 },
-            TrangThai: 0 // Chỉ lấy các khuyến mãi có trạng thái là 0 (đang hoạt động)
+            TrangThai: 0, // Chỉ lấy các khuyến mãi có trạng thái là 0 (đang hoạt động)
+            isDeleted: false
         });
 
         // Thêm thuộc tính isEligible cho từng khuyến mãi
@@ -73,7 +74,9 @@ async function getlistKhuyenMaiForWeb(req, res, next) {
         // });
         const activePromotions = await KhuyenMaiModel.find({
             SoLuongHienTai: { $gt: 0 },
-            TrangThai: 0 // Chỉ lấy các khuyến mãi có trạng thái là 0 (đang hoạt động)
+            TrangThai: 0, // Chỉ lấy các khuyến mãi có trạng thái là 0 (đang hoạt động)
+            isDeleted: false
+
         }).populate("IDLoaiKhuyenMai");
 
         // Thêm thuộc tính isEligible cho từng khuyến mãi
