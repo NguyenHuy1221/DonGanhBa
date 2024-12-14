@@ -30,7 +30,7 @@ const { v4: uuidv4 } = require('uuid');
 
 async function getlistSanPham(req, res, next) {
   try {
-    const sanphams = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng" })// Lọc và sắp xếp
+    const sanphams = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng" }).sort({ NgayTao: -1 })// Lọc và sắp xếp
     if (!sanphams) {
       res.status(404).json({ message: 'Khong thay san pham nao' });
     }
@@ -118,7 +118,7 @@ async function getSanPhamListNew_Old(req, res, next) {
     // }
 
     // Lấy danh sách sản phẩm dựa trên giá trị SanPhamMoi
-    const sanPhamList = await SanPhamModel.find({ SanPhamMoi });
+    const sanPhamList = await SanPhamModel.find({ SanPhamMoi }).sort({ NgayTao: -1 });
 
     res.status(200).json(sanPhamList);
   } catch (error) {
@@ -156,7 +156,10 @@ async function createSanPham(req, res, next) {
     //   TenAnh: file.originalname,
     //   UrlAnh: file.path.replace("public", process.env.URL_IMAGE),
     // })) : [];
-    // const bucketName = process.env.VIETTEL_BUCKET;
+
+
+
+
     const bucketName = process.env.VIETTEL_BUCKET;
     const avatarFile = req.files && req.files.find(file => file.fieldname === 'file');
     const detailFiles = req.files && req.files.filter(file => file.fieldname === 'files');
@@ -268,7 +271,8 @@ async function ToHopBienThe(res, IDSanPham, sku, gia, soLuong) {
     return res.status(404).json({ message: "sản phẩm không tồn tại" });
   }
   const attributeIds = product.DanhSachThuocTinh;
-  console.log(attributeIds);
+  // console.log(attributeIds);
+  if (attributeIds.length < 2) { return res.status(400).json({ message: "Sản phẩm cần ít nhất 2 thuộc tính để tổ hợp" }); }
   // // Tạo các biến thể sản phẩm
   const createVariants = async (product, thuocTinhs, currentVariant = {}) => {
     if (thuocTinhs.length === 0) {
@@ -397,6 +401,8 @@ async function ToHopBienThePhienBanBangTay(req, res) {
       return res.status(404).json({ message: "Sản phẩm không tồn tại" });
     }
     const attributeIds = product.DanhSachThuocTinh;
+    if (attributeIds.length < 2) { return res.status(400).json({ message: "Sản phẩm cần ít nhất 2 thuộc tính để tổ hợp" }); }
+
     const variantsList = []; // Danh sách các biến thể sẽ được thu thập
 
     // Hàm tạo biến thể
@@ -1179,8 +1185,7 @@ async function updateBienTheThuCong(req, res, next) {
     const sanpham = await SanPhamModel.findByIdAndUpdate(
       BienTheS.IDSanPham,
       { $inc: { SoLuongHienTai: deltaSoLuong } }
-    );
-    console.log(sanpham)
+    ).sort({ NgayTao: -1 });
     BienTheS.sku = sku
     BienTheS.gia = gia
     BienTheS.soLuong = soLuong
@@ -1211,7 +1216,7 @@ async function deleteBienTheThuCong(req, res, next) {
       await SanPhamModel.findOneAndUpdate(
         { _id: bienthe.IDSanPham },
         { $inc: { SoLuongHienTai: -bienthe.soLuong } }
-      );
+      ).sort({ NgayTao: -1 });
       bienthe.soLuong = 0
       await bienthe.save()
       res.status(200).json({ message: 'Biến thể đã được đánh dấu là đã xóa' });
@@ -1297,7 +1302,7 @@ async function getlistPageSanPham(req, res, next) {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     //true chi hien sp ok
-    const sanphams = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng" }).skip(skip).limit(limit).populate("userId");
+    const sanphams = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng" }).skip(skip).limit(limit).populate("userId").sort({ NgayTao: -1 });
     const totalProducts = await SanPhamModel.countDocuments();
 
     let favoritedProductIds = [];
@@ -1474,14 +1479,14 @@ async function findSanPhamByDanhMuc(req, res, next) {
 async function searchSanPham(req, res, next) {
   try {
     const { TenSanPham, userId, yeuThichId } = req.query;
-    // const tenSanPhamKhongDau = removeAccents(TenSanPham.toLowerCase());
+    const tenSanPhamKhongDau = removeAccents(TenSanPham.toLowerCase());
 
     // Biểu thức chính quy linh hoạt hơn, bao gồm khoảng trắng và các ký tự đặc biệt
     const regex = new RegExp(`.*${TenSanPham}.*`, 'gi');
 
     // Tìm kiếm, thêm index nếu chưa có
     const sanphams = await SanPhamModel.find({
-      SanPhamMoi: false, TinhTrang: "Còn hàng",
+      SanPhamMoi: true, TinhTrang: "Còn hàng",
       TenSanPham: { $regex: regex }
     }).collation({ locale: 'vi' })
       .populate("userId").exec(); // Sử dụng collation cho tiếng Việt

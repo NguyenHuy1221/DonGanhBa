@@ -12,6 +12,7 @@ const removeAccents = require('remove-accents');
 const BienThe = require("../models/BienTheSchema");
 const SanPham = require("../models/SanPhamSchema");
 const KhuyenMai = require("../models/KhuyenMaiSchema")
+const mongoose = require('mongoose');
 
 const { createThongBaoNoreq } = require("../helpers/helpers")
 
@@ -156,26 +157,37 @@ async function getHoaDonByHoaDonId(req, res) {
     const { hoadonId } = req.params;
 
     if (!hoadonId) {
-      return res.status(400).json({ message: "Thiếu thông tin userid" });
+      return res.status(400).json({ message: "Thiếu thông tin hoa don id" });
     }
 
-    const hoadon = await HoaDonModel.findById(hoadonId).sort({ NgayTao: -1 })
-    // .populate("userId")
-    //.populate('khuyenmaiId')
-    // .populate({
-    //   path: 'chiTietHoaDon.BienThe.IDSanPham',
-    //   model: 'SanPham',
-    // })
+    const hoadon = await HoaDonModel.findById(hoadonId)
+      .populate("userId")
+      // .populate('khuyenmaiId')
+      .populate({
+        path: 'chiTietHoaDon.idBienThe',
+        populate: [
+          {
+            path: "KetHopThuocTinh.IDGiaTriThuocTinh",
+          },
+          {
+            path: "IDSanPham",
+            model: "SanPham",
+            populate: {
+              path: "userId",
+              model: "User",
+            },
+          },
+        ],
+      }).sort({ NgayTao: -1 });
     if (!hoadon) {
       return res.status(404).json({ message: "Không tìm thấy hoa don" });
     }
-
     return res.json(hoadon);
   } catch (error) {
-    console.error("Lỗi khi lấy thông tin người dùng:", error);
+    console.error("Lỗi khi lấy thông tin hoadon:", error);
     return res
       .status(500)
-      .json({ message: "Đã xảy ra lỗi khi lấy thông tin người dùng" });
+      .json({ message: "Đã xảy ra lỗi khi lấy thông tin hoa don" });
   }
 }
 async function getHoaDonByHoaDonForHoKinhDoanhId(req, res) {
@@ -433,13 +445,25 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
           chiTietHoaDon: [],
           TongTien: 0,
           GhiChu: ghiChu,
-          order_id: orderIdbaokim
+          order_id: orderIdbaokim,
+          SoTienKhuyenMai: 0,
+          khuyenmaiId: null
         };
       }
 
       item.sanPhamList.forEach(sanPhamItem => {
+        //luu thong tin khuyen mai
+        // hoaDonMap[hoKinhDoanhId].SoTienKhuyenMai = sanPhamItem.giaTriKhuyenMai
+        // hoaDonMap[hoKinhDoanhId].khuyenMaiId = sanPhamItem.khuyenMaiId
+        if (!hoaDonMap[hoKinhDoanhId].khuyenmaiId && sanPhamItem.khuyenMaiId) {
+          hoaDonMap[hoKinhDoanhId].khuyenmaiId = sanPhamItem.khuyenMaiId;
+        }
+        if (sanPhamItem.giaTriKhuyenMai) {
+          hoaDonMap[hoKinhDoanhId].SoTienKhuyenMai += sanPhamItem.giaTriKhuyenMai;
+        }
+        console.log("khuyen mai thong tin", sanPhamItem.giaTriKhuyenMai, sanPhamItem.khuyenMaiId, "sanphamlist:", sanPhamItem)
+
         sanPhamItem.chiTietGioHangs.forEach(chiTiet => {
-          console.log("chi tiet", chiTiet)
           hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
             idBienThe: chiTiet.idBienThe._id,
             soLuong: chiTiet.soLuong,
@@ -458,6 +482,7 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     let hoadon = [];
     for (const hoKinhDoanhId in hoaDonMap) {
       const hoaDonData = hoaDonMap[hoKinhDoanhId];
+      console.log("hoadondata", hoaDonData)
       const newHoaDon = new HoaDonModel(hoaDonData);
       const dulieuhoadon = await newHoaDon.save();
       hoadon.push(dulieuhoadon)
@@ -479,8 +504,13 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     }
     console.log("Các chi tiết giỏ hàng sẽ bị xóa: ", bienTheIds);
     await GioHangModel.updateOne({ userId }, { $pull: { chiTietGioHang: { _id: { $in: bienTheIds } } } });
-    // console.log({ message: 'Tạo hóa đơn thành công', hoadon })
-    return res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon });
+    const hoadonWithKhuyenMai = await HoaDonModel.find({ _id: { $in: hoadon.map(hd => hd._id) } })
+      .populate('khuyenmaiId');
+
+    console.log({ message: 'Tạo hóa đơn thành công', hoadonWithKhuyenMai })
+    console.log({ message: 'khuyenmai', hoadon: hoadonWithKhuyenMai[0].khuyenmaiId })
+
+    return res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon: hoadonWithKhuyenMai });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Lỗi khi tạo đơn hàng' });
@@ -903,7 +933,10 @@ async function updatetrangthaiHoaDOn(req, res, next) {
       return res.status(404).json({ message: 'Hóa đơn ko tồn tại' });
     }
     if (hoadon.TrangThai == 3) {
-      return res.status(400).json({ message: 'Không thể thay đổi trạng thái khi đang ở trạng thái 3' });
+      return res.status(400).json({ message: 'Không thể thay đổi trạng thái khi đang ở trạng thái đã hoàn thành' });
+    }
+    if (hoadon.TrangThai == 4) {
+      return res.status(400).json({ message: 'Không thể thay đổi trạng thái khi đang ở trạng thái đã hủy' });
     }
     if (TrangThai == 3) {
       // const checkrole = await UserModel.findById(hoadon.hoKinhDoanhId)

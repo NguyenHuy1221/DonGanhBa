@@ -23,7 +23,7 @@ async function createGioHang(req, res, next) {
         );
 
         if (existingProductIndex !== -1) {
-          gioHang.chiTietGioHang[existingProductIndex].soLuong += newProduct.soLuong;
+          gioHang.chiTietGioHang[existingProductIndex].soLuong = newProduct.soLuong;
           gioHang.chiTietGioHang[existingProductIndex].donGia = newProduct.donGia;
         } else {
           gioHang.chiTietGioHang.push(newProduct);
@@ -92,29 +92,81 @@ async function getGioHangById(req, res, next) {
 //     res.status(500).json({ error: "Lỗi khi cập nhật giỏ hàng" });
 //   }
 // }
+// async function updateGioHang(req, res, next) {
+//   try {
+
+//     const { chiTietGioHang } = req.body;
+//     console.log(chiTietGioHang)
+//     const gioHang = await GioHang.findById(req.params.id);
+//     if (!gioHang) {
+//       return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
+//     }
+
+//     chiTietGioHang.forEach((updatedProduct) => {
+//       const existingProduct = gioHang.chiTietGioHang.find(
+//         (item) =>
+//           item._id.toString() === updatedProduct._id.toString()
+//       );
+
+//       if (existingProduct) {
+//         existingProduct.soLuong = updatedProduct.soLuong;
+//         existingProduct.donGia = updatedProduct.donGia;
+//       } else {
+//         gioHang.chiTietGioHang.push(updatedProduct);
+//       }
+//     });
+
+//     const updatedGioHang = await gioHang.save();
+//     res.status(200).json(updatedGioHang);
+//   } catch (error) {
+//     res.status(500).json({ error: "Lỗi khi cập nhật giỏ hàng" });
+//   }
+// }
 async function updateGioHang(req, res, next) {
   try {
-
     const { chiTietGioHang } = req.body;
-    console.log(chiTietGioHang)
-    const gioHang = await GioHang.findById(req.params.id);
+    console.log(chiTietGioHang);
+
+    const gioHang = await GioHang.findById(req.params.id).populate({
+      path: "chiTietGioHang.idBienThe",
+      select: "soLuong", // Chỉ lấy số lượng của biến thể
+    });
+
     if (!gioHang) {
       return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
     }
 
-    chiTietGioHang.forEach((updatedProduct) => {
+    for (const updatedProduct of chiTietGioHang) {
       const existingProduct = gioHang.chiTietGioHang.find(
-        (item) =>
-          item._id.toString() === updatedProduct._id.toString()
+        (item) => item._id.toString() === updatedProduct._id.toString()
       );
 
       if (existingProduct) {
+        const bienThe = existingProduct.idBienThe;
+
+        // Kiểm tra số lượng sản phẩm trong biến thể
+        if (updatedProduct.soLuong > bienThe.soLuong) {
+          return res.status(400).json({
+            error: `Không đủ số lượng sản phẩm cho biến thể ${bienThe._id}. Chỉ còn ${bienThe.soLuong} sản phẩm.`,
+          });
+        }
+
         existingProduct.soLuong = updatedProduct.soLuong;
         existingProduct.donGia = updatedProduct.donGia;
       } else {
+        // Nếu không tìm thấy sản phẩm trong giỏ hàng, thêm mới
+        const bienThe = await BienTheSchema.findById(updatedProduct.idBienThe).select("soLuong");
+
+        // Kiểm tra số lượng sản phẩm trong biến thể
+        if (updatedProduct.soLuong > bienThe.soLuong) {
+          return res.status(400).json({
+            error: `Không đủ số lượng sản phẩm cho biến thể ${bienThe._id}. Chỉ còn ${bienThe.soLuong} sản phẩm.`,
+          });
+        }
+
         gioHang.chiTietGioHang.push(updatedProduct);
       }
-    });
+    }
 
     const updatedGioHang = await gioHang.save();
     res.status(200).json(updatedGioHang);
@@ -224,9 +276,90 @@ async function deleteGioHang(req, res, next) {
 
 
 
+// async function getGioHangByUserId(req, res, next) {
+//   try {
+//     const { userId } = req.params;
+//     // Lấy giỏ hàng và populate các trường liên quan
+//     const gioHang = await GioHang.findOne({ userId })
+//       .populate("userId")
+//       .populate({
+//         path: "chiTietGioHang.idBienThe",
+//         populate: [
+//           {
+//             path: "KetHopThuocTinh.IDGiaTriThuocTinh",
+//           },
+//           {
+//             path: "IDSanPham",
+//             model: "SanPham",
+//             populate: {
+//               path: "userId",
+//               model: "User",
+//             },
+//           },
+//         ],
+//       });
+
+//     if (!gioHang) {
+//       return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
+//     }
+
+//     // Gộp các biến thể cùng sản phẩm ID hoặc cùng userID
+//     const mergedCartItems = {};
+
+//     gioHang.chiTietGioHang.forEach(item => {
+//       const sanPhamId = item.idBienThe.IDSanPham._id.toString();
+//       const userId = item.idBienThe.IDSanPham.userId._id.toString();
+
+//       const key = `${userId}-${sanPhamId}`;
+
+//       if (!mergedCartItems[key]) {
+//         mergedCartItems[key] = {
+//           userId: item.idBienThe.IDSanPham.userId,
+//           sanPham: item.idBienThe.IDSanPham,
+//           chiTietGioHang: [],
+//         };
+//       }
+
+//       // Lấy tất cả các trường từ idBienThe nhưng chỉ giữ lại _id của IDSanPham và userId
+//       const bienTheData = { ...item.idBienThe._doc };
+//       bienTheData.IDSanPham = item.idBienThe.IDSanPham._id;
+//       //bienTheData.userId = item.idBienThe.IDSanPham.userId._id;
+
+//       mergedCartItems[key].chiTietGioHang.push({
+//         // ...bienTheData,
+//         idBienThe: {
+//           ...bienTheData,
+//         },
+//         _id: item._id,
+//         soLuong: item.soLuong,
+//         donGia: item.donGia,
+//       });
+//     });
+//     // Gộp các sản phẩm theo userId
+//     const groupedByUser = {};
+//     Object.values(mergedCartItems).forEach(item => {
+//       const userId = item.userId;
+//       if (!groupedByUser[userId]) {
+//         groupedByUser[userId] = {
+//           user: item.userId,
+//           sanPhamList: [],
+//         };
+//       }
+//       groupedByUser[userId].sanPhamList.push(item);
+//     });
+
+//     const mergedCart = Object.values(groupedByUser);
+
+//     return res.status(200).json({ gioHangId: gioHang._id, user: gioHang.userId, mergedCart });
+//   } catch (error) {
+//     console.error("Lỗi khi lấy thông tin giỏ hàng:", error);
+//     res.status(500).json({ error: "Lỗi khi lấy thông tin giỏ hàng" });
+//   }
+// }
 async function getGioHangByUserId(req, res, next) {
   try {
     const { userId } = req.params;
+
     // Lấy giỏ hàng và populate các trường liên quan
     const gioHang = await GioHang.findOne({ userId })
       .populate("userId")
@@ -251,38 +384,42 @@ async function getGioHangByUserId(req, res, next) {
       return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
     }
 
+    // Lọc ra những biến thể không bị xóa
+    gioHang.chiTietGioHang = gioHang.chiTietGioHang.filter(item => !item.idBienThe.isDeleted);
+
+    // Cập nhật giỏ hàng trong cơ sở dữ liệu
+    await gioHang.save();
+
     // Gộp các biến thể cùng sản phẩm ID hoặc cùng userID
     const mergedCartItems = {};
 
     gioHang.chiTietGioHang.forEach(item => {
-      const sanPhamId = item.idBienThe.IDSanPham._id.toString();
-      const userId = item.idBienThe.IDSanPham.userId._id.toString();
+      const bienThe = item.idBienThe;
 
+      const sanPhamId = bienThe.IDSanPham._id.toString();
+      const userId = bienThe.IDSanPham.userId._id.toString();
       const key = `${userId}-${sanPhamId}`;
 
       if (!mergedCartItems[key]) {
         mergedCartItems[key] = {
-          userId: item.idBienThe.IDSanPham.userId,
-          sanPham: item.idBienThe.IDSanPham,
+          userId: bienThe.IDSanPham.userId,
+          sanPham: bienThe.IDSanPham,
           chiTietGioHang: [],
         };
       }
 
       // Lấy tất cả các trường từ idBienThe nhưng chỉ giữ lại _id của IDSanPham và userId
-      const bienTheData = { ...item.idBienThe._doc };
-      bienTheData.IDSanPham = item.idBienThe.IDSanPham._id;
-      //bienTheData.userId = item.idBienThe.IDSanPham.userId._id;
+      const bienTheData = { ...bienThe._doc };
+      bienTheData.IDSanPham = bienThe.IDSanPham._id;
 
       mergedCartItems[key].chiTietGioHang.push({
-        // ...bienTheData,
-        idBienThe: {
-          ...bienTheData,
-        },
+        idBienThe: { ...bienTheData },
         _id: item._id,
         soLuong: item.soLuong,
         donGia: item.donGia,
       });
     });
+
     // Gộp các sản phẩm theo userId
     const groupedByUser = {};
     Object.values(mergedCartItems).forEach(item => {
@@ -298,7 +435,7 @@ async function getGioHangByUserId(req, res, next) {
 
     const mergedCart = Object.values(groupedByUser);
 
-    res.status(200).json({ gioHangId: gioHang._id, user: gioHang.userId, mergedCart });
+    return res.status(200).json({ gioHangId: gioHang._id, user: gioHang.userId, mergedCart });
   } catch (error) {
     console.error("Lỗi khi lấy thông tin giỏ hàng:", error);
     res.status(500).json({ error: "Lỗi khi lấy thông tin giỏ hàng" });

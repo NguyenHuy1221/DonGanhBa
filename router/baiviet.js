@@ -13,6 +13,8 @@ const {
     updateBinhLuan,
     deleteBinhLuan,
     getListBaiVietAdmin,
+    getListBaiVietTheoDoi,
+    countUserPosts,
 } = require("../controller/baiviet-controller");
 
 baivietRouter.get("/getListBaiVietAdmin/:userId", function (req, res) {
@@ -23,6 +25,12 @@ baivietRouter.get("/getListBaiViet/:userId", function (req, res) {
 });
 baivietRouter.get("/getBaiVietById/:userId", function (req, res) {
     return getBaiVietById(req, res);
+});
+baivietRouter.get("/getListBaiVietTheoDoi/:userId", function (req, res) {
+    return getListBaiVietTheoDoi(req, res);
+});
+baivietRouter.get("/countUserPosts/:userId", function (req, res) {
+    return countUserPosts(req, res);
 });
 
 baivietRouter.post("/createBaiViet", uploadmemory.array("files", 10), function (req, res) {

@@ -43,6 +43,52 @@ async function getListBaiViet(req, res, next) {
         res.status(500).json({ message: 'Lỗi khi lấy Bài viết đánh giá' });
     }
 }
+
+async function getListBaiVietTheoDoi(req, res) {
+    const { userId } = req.params;
+    try {
+        if (!userId) {
+            return res.status(400).json({ message: 'Thiếu thông tin userId' });
+        }
+        const user = await UserModel.findById(userId).populate('following');
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        }
+        const followingUserIds = user.following.map(user => user._id);
+        const baiviets = await BaiVietSchema.find({ userId: { $in: followingUserIds } })
+            .populate('userId')
+            .populate({
+                path: 'binhluan.userId',
+            });
+
+        const baivietsWithLikeInfo = baiviets.map(baiViet => {
+            const isLiked = baiViet.likes.includes(userId);
+            return { ...baiViet._doc, isLiked };
+        });
+
+        return res.status(200).json(baivietsWithLikeInfo);
+    } catch (error) {
+        console.error('Lỗi khi lấy các bài viết theo dõi:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy các bài viết theo dõi' });
+    }
+}
+
+async function countUserPosts(req, res) {
+    const { userId } = req.params;
+    try {
+        if (!userId) {
+            return res.status(400).json({ message: 'Thiếu thông tin userId' });
+        }
+        const postCount = await BaiVietSchema.countDocuments({ userId });
+        return res.status(200).json(postCount);
+    } catch (error) {
+        console.error('Lỗi khi đếm số lượng bài viết:', error);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi khi đếm số lượng bài viết' });
+    }
+}
+
+
+
 async function getListBaiVietAdmin(req, res, next) {
     const { userId } = req.params;
     let user = {}
@@ -236,70 +282,160 @@ async function createBaiViet(req, res) {
 //     }
 // }
 
+// async function updateBaiViet(req, res) {
+//     try {
+//         const { baivietId } = req.params;
+//         const { tieude, tags, noidung, userId } = req.body;
+//         let updatedBaiViet = await BaiVietSchema.findById(baivietId);
+
+//         if (!updatedBaiViet) {
+//             return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
+//         } else if (userId != updatedBaiViet.userId) {
+//             return res.status(403).json({ message: 'Bạn không phải người viết bài viết này' });
+//         }
+
+//         if (tieude !== undefined) updatedBaiViet.tieude = tieude;
+//         if (tags !== undefined) updatedBaiViet.tags = tags;
+//         if (noidung !== undefined) updatedBaiViet.noidung = noidung;
+
+//         updatedBaiViet.isUpdate = true;
+
+//         if (req.files && req.files.length > 0) {
+//             const bucketName = process.env.VIETTEL_BUCKET;
+//             const detailFiles = req.files.filter(file => file.fieldname === 'files');
+
+//             let detailUrls = [];
+
+//             if (detailFiles && detailFiles.length > 0) {
+//                 const uploadPromises = detailFiles.map(file => {
+//                     let objectKey = "";
+//                     if (file.mimetype.startsWith('image/')) {
+//                         objectKey = `images/${uuidv4()}-${file.originalname}`;
+//                     } else {
+//                         return Promise.reject(new Error('Chỉ được upload image'));
+//                     }
+//                     return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+//                 });
+
+//                 try {
+//                     detailUrls = await Promise.all(uploadPromises);
+//                 } catch (error) {
+//                     console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+//                     return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
+//                 }
+//             }
+
+//             const oldImages = updatedBaiViet.image || [];
+//             const newImages = detailUrls;
+
+//             const combinedImages = [...new Set([...oldImages, ...newImages])];
+//             const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
+
+//             // for (const image of imagesToDelete) {
+//             //     await deleteImage(image);
+//             // }
+
+//             updatedBaiViet.image = combinedImages.filter(image => !imagesToDelete.includes(image));
+//         }
+
+//         await updatedBaiViet.save();
+//         res.status(200).json({ message: 'Cập nhật bài viết thành công', updatedBaiViet });
+//     } catch (error) {
+//         console.error('Lỗi khi cập nhật bài viết:', error);
+//         res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật bài viết' });
+//     }
+// };
+
 async function updateBaiViet(req, res) {
     try {
         const { baivietId } = req.params;
-        const { tieude, tags, noidung, userId } = req.body;
-        let updatedBaiViet = await BaiVietSchema.findById(baivietId);
+        const { tieude, tags, noidung, userId, image: files } = req.body;
+        console.log(files)
+        // Kiểm tra baivietId và userId có hợp lệ không
+        if (!baivietId || !userId) {
+            return res.status(400).json({ message: 'Bài viết ID hoặc User ID không hợp lệ' });
+        }
 
+        // Tìm bài viết
+        let updatedBaiViet = await BaiVietSchema.findById(baivietId);
         if (!updatedBaiViet) {
             return res.status(404).json({ message: 'Không tìm thấy Bài viết' });
-        } else if (userId != updatedBaiViet.userId) {
+        }
+
+        // Kiểm tra quyền sở hữu bài viết
+        if (!updatedBaiViet.userId.equals(userId)) {
             return res.status(403).json({ message: 'Bạn không phải người viết bài viết này' });
         }
 
+        // Cập nhật các trường cơ bản
         if (tieude !== undefined) updatedBaiViet.tieude = tieude;
         if (tags !== undefined) updatedBaiViet.tags = tags;
         if (noidung !== undefined) updatedBaiViet.noidung = noidung;
 
         updatedBaiViet.isUpdate = true;
 
-        if (req.files && req.files.length > 0) {
-            const bucketName = process.env.VIETTEL_BUCKET;
-            const detailFiles = req.files.filter(file => file.fieldname === 'files');
+        // Xử lý hình ảnh
+        const bucketName = process.env.VIETTEL_BUCKET;
+        const detailFiles = req.files?.filter(file => file.fieldname === 'files') || [];
 
-            let detailUrls = [];
+        const oldImages = updatedBaiViet.image || [];
+        let newImages;
 
-            if (detailFiles && detailFiles.length > 0) {
-                const uploadPromises = detailFiles.map(file => {
-                    let objectKey = "";
-                    if (file.mimetype.startsWith('image/')) {
-                        objectKey = `images/${uuidv4()}-${file.originalname}`;
-                    } else {
-                        return Promise.reject(new Error('Chỉ được upload image'));
-                    }
-                    return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
-                });
-
-                try {
-                    detailUrls = await Promise.all(uploadPromises);
-                } catch (error) {
-                    console.error('Lỗi khi tải lên ảnh chi tiết:', error);
-                    return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
-                }
-            }
-
-            const oldImages = updatedBaiViet.image || [];
-            const newImages = detailUrls;
-
-            const combinedImages = [...new Set([...oldImages, ...newImages])];
-            const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
-
-            // for (const image of imagesToDelete) {
-            //     await deleteImage(image);
-            // }
-
-            updatedBaiViet.image = combinedImages.filter(image => !imagesToDelete.includes(image));
+        // Phân biệt trường hợp client không gửi hoặc gửi mảng rỗng
+        if (files === undefined) {
+            // Nếu client không gửi gì, giữ nguyên ảnh cũ
+            newImages = oldImages;
+        } else {
+            // Nếu client gửi mảng (kể cả rỗng), sử dụng mảng đó làm cơ sở
+            newImages = files;
         }
 
+        // Upload ảnh mới
+        if (detailFiles.length > 0) {
+            const invalidFiles = detailFiles.filter(file => !file.mimetype.startsWith('image/'));
+            if (invalidFiles.length > 0) {
+                return res.status(400).json({ message: 'Chỉ được upload image' });
+            }
+
+            const uploadPromises = detailFiles.map(file => {
+                const objectKey = `images/${uuidv4()}-${file.originalname}`;
+                return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+            });
+
+            try {
+                const uploadedUrls = await Promise.all(uploadPromises);
+                newImages = [...newImages, ...uploadedUrls];
+            } catch (error) {
+                console.error('Lỗi khi tải lên ảnh chi tiết:', error);
+                return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
+            }
+        }
+
+        // Xóa ảnh cũ không còn trong danh sách
+        const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
+        for (const image of imagesToDelete) {
+            try {
+                await deleteImage(image);
+            } catch (error) {
+                console.error(`Lỗi khi xóa hình ảnh: ${image}`, error);
+            }
+        }
+
+        // Cập nhật danh sách ảnh
+        updatedBaiViet.image = newImages;
+
+        // Cập nhật updatedAt
+        updatedBaiViet.updatedAt = new Date();
+
+        // Lưu bài viết
         await updatedBaiViet.save();
+
         res.status(200).json({ message: 'Cập nhật bài viết thành công', updatedBaiViet });
     } catch (error) {
         console.error('Lỗi khi cập nhật bài viết:', error);
         res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật bài viết' });
     }
-};
-
+}
 
 async function updateLike(req, res) {
     try {
@@ -557,4 +693,6 @@ module.exports = {
     updateLike,
     getBaiVietById,
     getListBaiVietAdmin,
+    getListBaiVietTheoDoi,
+    countUserPosts,
 };

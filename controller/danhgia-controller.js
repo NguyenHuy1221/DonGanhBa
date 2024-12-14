@@ -246,13 +246,12 @@ async function createDanhGia(req, res) {
             userId,
             TrangThai: 3
         }).populate('chiTietHoaDon.idBienThe'); // Populate idBienThe để lấy thông tin sản phẩm
-
+        console.log(hoaDons)
         let hasPurchased = false;
-
         for (const hoaDon of hoaDons) {
             for (const chiTiet of hoaDon.chiTietHoaDon) {
                 const bienThe = await BienThe.findById(chiTiet.idBienThe).populate('IDSanPham');
-                if (bienThe && bienThe.IDSanPham.toString() === sanphamId) {
+                if (bienThe && bienThe.IDSanPham._id.toString() === sanphamId) {
                     hasPurchased = true;
                     break;
                 }

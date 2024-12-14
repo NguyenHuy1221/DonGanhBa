@@ -193,6 +193,15 @@ async function deleteThuocTinhForSanPham(req, res) {
                 );
                 bienThe.soLuong = 0;
                 await bienThe.save();
+
+                // if (gioHangs.length > 0) {
+                //     for (const gioHang of gioHangs) {
+                //         await GiohangModel.findByIdAndUpdate(
+                //             gioHang._id,
+                //             { $pull: { chiTietGioHang: { idBienThe: bienThe._id } } }
+                //         );
+                //     }
+                // }
             } else {
                 // Nếu không tìm thấy hóa đơn nào, xóa biến thể hoàn toàn
                 await SanPhamModel.findOneAndUpdate(
@@ -289,7 +298,7 @@ async function createVariants(req, res) {
         }
 
         const { DanhSachThuocTinh } = sanPham;
-
+        if (DanhSachThuocTinh.length < 2) { return res.status(400).json({ message: "Sản phẩm cần ít nhất 2 thuộc tính để tổ hợp" }); }
         // Tạo tổ hợp các giá trị thuộc tính
         const combinations = combineAttributes(DanhSachThuocTinh);
 
