@@ -23,7 +23,12 @@ async function createGioHang(req, res, next) {
         );
 
         if (existingProductIndex !== -1) {
-          gioHang.chiTietGioHang[existingProductIndex].soLuong = newProduct.soLuong;
+          if (gioHang.chiTietGioHang[existingProductIndex].soLuong + newProduct.soLuong >= 10) {
+            gioHang.chiTietGioHang[existingProductIndex].soLuong = 10
+          } else {
+            gioHang.chiTietGioHang[existingProductIndex].soLuong += newProduct.soLuong;
+
+          }
           gioHang.chiTietGioHang[existingProductIndex].donGia = newProduct.donGia;
         } else {
           gioHang.chiTietGioHang.push(newProduct);

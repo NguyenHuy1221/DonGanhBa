@@ -159,7 +159,6 @@ async function getHoaDonByHoaDonId(req, res) {
     if (!hoadonId) {
       return res.status(400).json({ message: "Thiếu thông tin hoa don id" });
     }
-
     const hoadon = await HoaDonModel.findById(hoadonId)
       .populate("userId")
       // .populate('khuyenmaiId')
