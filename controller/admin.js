@@ -32,8 +32,8 @@ async function UpdateRole(req, res, next) {
 async function Updatepermissions(req, res, next) {
     const { userId } = req.params;
     const { role } = req.body
-    const validEntities = ['sanpham', 'khuyenmai', 'hoadon'];
-    const validActions = ['them', 'xoa', 'sua', 'update'];
+    const validEntities = ['sanpham', 'khuyenmai', 'hoadon', 'baiviet', 'khuyenmaimanage', 'thuoctinh', 'giatrithuoctinh', 'nguoidung', 'yeucaudangky'];
+    const validActions = ['them', 'xoa', 'sua', 'update', 'xem'];
     if (!validEntities.includes(entity) || !actions.every(action => validActions.includes(action))) {
         return res.status(400).json({ message: "Quyền không tồn tại" });
     }
@@ -60,8 +60,8 @@ async function updateUserRoleAndPermissions(req, res, next) {
     const { role, permissions } = req.body; // Nhận role và permissions từ body request
 
     const validRoles = ['khachhang', 'hokinhdoanh', 'nhanvien', 'admin'];
-    const validEntities = ['sanpham', 'khuyenmai', 'hoadon'];
-    const validActions = ['them', 'xoa', 'sua', 'update'];
+    const validEntities = ['sanpham', 'khuyenmai', 'hoadon', 'baiviet', 'khuyenmaimanage', 'thuoctinh', 'giatrithuoctinh', 'nguoidung', 'yeucaudangky'];
+    const validActions = ['them', 'xoa', 'sua', 'update', 'xem'];
 
     try {
         // Kiểm tra role hợp lệ
