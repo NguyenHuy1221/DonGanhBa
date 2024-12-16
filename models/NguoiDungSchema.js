@@ -22,8 +22,8 @@ const NguoiDungSchema = new Schema({
     default: 'khachhang' // Thiết lập giá trị mặc định là 'khachhang'
   },
   permissions: [{
-    entity: { type: String, enum: ['sanpham', 'khuyenmai', 'hoadon'], required: true },
-    actions: [{ type: String, enum: ['them', 'xoa', 'sua', 'update'] }]
+    entity: { type: String, enum: ['sanpham', 'khuyenmai', 'hoadon', 'baiviet', 'khuyenmaimanage', 'thuoctinh', 'giatrithuoctinh', 'nguoidung', 'yeucaudangky'], required: true },
+    actions: [{ type: String, enum: ['them', 'xoa', 'sua', 'update', 'xem'] }]
   }],
   // Thêm trường followers và following 
   followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],

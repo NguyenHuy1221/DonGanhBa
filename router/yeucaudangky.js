@@ -1,6 +1,7 @@
 const express = require('express');
 const yeucaudangkyRouter = express.Router();
 const { uploadmemory } = require("../untils/index")
+const { checkPermissions } = require("../middleware/index")
 
 const {
     createYeuCauDangKy,
@@ -15,13 +16,13 @@ yeucaudangkyRouter.post('/createYeuCauDangKy', uploadmemory.single("file", 1), a
     return createYeuCauDangKy(req, res);
 })
 
-yeucaudangkyRouter.get('/getListYeuCauDangKy', async function (req, res) {
+yeucaudangkyRouter.get('/getListYeuCauDangKy', checkPermissions("yeucaudangky", "xem"), async function (req, res) {
     return getListYeuCauDangKy(req, res);
 })
 yeucaudangkyRouter.get('/getYeuCauDangKyByUserId/:userId', async function (req, res) {
     return getYeuCauDangKyByUserId(req, res);
 })
-yeucaudangkyRouter.put('/updateYeuCauDangKy/:yeuCauDangKyId', async function (req, res) {
+yeucaudangkyRouter.put('/updateYeuCauDangKy/:yeuCauDangKyId', checkPermissions("yeucaudangky", "sua"), async function (req, res) {
     return updateYeuCauDangKy(req, res);
 })
 

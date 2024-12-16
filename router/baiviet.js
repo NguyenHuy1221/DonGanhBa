@@ -1,6 +1,7 @@
 const express = require("express");
 const baivietRouter = express.Router();
 const { uploadmemory } = require("../untils/index")
+const { checkPermissions } = require("../middleware/index")
 
 const {
     getListBaiViet,
@@ -17,7 +18,7 @@ const {
     countUserPosts,
 } = require("../controller/baiviet-controller");
 
-baivietRouter.get("/getListBaiVietAdmin/:userId", function (req, res) {
+baivietRouter.get("/getListBaiVietAdmin/:userId", checkPermissions("baiviet", "xem"), function (req, res) {
     return getListBaiVietAdmin(req, res);
 });
 baivietRouter.get("/getListBaiViet/:userId", function (req, res) {
@@ -43,7 +44,7 @@ baivietRouter.put("/updateBaiViet/:baivietId", uploadmemory.array("files", 10), 
 baivietRouter.put("/updateLike/:baivietId/:userId", function (req, res) {
     return updateLike(req, res);
 });
-baivietRouter.delete("/deleteBaiViet/:baivietId", function (req, res) {
+baivietRouter.delete("/deleteBaiViet/:baivietId", checkPermissions("baiviet", "xoa"), function (req, res) {
     return deleteBaiViet(req, res);
 });
 

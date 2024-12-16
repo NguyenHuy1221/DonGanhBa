@@ -21,6 +21,7 @@ const storage = multer.diskStorage({
     cb(null, name)
   }
 })
+const { checkPermissions } = require("../middleware/index")
 
 const upload = multer({ storage: storage })
 const {
@@ -58,7 +59,7 @@ const {
   getHoKinhDoanhInFoNumberById,
 } = require("../controller/user-controller");
 
-userRoute.get("/showAllUser/:userId", function (req, res) {
+userRoute.get("/showAllUser/:userId", checkPermissions("nguoidung", ""), function (req, res) {
   return getAllUsers(req, res);
 });
 userRoute.get("/getHoKinhDoanhInFoNumberById/:userId", function (req, res) {

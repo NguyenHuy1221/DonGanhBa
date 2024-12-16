@@ -1,5 +1,7 @@
 const express = require('express');
 const hoadonRouter = express.Router();
+const { checkPermissions } = require("../middleware/index")
+
 const { getlistHoaDon,
     getHoaDonByUserId,
     getHoaDonByHoKinhDoanhId,
@@ -39,7 +41,7 @@ hoadonRouter.get("/getHoaDonByHoaDonForHoKinhDoanhId/:hoadonId", function (req, 
     return getHoaDonByHoaDonForHoKinhDoanhId(req, res);
 });
 
-hoadonRouter.get("/getHoaDonByHoaDonIdFullVersion/:hoadonId", function (req, res) {
+hoadonRouter.get("/getHoaDonByHoaDonIdFullVersion/:hoadonId", checkPermissions("hoadon", "xem"), function (req, res) {
     return getHoaDonByHoaDonIdFullVersion(req, res);
 });
 
@@ -80,7 +82,7 @@ hoadonRouter.post('/HuyDonHang/:hoadonId', async function (req, res) {
 hoadonRouter.post('/updateDiaChighichuHoaDon/:hoadonId', async function (req, res) {
     return updateDiaChighichuHoaDon(req, res);
 })
-hoadonRouter.post('/updatetrangthaiHoaDOn/:hoadonId', async function (req, res) {
+hoadonRouter.post('/updatetrangthaiHoaDOn/:hoadonId', checkPermissions("hoadon", "sua"), async function (req, res) {
     return updatetrangthaiHoaDOn(req, res);
 })
 

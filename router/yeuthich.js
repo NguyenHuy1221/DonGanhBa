@@ -1,5 +1,7 @@
 const express = require('express');
 const yeuthichRouter = express.Router();
+const { checkPermissions } = require("../middleware/index")
+
 const {
     getListYeuThich,
     addToFavorites,

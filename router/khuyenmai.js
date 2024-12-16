@@ -1,5 +1,7 @@
 const express = require('express');
 const khuyenmaiRouter = express.Router();
+const { checkPermissions } = require("../middleware/index")
+
 const {
     getlistKhuyenMai,
     createKhuyenMai,
@@ -16,21 +18,21 @@ khuyenmaiRouter.get('/getlistKhuyenMaiForWeb/:tongTien', async function (req, re
     return getlistKhuyenMaiForWeb(req, res);
 })
 
-khuyenmaiRouter.post('/createKhuyenMai', async function (req, res) {
+khuyenmaiRouter.post('/createKhuyenMai', checkPermissions("khuyenmai", "tao"), async function (req, res) {
     return createKhuyenMai(req, res);
 })
 
-khuyenmaiRouter.put('/updateKhuyenMai/:id', async function (req, res) {
+khuyenmaiRouter.put('/updateKhuyenMai/:id', checkPermissions("khuyenmai", "sua"), async function (req, res) {
     return updateKhuyenMai(req, res);
 })
-khuyenmaiRouter.put('/getActiveKhuyenMai/:id', async function (req, res) {
+khuyenmaiRouter.put('/getActiveKhuyenMai/:id', checkPermissions("khuyenmai", "sua"), async function (req, res) {
     return getActiveKhuyenMai(req, res);
 })
-khuyenmaiRouter.delete('/deleteKhuyenMai/:id', async function (req, res) {
+khuyenmaiRouter.delete('/deleteKhuyenMai/:id', checkPermissions("khuyenmai", "xoa"), async function (req, res) {
     return deleteKhuyenMai(req, res);
 })
 
-khuyenmaiRouter.get('/getlistKhuyenMaiforadmin', async function (req, res) {
+khuyenmaiRouter.get('/getlistKhuyenMaiforadmin', checkPermissions("khuyenmai", "xem"), async function (req, res) {
     return getlistKhuyenMaiforadmin(req, res);
 })
 

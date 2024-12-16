@@ -28,12 +28,13 @@ async function getListBaiViet(req, res, next) {
             .populate({
                 path: 'binhluan.userId', // Populate userId của binhluan 
                 // select: 'name email' // Chỉ chọn các trường cần thiết 
-            })
+            }).maxTimeMS(45000)
         if (userId) {
             const baivietsWithLikeInfo = baiviets.map(baiViet => {
                 const isLiked = baiViet.likes.includes(userId);
                 return { ...baiViet._doc, isLiked };
             });
+
             return res.status(200).json(baivietsWithLikeInfo);
         }
         return res.status(200).json(baiviets);
@@ -153,9 +154,10 @@ async function getBaiVietById(req, res, next) {
                 const isLiked = baiViet.likes.includes(userId);
                 return { ...baiViet._doc, isLiked };
             });
-
+            console.log(baiviets)
             return res.status(200).json(baivietsWithLikeInfo);
         }
+        console.log(baiviets)
         return res.status(200).json(baiviets);
 
     } catch (error) {
@@ -218,7 +220,7 @@ async function createBaiViet(req, res) {
 
         const taobaiviet = await newBaiViet.save();
         //const baiviet = await BaiVietSchema.findById(taobaiviet._id).populate("userId")
-        res.status(201).json({ message: 'Tạo bài viết thành công' });
+        res.status(200).json({ message: 'Tạo bài viết thành công' });
     } catch (error) {
         console.error('Lỗi khi tạo Bài viết:', error);
         res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo Bài viết' });
@@ -349,8 +351,8 @@ async function createBaiViet(req, res) {
 async function updateBaiViet(req, res) {
     try {
         const { baivietId } = req.params;
-        const { tieude, tags, noidung, userId, image: files } = req.body;
-        console.log(files)
+        const { tieude, tags, noidung, userId } = req.body;
+
         // Kiểm tra baivietId và userId có hợp lệ không
         if (!baivietId || !userId) {
             return res.status(400).json({ message: 'Bài viết ID hoặc User ID không hợp lệ' });
@@ -376,53 +378,47 @@ async function updateBaiViet(req, res) {
 
         // Xử lý hình ảnh
         const bucketName = process.env.VIETTEL_BUCKET;
-        const detailFiles = req.files?.filter(file => file.fieldname === 'files') || [];
+        const newFiles = req.files || []; // Danh sách file từ client
+        const oldImages = updatedBaiViet.image || []; // Ảnh cũ trong DB
 
-        const oldImages = updatedBaiViet.image || [];
-        let newImages;
+        let uploadedUrls = [];
+        let remainingUrlsFromClient = []; // Ảnh cũ được client gửi lên
 
-        // Phân biệt trường hợp client không gửi hoặc gửi mảng rỗng
-        if (files === undefined) {
-            // Nếu client không gửi gì, giữ nguyên ảnh cũ
-            newImages = oldImages;
-        } else {
-            // Nếu client gửi mảng (kể cả rỗng), sử dụng mảng đó làm cơ sở
-            newImages = files;
-        }
-
-        // Upload ảnh mới
-        if (detailFiles.length > 0) {
-            const invalidFiles = detailFiles.filter(file => !file.mimetype.startsWith('image/'));
-            if (invalidFiles.length > 0) {
-                return res.status(400).json({ message: 'Chỉ được upload image' });
-            }
-
-            const uploadPromises = detailFiles.map(file => {
+        // Phân loại file mới và file cũ dựa trên danh sách gửi từ client
+        for (const file of newFiles) {
+            const fileUrl = `${process.env.VIETTEL_CLOUD_BASE_URL}/${bucketName}/${file.originalname}`;
+            if (oldImages.includes(fileUrl)) {
+                remainingUrlsFromClient.push(fileUrl);
+            } else {
+                // File mới cần upload
                 const objectKey = `images/${uuidv4()}-${file.originalname}`;
-                return uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
-            });
-
-            try {
-                const uploadedUrls = await Promise.all(uploadPromises);
-                newImages = [...newImages, ...uploadedUrls];
-            } catch (error) {
-                console.error('Lỗi khi tải lên ảnh chi tiết:', error);
-                return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh chi tiết' });
+                if (!file.mimetype.startsWith('image/')) {
+                    return res.status(400).json({ message: 'Chỉ được upload image' });
+                }
+                try {
+                    const uploadedUrl = await uploadFileToViettelCloud(file.buffer, bucketName, objectKey, file.mimetype);
+                    uploadedUrls.push(uploadedUrl);
+                } catch (error) {
+                    console.error('Lỗi khi tải lên ảnh mới:', error);
+                    return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên ảnh mới' });
+                }
             }
         }
 
-        // Xóa ảnh cũ không còn trong danh sách
-        const imagesToDelete = oldImages.filter(image => !newImages.includes(image));
-        for (const image of imagesToDelete) {
-            try {
-                await deleteImage(image);
-            } catch (error) {
-                console.error(`Lỗi khi xóa hình ảnh: ${image}`, error);
-            }
-        }
+        // Xác định ảnh cần xóa
+        const imagesToDelete = oldImages.filter(url => !remainingUrlsFromClient.includes(url));
+        console.log("anh can xoa", imagesToDelete)
+        // Xóa ảnh không còn được giữ lại
+        // for (const image of imagesToDelete) {
+        //     try {
+        //         await deleteFileFromViettelCloud(image, bucketName);
+        //     } catch (error) {
+        //         console.error(`Lỗi khi xóa ảnh: ${image}`, error);
+        //     }
+        // }
 
-        // Cập nhật danh sách ảnh
-        updatedBaiViet.image = newImages;
+        // Cập nhật danh sách ảnh vào bài viết
+        updatedBaiViet.image = [...remainingUrlsFromClient, ...uploadedUrls];
 
         // Cập nhật updatedAt
         updatedBaiViet.updatedAt = new Date();
@@ -436,6 +432,21 @@ async function updateBaiViet(req, res) {
         res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật bài viết' });
     }
 }
+
+// Hàm giả định xóa file khỏi Viettel Cloud
+async function deleteFileFromViettelCloud(fileUrl, bucketName) {
+    const objectKey = fileUrl.split(`${bucketName}/`)[1];
+    if (!objectKey) throw new Error('Không tìm thấy object key để xóa');
+
+    try {
+        await viettelCloudSDK.deleteObject(bucketName, objectKey);
+        console.log(`Đã xóa file: ${fileUrl}`);
+    } catch (error) {
+        console.error(`Lỗi khi xóa file: ${fileUrl}`, error);
+        throw error;
+    }
+}
+
 
 async function updateLike(req, res) {
     try {

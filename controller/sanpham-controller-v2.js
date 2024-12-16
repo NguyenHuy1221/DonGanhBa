@@ -11,6 +11,9 @@ const HoadonModel = require("../models/HoaDonSchema")
 const YeuThichModel = require("../models/YeuThichSchema")
 const GiohangModel = require("../models/GioHangSchema")
 const UserModel = require("../models/NguoiDungSchema")
+const DanhGiaModel = require("../models/DanhGiaSchema")
+const DanhMucModel = require("../models/DanhMucSchema")
+
 //thu vien tim ket qua gan dung
 const fuzzysearch = require('fuzzysearch');
 
@@ -421,6 +424,176 @@ async function createSanPhamExcel(req, res, next) {
     }
 }
 
+async function getSanPhamSapXep(req, res) {
+    try {
+        const { sortBy = 'averageRating', order = 'desc', danhMucId, limit = 10 } = req.query;
+
+        // Tạo bộ lọc
+        const filter = { SanPhamMoi: true, TinhTrang: "Còn hàng" };
+        if (danhMucId) {
+            filter.IDDanhMuc = danhMucId;
+        }
+
+        // Lấy danh sách sản phẩm
+        let sanphams = await SanPhamModel.find(filter)
+            .limit(parseInt(limit))
+            .lean();
+
+        // Tính toán điểm đánh giá trung bình và số lượng bán
+        const sanphamsWithDetails = await Promise.all(
+            sanphams.map(async (sanpham) => {
+                // Tính điểm đánh giá trung bình
+                const danhGias = await DanhGiaModel.find({ sanphamId: sanpham._id });
+                const averageRating =
+                    danhGias.length > 0
+                        ? danhGias.reduce((sum, dg) => sum + dg.XepHang, 0) / danhGias.length
+                        : 0;
+
+                // Tính số lượng bán
+                const soLuongBan = sanpham.SoLuongNhap - sanpham.SoLuongHienTai;
+
+                return {
+                    ...sanpham,
+                    averageRating,
+                    soLuongBan,
+                };
+            })
+        );
+
+        // Sắp xếp dựa trên trường `sortBy` (averageRating, soLuongBan, DonGiaBan)
+        const sortedSanphams = sanphamsWithDetails.sort((a, b) => {
+            const fieldA = a[sortBy];
+            const fieldB = b[sortBy];
+
+            if (order === 'asc') return fieldA - fieldB;
+            return fieldB - fieldA;
+        });
+
+        // Chỉ trả về các trường quan trọng
+        // const result = sortedSanphams.map((sp) => ({
+        //     _id: sp._id,
+        //     TenSanPham: sp.TenSanPham,
+        //     DonGiaBan: sp.DonGiaBan,
+        //     averageRating: sp.averageRating,
+        //     soLuongBan: sp.soLuongBan,
+        // }));
+
+        res.status(200).json(sortedSanphams);
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách sản phẩm sắp xếp:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy danh sách sản phẩm sắp xếp' });
+    }
+}
+
+async function getlistPageSanPhamHasFilter(req, res, next) {
+    const { userId, yeuThichId, sortBy, IDDanhMuc, page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    try {
+        let favoritedProductIds = [];
+        if (userId && yeuThichId) {
+            const yeuThich = await YeuThichModel.findById(yeuThichId);
+            if (yeuThich) {
+                favoritedProductIds = yeuThich.sanphams.map(sanpham => sanpham.IDSanPham.toString());
+            }
+        }
+
+        let sanphamsQuery = []
+        if (IDDanhMuc) {
+            sanphamsQuery = await SanPhamModel.find({ SanPhamMoi: true, IDDanhMuc, TinhTrang: "Còn hàng" }).exec();
+        } else {
+            sanphamsQuery = await SanPhamModel.find({ SanPhamMoi: true, TinhTrang: "Còn hàng" }).exec();
+
+        }
+
+        // Sắp xếp theo yêu cầu
+        if (sortBy) {
+            switch (sortBy) {
+                // case 'rating':
+
+                //     const sanphamsWithDetails = await Promise.all(
+                //         sanphamsQuery.map(async (sanphams) => {
+                //             // Tính điểm đánh giá trung bình
+                //             const danhGias = await DanhGiaModel.find({ sanphamId: sanphams._id });
+                //             const averageRating =
+                //                 danhGias.length > 0
+                //                     ? danhGias.reduce((sum, dg) => sum + dg.XepHang, 0) / danhGias.length
+                //                     : 0;
+                //             return {
+                //                 ...sanphams,
+                //                 averageRating,
+                //             };
+                //         })
+                //     );
+
+                //     // Sắp xếp dựa trên trường `sortBy` (averageRating, soLuongBan, DonGiaBan)
+                //     sanphamsQuery = sanphamsWithDetails.sort((a, b) => {
+                //         const fieldA = a[sortBy];
+                //         const fieldB = b[sortBy];
+                //         return fieldB - fieldA;
+                //     });
+                //     break;
+                case 'sold':
+                    const salesData = await HoadonModel.aggregate([
+                        { $unwind: "$chiTietHoaDon" },
+                        {
+                            $lookup: {
+                                from: 'bienthes', // Tên collection mà bienThe thuộc về
+                                localField: 'chiTietHoaDon.idBienThe',
+                                foreignField: '_id',
+                                as: 'bienTheDetails'
+                            }
+                        },
+                        { $unwind: "$bienTheDetails" },
+                        {
+                            $group: {
+                                _id: "$bienTheDetails.IDSanPham",
+                                totalSold: { $sum: "$chiTietHoaDon.soLuong" }
+                            }
+                        },
+                        { $sort: { totalSold: -1 } },
+                        { $limit: limit },
+                        { $skip: skip }
+                    ]);
+                    // console.log(salesData)
+                    sanphamsQuery = await SanPhamModel.find({ _id: { $in: salesData.map(item => item._id) } }, { SanPhamMoi: true, TinhTrang: "Còn hàng" }).skip(skip).limit(limit).populate('userId').exec();
+                    // console.log(sanphamsQuery)
+
+                    break;
+                case 'price':
+                    console.log(sanphamsQuery)
+                    sanphamsQuery = sanphamsQuery.sort({ DonGiaBan: -1 });
+                    break;
+                default:
+                    sanphamsQuery = sanphamsQuery.sort({ NgayTao: -1 });
+                    break;
+            }
+        } else {
+            sanphamsQuery = sanphamsQuery.sort({ NgayTao: -1 });
+        }
+
+        // const sanphams = await sanphamsQuery.skip(skip).limit(limit).populate('userId').exec();
+        const totalProducts = await SanPhamModel.countDocuments({ SanPhamMoi: true, TinhTrang: "Còn hàng" });
+
+        // Thêm thuộc tính isFavorited vào từng sản phẩm 
+        const sanphamsWithFavoriteStatus = sanphamsQuery.map(sanpham => {
+            console.log(sanpham)
+            const productObject = sanpham.toObject();
+            productObject.isFavorited = favoritedProductIds.includes(productObject._id.toString());
+            return productObject;
+        });
+
+        res.status(200).json({
+            sanphams: sanphamsWithFavoriteStatus,
+            totalProducts,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalProducts / limit),
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Lỗi khi truy xuất sản phẩm" });
+    }
+}
 
 module.exports = {
     addThuocTinhForSanPham,
@@ -430,4 +603,5 @@ module.exports = {
     getDatabientheByid,
     createVariants,
     createSanPhamExcel,
+    getlistPageSanPhamHasFilter,
 };

@@ -503,13 +503,13 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     }
     console.log("Các chi tiết giỏ hàng sẽ bị xóa: ", bienTheIds);
     await GioHangModel.updateOne({ userId }, { $pull: { chiTietGioHang: { _id: { $in: bienTheIds } } } });
-    const hoadonWithKhuyenMai = await HoaDonModel.find({ _id: { $in: hoadon.map(hd => hd._id) } })
-      .populate('khuyenmaiId');
+    // const hoadonWithKhuyenMai = await HoaDonModel.find({ _id: { $in: hoadon.map(hd => hd._id) } })
+    //   .populate('khuyenmaiId');
 
-    console.log({ message: 'Tạo hóa đơn thành công', hoadonWithKhuyenMai })
-    console.log({ message: 'khuyenmai', hoadon: hoadonWithKhuyenMai[0].khuyenmaiId })
+    // console.log({ message: 'Tạo hóa đơn thành công', hoadonWithKhuyenMai })
+    // console.log({ message: 'khuyenmai', hoadon: hoadonWithKhuyenMai[0].khuyenmaiId })
 
-    return res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon: hoadonWithKhuyenMai });
+    return res.status(200).json({ message: 'Tạo hóa đơn thành công', hoadon: hoadon });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Lỗi khi tạo đơn hàng' });

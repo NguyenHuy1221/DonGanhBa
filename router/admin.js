@@ -2,7 +2,7 @@ const express = require("express");
 const adminRouter = express.Router();
 const UserModel = require("../models/NguoiDungSchema");
 const admin = require('firebase-admin');
-
+const { checkPermissions } = require("../middleware/index")
 // const serviceAccount = require('../don-ganh-firebase-adminsdk-2ldcw-efac841716 (1).json'); // Đường dẫn tới file JSON đã tải về
 // admin.initializeApp({
 //     credential: admin.credential.cert(serviceAccount),
@@ -21,24 +21,24 @@ const {
 
 
 
-adminRouter.post("/updateUserRoleAndPermissions/:userId", function (req, res) {
+adminRouter.post("/updateUserRoleAndPermissions/:userId", checkPermissions("admin", ""), function (req, res) {
     return updateUserRoleAndPermissions(req, res);
 });
-adminRouter.post("/updateUserRoleAndPermissionsforuser/:userId", function (req, res) {
+adminRouter.post("/updateUserRoleAndPermissionsforuser/:userId", checkPermissions("admin", ""), function (req, res) {
     return updateUserRoleAndPermissionsforuser(req, res);
 });
 
-adminRouter.get("/getListThongBaoAdmin", function (req, res) {
+adminRouter.get("/getListThongBaoAdmin", checkPermissions("admin", ""), function (req, res) {
     return getListThongBaoAdmin(req, res);
 });
 adminRouter.post("/createThongBao", function (req, res) {
     return createThongBao(req, res);
 });
 
-adminRouter.get("/getAdminYeuCauRutTien", function (req, res) {
+adminRouter.get("/getAdminYeuCauRutTien", checkPermissions("admin", ""), function (req, res) {
     return getAdminYeuCauRutTien(req, res);
 });
-adminRouter.put("/updateYeuCauRutTien/:requestId", function (req, res) {
+adminRouter.put("/updateYeuCauRutTien/:requestId", checkPermissions("admin", ""), function (req, res) {
     return updateYeuCauRutTien(req, res);
 });
 adminRouter.post("/FixadminupdateThuocTinhIsDeleted", function (req, res) {

@@ -1,6 +1,8 @@
 const express = require("express");
 const sanphamRouter = express.Router();
 const { uploadFileToViettelCloud, uploadmemory } = require("../untils/index")
+const { checkPermissions } = require("../middleware/index")
+
 const { getlistSanPham, getlistSanPhamAdmin, toggleSanPhamMoi, getSanPhamListNew_Old, createSanPham, updateHinhBoSung, createThuocTinhSanPham, createSanPhamVoiBienThe,
   getlistBienThe,
   createBienTheThuCong,
@@ -30,9 +32,9 @@ const { getlistSanPham, getlistSanPhamAdmin, toggleSanPhamMoi, getSanPhamListNew
   updateMissingUserIds,
   ToHopBienThePhienBanBangTay,
 } = require("../controller/sanpham-controller");
-sanphamRouter.post("/createSanPhamtest", async function (req, res) {
-  return createSanPhamtest(req, res);
-});
+// sanphamRouter.post("/createSanPhamtest", async function (req, res) {
+//   return createSanPhamtest(req, res);
+// });
 //dangsdungadmin
 sanphamRouter.get("/getlistSanPham", async function (req, res) {
   return getlistSanPham(req, res);
@@ -47,33 +49,33 @@ sanphamRouter.get("/getSanPhamListNew_Old", async function (req, res) {
 sanphamRouter.post("/toggleSanPhamMoi/:IDSanPham", async function (req, res) {
   return toggleSanPhamMoi(req, res);
 });
-sanphamRouter.post("/createSanPham", uploadmemory.any(), async function (req, res) {
+sanphamRouter.post("/createSanPham", uploadmemory.any(), checkPermissions("sanpham", "tao"), async function (req, res) {
   return createSanPham(req, res);
 });
-sanphamRouter.post("/ToHopBienThePhienBanBangTay", async function (req, res) {
+sanphamRouter.post("/ToHopBienThePhienBanBangTay", checkPermissions("sanpham", "tao"), async function (req, res) {
   return ToHopBienThePhienBanBangTay(req, res);
 });
-sanphamRouter.post("/updateHinhBoSung/:IDSanPham", async function (req, res) {
-  return updateHinhBoSung(req, res);
-});
-sanphamRouter.post("/createThuocTinhSanPham/:IDSanPham", async function (req, res) {
-  return createThuocTinhSanPham(req, res);
-});
+// sanphamRouter.post("/updateHinhBoSung/:IDSanPham", async function (req, res) {
+//   return updateHinhBoSung(req, res);
+// });
+// sanphamRouter.post("/createThuocTinhSanPham/:IDSanPham", async function (req, res) {
+//   return createThuocTinhSanPham(req, res);
+// });
 // sanphamRouter.post("/createbienthesanpham", async function (req, res) {return createbienthesanpham(req, res);
 // });
-sanphamRouter.post("/createSanPhamVoiBienThe/:IDSanPham", async function (req, res) {
-  return createSanPhamVoiBienThe(req, res);
-});
-sanphamRouter.put("/updateSanPham/:id", uploadmemory.any(), async function (req, res) {
+// sanphamRouter.post("/createSanPhamVoiBienThe/:IDSanPham", async function (req, res) {
+//   return createSanPhamVoiBienThe(req, res);
+// });
+sanphamRouter.put("/updateSanPham/:id", uploadmemory.any(), checkPermissions("sanpham", "sua"), async function (req, res) {
   return updateSanPham(req, res);
 });
-sanphamRouter.put("/deleteSanPham/:IDSanPham", async function (req, res) {
+sanphamRouter.put("/deleteSanPham/:IDSanPham", checkPermissions("sanpham", "xoa"), async function (req, res) {
   return deleteSanPham(req, res);
 });
-sanphamRouter.put("/ToggleSanPhamMoi/:IDSanPham", async function (req, res) {
+sanphamRouter.put("/ToggleSanPhamMoi/:IDSanPham", checkPermissions("sanpham", "sua"), async function (req, res) {
   return ToggleSanPhamMoi(req, res);
 });
-sanphamRouter.put("/updateTinhTrangSanPham/:IDSanPham", async function (req, res) {
+sanphamRouter.put("/updateTinhTrangSanPham/:IDSanPham", checkPermissions("sanpham", "sua"), async function (req, res) {
   return updateTinhTrangSanPham(req, res);
 });
 
@@ -84,14 +86,14 @@ sanphamRouter.get("/getDanhSachThuocTinhTrongSanPham/:IDSanPham", async function
 sanphamRouter.get("/getlistBienThe/:IDSanPham", async function (req, res) {
   return getlistBienThe(req, res);
 });
-sanphamRouter.post("/createBienTheThuCong/:IDSanPham", async function (req, res) {
+sanphamRouter.post("/createBienTheThuCong/:IDSanPham", checkPermissions("sanpham", "tao"), async function (req, res) {
   return createBienTheThuCong(req, res);
 });
 
-sanphamRouter.put("/updateBienTheThuCong/:IDBienThe", async function (req, res) {
+sanphamRouter.put("/updateBienTheThuCong/:IDBienThe", checkPermissions("sanpham", "sua"), async function (req, res) {
   return updateBienTheThuCong(req, res);
 });
-sanphamRouter.delete("/deleteBienTheThuCong/:IDBienThe", async function (req, res) {
+sanphamRouter.delete("/deleteBienTheThuCong/:IDBienThe", checkPermissions("sanpham", "xoa"), async function (req, res) {
   return deleteBienTheThuCong(req, res);
 });
 
@@ -204,6 +206,7 @@ const { addThuocTinhForSanPham,
   getDatabientheByid,
   createVariants,
   createSanPhamExcel,
+  getlistPageSanPhamHasFilter
 } = require("../controller/sanpham-controller-v2");
 
 
@@ -223,9 +226,14 @@ sanphamRouter.get("/findthuoctinhInsanpham/:IDSanPham", async function (req, res
 sanphamRouter.get("/getDatabientheByid/:idbienthe", async function (req, res) {
   return getDatabientheByid(req, res);
 });
+sanphamRouter.get("/getlistPageSanPhamHasFilter", async function (req, res) {
+  return getlistPageSanPhamHasFilter(req, res);
+});
+
 sanphamRouter.post("/createVariants/:IDSanPham", async function (req, res) {
   return createVariants(req, res);
 });
+
 
 sanphamRouter.post("/createSanPhamExcel", async function (req, res) {
   return createSanPhamExcel(req, res);

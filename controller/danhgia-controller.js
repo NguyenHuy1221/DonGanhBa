@@ -309,7 +309,7 @@ async function createDanhGia(req, res) {
         await createThongBaoNoreq(sanpham.userId, "newCommentDanhGia", `${XepHang}+" điểm "+${BinhLuan}`)
 
         await newDanhGia.save();
-        return res.status(201).json(newDanhGia);
+        return res.status(200).json(newDanhGia);
     } catch (error) {
         console.error('Lỗi khi tạo đánh giá:', error);
         return res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đánh giá' });
