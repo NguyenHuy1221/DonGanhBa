@@ -59,7 +59,7 @@ const {
   getHoKinhDoanhInFoNumberById,
 } = require("../controller/user-controller");
 
-userRoute.get("/showAllUser/:userId", checkPermissions("nguoidung", ""), function (req, res) {
+userRoute.get("/showAllUser/:userId", checkPermissions("nguoidung", "xem"), function (req, res) {
   return getAllUsers(req, res);
 });
 userRoute.get("/getHoKinhDoanhInFoNumberById/:userId", function (req, res) {
