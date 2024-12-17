@@ -6,10 +6,53 @@ const moment = require("moment");
 const Transaction = require("../models/TransactionSchema");
 
 
+// async function createGioHang(req, res, next) {
+//   try {
+//     const { userId, chiTietGioHang } = req.body;
+//     let gioHang = await GioHang.findOne({ userId });
+
+//     if (!gioHang) {
+//       gioHang = new GioHang({
+//         userId,
+//         chiTietGioHang,
+//       });
+//     } else {
+//       chiTietGioHang.forEach((newProduct) => {
+//         const existingProductIndex = gioHang.chiTietGioHang.findIndex(
+//           (item) => item.idBienThe.toString() === newProduct.idBienThe.toString()
+//         );
+
+//         if (existingProductIndex !== -1) {
+//           if (gioHang.chiTietGioHang[existingProductIndex].soLuong + newProduct.soLuong >= 10) {
+//             gioHang.chiTietGioHang[existingProductIndex].soLuong = 10
+//           } else {
+//             gioHang.chiTietGioHang[existingProductIndex].soLuong += newProduct.soLuong;
+
+//           }
+//           gioHang.chiTietGioHang[existingProductIndex].donGia = newProduct.donGia;
+//         } else {
+//           gioHang.chiTietGioHang.push(newProduct);
+//         }
+//       });
+//     }
+
+//     const savedGioHang = await gioHang.save();
+//     res.status(201).json(savedGioHang);
+//   } catch (error) {
+//     console.error('Lỗi khi tạo hoặc cập nhật giỏ hàng:', error);
+//     res.status(500).json({ error: "Lỗi khi tạo hoặc cập nhật giỏ hàng" });
+//   }
+// }
+
+
 async function createGioHang(req, res, next) {
   try {
     const { userId, chiTietGioHang } = req.body;
     let gioHang = await GioHang.findOne({ userId });
+
+    // Lấy thông tin biến thể từ cơ sở dữ liệu
+    const bienTheIds = chiTietGioHang.map(product => product.idBienThe);
+    const bienTheList = await BienTheSchema.find({ _id: { $in: bienTheIds } });
 
     if (!gioHang) {
       gioHang = new GioHang({
@@ -22,15 +65,27 @@ async function createGioHang(req, res, next) {
           (item) => item.idBienThe.toString() === newProduct.idBienThe.toString()
         );
 
+        // Lấy biến thể tương ứng
+        const existingVariant = bienTheList.find(bienThe => bienThe._id.toString() === newProduct.idBienThe.toString());
+
+        // Kiểm tra số lượng tối đa từ biến thể
+        if (newProduct.soLuong > existingVariant.soLuong) {
+          return res.status(400).json({ error: "Số lượng không đủ trong biến thể." });
+        }
+
         if (existingProductIndex !== -1) {
-          if (gioHang.chiTietGioHang[existingProductIndex].soLuong + newProduct.soLuong >= 10) {
-            gioHang.chiTietGioHang[existingProductIndex].soLuong = 10
+          // Cập nhật số lượng nếu sản phẩm đã tồn tại trong giỏ hàng
+          const currentQuantity = gioHang.chiTietGioHang[existingProductIndex].soLuong;
+
+          if (currentQuantity + newProduct.soLuong > 10) {
+            gioHang.chiTietGioHang[existingProductIndex].soLuong = 10; // Đặt giới hạn tối đa
           } else {
             gioHang.chiTietGioHang[existingProductIndex].soLuong += newProduct.soLuong;
-
           }
+
           gioHang.chiTietGioHang[existingProductIndex].donGia = newProduct.donGia;
         } else {
+          // Thêm sản phẩm mới vào giỏ hàng
           gioHang.chiTietGioHang.push(newProduct);
         }
       });
@@ -43,8 +98,6 @@ async function createGioHang(req, res, next) {
     res.status(500).json({ error: "Lỗi khi tạo hoặc cập nhật giỏ hàng" });
   }
 }
-
-
 
 async function getGioHangById(req, res, next) {
   try {
