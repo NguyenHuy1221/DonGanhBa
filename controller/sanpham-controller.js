@@ -306,6 +306,11 @@ async function ToHopBienThe(res, IDSanPham, sku, gia, soLuong) {
             existing.soLuong = soLuong;
             existing.isDeleted = false;
             await existing.save();
+            // Cập nhật số lượng cho sản phẩm
+            await SanPhamModel.findByIdAndUpdate(
+              existing.IDSanPham,
+              { $inc: { SoLuongHienTai: soLuong } }
+            );
             return; // Ngừng tạo biến thể hiện tại
           }
 
@@ -442,45 +447,19 @@ async function ToHopBienThePhienBanBangTay(req, res) {
               existing.soLuong = soLuong;
               existing.isDeleted = false;
               await existing.save();
+              // Cập nhật số lượng cho sản phẩm
+              await SanPhamModel.findByIdAndUpdate(
+                existing.IDSanPham,
+                { $inc: { SoLuongHienTai: soLuong } }
+              );
               return; // Ngừng tạo biến thể hiện tại
             }
-
             // Nếu biến thể đã tồn tại và không bị xóa
             variantsList.push(existing);
 
             return; // Bỏ qua biến thể hiện tại
           }
         }
-
-        // for (const existing of bienthe) {
-        //   const existingKetHopThuocTinh = existing.KetHopThuocTinh;
-        //   console.log("check 1", existingKetHopThuocTinh)
-        //   console.log("check 2", KetHopThuocTinh)
-        //   if (existingKetHopThuocTinh.length !== KetHopThuocTinh.length) {
-        //     continue;
-        //   }
-
-        //   let isDuplicate = true;
-        //   for (let i = 0; i < existingKetHopThuocTinh.length; i++) {
-        //     if (existingKetHopThuocTinh[i].IDGiaTriThuocTinh.toString() !== KetHopThuocTinh[i].IDGiaTriThuocTinh.toString()) {
-        //       isDuplicate = false;
-        //       break;
-        //     }
-        //   }
-
-        //   if (isDuplicate) {
-        //     const bientheisDelete = await BienTheSchema.findById(existing._id);
-        //     if (bientheisDelete && bientheisDelete.isDeleted) {
-        //       bientheisDelete.sku = sku;
-        //       bientheisDelete.gia = gia;
-        //       bientheisDelete.soLuong = soLuong;
-        //       bientheisDelete.isDeleted = false;
-        //       await bientheisDelete.save();
-        //       return; // Không dừng chương trình, tiếp tục tạo biến thể khác
-        //     }
-        //     continue; // Nếu trùng lặp và chưa bị xóa, bỏ qua biến thể này
-        //   }
-        // }
 
         // Tạo biến thể mới nếu không có trùng lặp
         const newVariant = new BienTheSchema({
@@ -1105,6 +1084,11 @@ async function createBienTheThuCong(req, res, next) {
           bientheisDelete.soLuong = soLuong;
           bientheisDelete.isDeleted = false;
           await bientheisDelete.save();
+          await SanPhamModel.findOneAndUpdate(
+            { _id: bientheisDelete.IDSanPham },
+            { $inc: { SoLuongHienTai: soLuong } }
+          );
+
           return res.status(200).json({ message: 'Biến thể đã được khôi phục' });
         }
         return res.status(400).json({ message: 'Kết hợp thuộc tính đã tồn tại' });
@@ -1138,10 +1122,6 @@ async function updateBienTheThuCong(req, res, next) {
   if (!BienTheS) {
     return res.status(404).json({ message: 'Không tìm thấy biến thể' });
   }
-
-
-
-
   try {
     //const bienthe = await BienTheSchema.find({ IDSanPham: BienTheS.IDSanPham })
     const bienthe = await BienTheSchema.find({ IDSanPham: BienTheS.IDSanPham, _id: { $ne: IDBienThe } });
@@ -1184,7 +1164,7 @@ async function updateBienTheThuCong(req, res, next) {
 
     const sanpham = await SanPhamModel.findByIdAndUpdate(
       BienTheS.IDSanPham,
-      { $inc: { SoLuongHienTai: deltaSoLuong } }
+      { $inc: { SoLuongHienTai: BienTheS.soLuong - soLuong } }
     ).sort({ NgayTao: -1 });
     BienTheS.sku = sku
     BienTheS.gia = gia

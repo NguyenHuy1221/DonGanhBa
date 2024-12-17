@@ -487,13 +487,13 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
       hoadon.push(dulieuhoadon)
 
       for (const chiTiet of hoaDonData.chiTietHoaDon) {
-        await BienThe.findOneAndUpdate(
+        const bienthexoa = await BienThe.findOneAndUpdate(
           { _id: chiTiet.idBienThe },
           { $inc: { soLuong: -chiTiet.soLuong } }
         );
 
         await SanPham.findOneAndUpdate(
-          { _id: chiTiet.idBienThe.IDSanPham },
+          { _id: bienthexoa.IDSanPham },
           {
             $inc: { soLuongDaBan: chiTiet.soLuong },
             $inc: { SoLuongHienTai: -chiTiet.soLuong }
@@ -1005,7 +1005,7 @@ async function updatetrangthaiHoaDOn(req, res, next) {
     else if (TrangThai == 2) { trangthaitext = "Bắt đầu giao" }
     else if (TrangThai == 3) { trangthaitext = "Hoàn thành đơn hàng" }
     else { trangthaitext = "Hủy" }
-    await createThongBaoNoreq(hoadon.userId, "updateTrangThaiDonHang", `"Thành "+${trangthaitext}`)
+    await createThongBaoNoreq(hoadon.userId, "updateTrangThaiDonHang", `"Thành " ${trangthaitext}`)
     hoadon.TrangThai = TrangThai;
     await hoadon.save();
     return res.status(200).json("Cập nhập đơn hàng thành công");
