@@ -1164,7 +1164,7 @@ async function updateBienTheThuCong(req, res, next) {
 
     const sanpham = await SanPhamModel.findByIdAndUpdate(
       BienTheS.IDSanPham,
-      { $inc: { SoLuongHienTai: BienTheS.soLuong - soLuong } }
+      { $inc: { SoLuongHienTai: deltaSoLuong } }
     ).sort({ NgayTao: -1 });
     BienTheS.sku = sku
     BienTheS.gia = gia
