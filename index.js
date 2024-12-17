@@ -113,7 +113,40 @@ app.get("/logout", (req, res) => {
   req.logout();
   res.redirect("/");
 });
+app.get("/auth/google/callback", (req, res, next) => {
+  passport.authenticate("google", { session: false }, (err, user) => {
+    // Log để kiểm tra lỗi và user
+    console.log("Error:", err);
+    console.log("User:", user);
 
+    if (err || !user) {
+      console.log("Đăng nhập thất bại hoặc không tìm thấy user!");
+      return res.send(`
+        <script>
+          window.opener.postMessage({ error: "Đăng nhập thất bại" }, "http://localhost:3000");
+          window.close();
+        </script>
+      `);
+    }
+
+    const token = generateToken(user._id, user.role);
+
+    // Log token và user ID để kiểm tra
+    console.log("Token:", token);
+    console.log("User ID:", user._id);
+
+    // Gửi token và userId về client thông qua postMessage
+    return res.send(`
+      <script>
+        window.opener.postMessage({
+          token: "${token}",
+          userId: "${user._id}"
+        }, "http://localhost:3000");
+        window.close();
+      </script>
+    `);
+  })(req, res, next);
+});
 //chat
 let connectedUsers = []; // Danh sách các user đã kết nối
 
