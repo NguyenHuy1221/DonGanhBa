@@ -4,7 +4,7 @@ const axios = require("axios").default;
 const CryptoJS = require("crypto-js");
 const moment = require("moment");
 const Transaction = require("../models/TransactionSchema");
-
+const BienTheSchema = require("../models/BienTheSchema")
 
 // async function createGioHang(req, res, next) {
 //   try {
@@ -76,11 +76,15 @@ async function createGioHang(req, res, next) {
         if (existingProductIndex !== -1) {
           // Cập nhật số lượng nếu sản phẩm đã tồn tại trong giỏ hàng
           const currentQuantity = gioHang.chiTietGioHang[existingProductIndex].soLuong;
+          const newTotalQuantity = currentQuantity + newProduct.soLuong;
 
-          if (currentQuantity + newProduct.soLuong > 10) {
+          // Kiểm tra xem tổng số lượng có vượt quá số lượng tối đa hay không
+          if (newTotalQuantity > 10) {
             gioHang.chiTietGioHang[existingProductIndex].soLuong = 10; // Đặt giới hạn tối đa
+          } else if (newTotalQuantity > existingVariant.soLuong) {
+            return res.status(400).json({ error: "Tổng số lượng trong giỏ hàng vượt quá số lượng hiện có của biến thể." });
           } else {
-            gioHang.chiTietGioHang[existingProductIndex].soLuong += newProduct.soLuong;
+            gioHang.chiTietGioHang[existingProductIndex].soLuong = newTotalQuantity; // Cập nhật số lượng mới
           }
 
           gioHang.chiTietGioHang[existingProductIndex].donGia = newProduct.donGia;
@@ -98,6 +102,7 @@ async function createGioHang(req, res, next) {
     res.status(500).json({ error: "Lỗi khi tạo hoặc cập nhật giỏ hàng" });
   }
 }
+
 
 async function getGioHangById(req, res, next) {
   try {
