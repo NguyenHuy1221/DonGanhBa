@@ -427,14 +427,77 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
     console.log("Dữ liệu giỏ hàng mergedCart: ", mergedCart);
 
     // console.log("mergedCart2", mergedCart)
-    for (const item of mergedCart.mergedCart) {
-      // console.log("item", item)
-      // console.log("user", item.user)
-      console.log("sanpham", item.sanPhamList)
+    // for (const item of mergedCart.mergedCart) {
+    //   // console.log("item", item)
+    //   // console.log("user", item.user)
+    //   console.log("sanpham", item.sanPhamList)
 
+    //   const hoKinhDoanhId = item.user._id;
+    //   const vietnamTime = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
+    //   const orderIdbaokim = `${vietnamTime}`;
+    //   if (!hoaDonMap[hoKinhDoanhId]) {
+    //     hoaDonMap[hoKinhDoanhId] = {
+    //       hoKinhDoanhId,
+    //       userId,
+    //       diaChi: diaChiMoi,
+    //       TrangThai,
+    //       chiTietHoaDon: [],
+    //       TongTien: 0,
+    //       GhiChu: ghiChu,
+    //       order_id: orderIdbaokim,
+    //       SoTienKhuyenMai: 0,
+    //       khuyenmaiId: null
+    //     };
+    //   }
+
+    //   item.sanPhamList.forEach(sanPhamItem => {
+    //     //luu thong tin khuyen mai
+    //     // hoaDonMap[hoKinhDoanhId].SoTienKhuyenMai = sanPhamItem.giaTriKhuyenMai
+    //     // hoaDonMap[hoKinhDoanhId].khuyenMaiId = sanPhamItem.khuyenMaiId
+    //     if (!hoaDonMap[hoKinhDoanhId].khuyenmaiId && sanPhamItem.khuyenMaiId) {
+    //       hoaDonMap[hoKinhDoanhId].khuyenmaiId = sanPhamItem.khuyenMaiId;
+    //     }
+    //     if (sanPhamItem.giaTriKhuyenMai) {
+    //       hoaDonMap[hoKinhDoanhId].SoTienKhuyenMai += sanPhamItem.giaTriKhuyenMai;
+    //     }
+    //     console.log("khuyen mai thong tin", sanPhamItem.giaTriKhuyenMai, sanPhamItem.khuyenMaiId, "sanphamlist:", sanPhamItem)
+
+    //     // sanPhamItem.chiTietGioHangs.forEach(chiTiet => {
+    //     //   hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
+    //     //     idBienThe: chiTiet.idBienThe._id,
+    //     //     soLuong: chiTiet.soLuong,
+    //     //     donGia: chiTiet.donGia
+    //     //   });
+    //     //   hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
+    //     //   bienTheIds.push(chiTiet._id); // Lưu trữ ID của chi tiết giỏ hàng để xóa sau này
+
+    //     //   console.log("ID cần xóa từ giỏ hàng: ", chiTiet._id);
+    //     // });
+    //     for (const chiTiet of sanPhamItem.chiTietGioHangs) {
+    //       const bienThe = await BienThe.findById(chiTiet.idBienThe);
+    //       if (!bienThe) {
+    //         return res.status(404).json({ message: `Biến thể không tồn tại cho ID: ${chiTiet.idBienThe}` });
+    //       }
+
+    //       // Kiểm tra số lượng yêu cầu có vượt quá số lượng hiện có không
+    //       if (chiTiet.soLuong > bienThe.soLuong) {
+    //         return res.status(400).json({ message: `Số lượng yêu cầu cho biến thể ${chiTiet.idBienThe} vượt quá số lượng hiện có (${bienThe.soLuong})` });
+    //       }
+
+    //       hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
+    //         idBienThe: chiTiet.idBienThe._id,
+    //         soLuong: chiTiet.soLuong,
+    //         donGia: chiTiet.donGia
+    //       });
+    //       hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
+    //       bienTheIds.push(chiTiet._id);
+    //     }
+    //   });
+
+    // }
+    for (const item of mergedCart.mergedCart) {
       const hoKinhDoanhId = item.user._id;
-      const vietnamTime = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
-      const orderIdbaokim = `${vietnamTime}`;
+
       if (!hoaDonMap[hoKinhDoanhId]) {
         hoaDonMap[hoKinhDoanhId] = {
           hoKinhDoanhId,
@@ -444,39 +507,45 @@ async function createUserDiaChivaThongTinGiaoHang(req, res, next) {
           chiTietHoaDon: [],
           TongTien: 0,
           GhiChu: ghiChu,
-          order_id: orderIdbaokim,
+          order_id: `${moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss')}`,
           SoTienKhuyenMai: 0,
           khuyenmaiId: null
         };
       }
 
-      item.sanPhamList.forEach(sanPhamItem => {
-        //luu thong tin khuyen mai
-        // hoaDonMap[hoKinhDoanhId].SoTienKhuyenMai = sanPhamItem.giaTriKhuyenMai
-        // hoaDonMap[hoKinhDoanhId].khuyenMaiId = sanPhamItem.khuyenMaiId
+      for (const sanPhamItem of item.sanPhamList) {
+        // Lưu thông tin khuyến mãi
         if (!hoaDonMap[hoKinhDoanhId].khuyenmaiId && sanPhamItem.khuyenMaiId) {
           hoaDonMap[hoKinhDoanhId].khuyenmaiId = sanPhamItem.khuyenMaiId;
         }
         if (sanPhamItem.giaTriKhuyenMai) {
           hoaDonMap[hoKinhDoanhId].SoTienKhuyenMai += sanPhamItem.giaTriKhuyenMai;
         }
-        console.log("khuyen mai thong tin", sanPhamItem.giaTriKhuyenMai, sanPhamItem.khuyenMaiId, "sanphamlist:", sanPhamItem)
 
-        sanPhamItem.chiTietGioHangs.forEach(chiTiet => {
+        console.log("khuyen mai thong tin", sanPhamItem.giaTriKhuyenMai, sanPhamItem.khuyenMaiId, "sanphamlist:", sanPhamItem);
+
+        // Sử dụng vòng lặp for...of thay vì forEach
+        for (const chiTiet of sanPhamItem.chiTietGioHangs) {
+          const bienThe = await BienThe.findById(chiTiet.idBienThe);
+          if (!bienThe) {
+            return res.status(404).json({ message: `Biến thể không tồn tại cho ID: ${chiTiet.idBienThe}` });
+          }
+
+          // Kiểm tra số lượng yêu cầu có vượt quá số lượng hiện có không
+          if (chiTiet.soLuong > bienThe.soLuong) {
+            return res.status(400).json({ message: `Số lượng yêu cầu cho biến thể ${chiTiet.idBienThe} vượt quá số lượng hiện có (${bienThe.soLuong})` });
+          }
+
           hoaDonMap[hoKinhDoanhId].chiTietHoaDon.push({
             idBienThe: chiTiet.idBienThe._id,
             soLuong: chiTiet.soLuong,
             donGia: chiTiet.donGia
           });
           hoaDonMap[hoKinhDoanhId].TongTien += chiTiet.donGia * chiTiet.soLuong;
-          bienTheIds.push(chiTiet._id); // Lưu trữ ID của chi tiết giỏ hàng để xóa sau này
-
-          console.log("ID cần xóa từ giỏ hàng: ", chiTiet._id);
-        });
-      });
-
+          bienTheIds.push(chiTiet._id);
+        }
+      }
     }
-
     // Lưu từng hóa đơn và cập nhật số lượng sản phẩm
     let hoadon = [];
     for (const hoKinhDoanhId in hoaDonMap) {
