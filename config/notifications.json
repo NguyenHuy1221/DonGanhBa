@@ -63,6 +63,10 @@
         "tieude": "Yêu cầu đăng ký trở thành hộ kinh doanh",
         "noidung": "Rất tiếc , yêu cầu đăng ký của bạn đã bị từ chối"
     },
+    "UpdateTrangThaiYeuCauDangKy": {
+        "tieude": "Yêu cầu đăng ký trở thành hộ kinh doanh",
+        "noidung": "Rất tiếc , yêu cầu đăng ký của bạn đã bị từ chối"
+    },
     "newKhuyenMai": {
         "tieude": "Khuyến mãi mới",
         "noidung": "Hệ thống vừa có một mã khuyến mãi mới , hãy nhanh tay vào và sử dụng"

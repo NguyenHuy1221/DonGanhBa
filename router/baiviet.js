@@ -44,11 +44,11 @@ baivietRouter.put("/updateBaiViet/:baivietId", uploadmemory.array("files", 10), 
 baivietRouter.put("/updateLike/:baivietId/:userId", function (req, res) {
     return updateLike(req, res);
 });
-baivietRouter.delete("/deleteBaiViet/:baivietId", checkPermissions("baiviet", "xoa"), function (req, res) {
+baivietRouter.delete("/deleteBaiViet/:baivietId", function (req, res) {
     return deleteBaiViet(req, res);
 });
 
-
+// , checkPermissions("baiviet", "xoa")
 baivietRouter.post("/addBinhLuan/:baivietId", function (req, res) {
     return addBinhLuan(req, res);
 });
