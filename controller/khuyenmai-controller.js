@@ -33,7 +33,7 @@ async function getlistKhuyenMai(req, res, next) {
 
         const eligiblePromotions = activePromotions.map(promotion => ({
             ...promotion._doc,
-            isEligible: tongTien >= promotion.GioiHanGiaTriDuocApDung && promotion.GioiHanGiaTriDuocApDung > 0
+            isEligible: tongTien >= promotion.GioiHanGiaTriDuocApDung && promotion.GioiHanGiaTriDuocApDung > 0 && tongTien - promotion.GiaTriKhuyenMai > 10000
         }));
         console.log(eligiblePromotions)
         eligiblePromotions.sort((a, b) => b.GiaTriKhuyenMai - a.GiaTriKhuyenMai);
@@ -83,7 +83,7 @@ async function getlistKhuyenMaiForWeb(req, res, next) {
 
         const eligiblePromotions = activePromotions.map(promotion => ({
             ...promotion._doc,
-            isEligible: tongTien >= promotion.GioiHanGiaTriDuocApDung && promotion.GioiHanGiaTriDuocApDung > 0
+            isEligible: tongTien >= promotion.GioiHanGiaTriDuocApDung && promotion.GioiHanGiaTriDuocApDung > 0 && tongTien - promotion.GiaTriKhuyenMai > 10000
         }));
         console.log(eligiblePromotions)
         eligiblePromotions.sort((a, b) => b.GiaTriKhuyenMai - a.GiaTriKhuyenMai);
