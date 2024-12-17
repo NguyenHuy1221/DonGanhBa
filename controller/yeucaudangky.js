@@ -164,9 +164,9 @@ async function updateYeuCauDangKy(req, res, next) {
             }
             user.role = "hokinhdoanh";
             const updatedUser = await user.save();
-            await createThongBaoNoreq(yeuCauDangKy.userId, "Yêu cầu đăng ký trở thành hộ kinh doanh", "Chúc mừng bạn đã đăng ký thành công trở thành hộ kinh doanh")
+            await createThongBaoNoreq(yeuCauDangKy.userId, "UpdateTrangThaiYeuCauDangKy", "Chúc mừng bạn đã đăng ký thành công trở thành hộ kinh doanh")
         } else if (yeuCauDangKy.trangThai === "huy") {
-            await createThongBaoNoreq(yeuCauDangKy.userId, "Yêu cầu đăng ký trở thành hộ kinh doanh", "Rất tiếc , yêu cầu đăng ký của bạn đã bị từ chối")
+            await createThongBaoNoreq(yeuCauDangKy.userId, "UpdateTrangThaiYeuCauDangKy", "Rất tiếc , yêu cầu đăng ký của bạn đã bị từ chối")
 
         }
         return res.status(200).json({ message: "Cập nhập trạng thái đăng ký thành công" });
