@@ -69,30 +69,30 @@ app.get(
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-app.get("/auth/google/callback", (req, res, next) => {
-  passport.authenticate("google", (err, user, info) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ message: "Đăng nhập thất bại", error: err });
-    }
-    if (!user) {
-      return res.status(401).json({ message: "Không tìm thấy người dùng" });
-    }
-    // Đăng nhập thành công, thực hiện lưu thông tin user vào session
-    req.logIn(user, (err) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ message: "Lỗi khi đăng nhập", error: err });
-      }
-      // Đăng ký hoặc đăng nhập thành công, trả về thông báo
-      return res
-        .status(200)
-        .json({ message: "Đăng nhập Google thành công", user });
-    });
-  })(req, res, next);
-});
+// app.get("/auth/google/callback", (req, res, next) => {
+//   passport.authenticate("google", (err, user, info) => {
+//     if (err) {
+//       return res
+//         .status(500)
+//         .json({ message: "Đăng nhập thất bại", error: err });
+//     }
+//     if (!user) {
+//       return res.status(401).json({ message: "Không tìm thấy người dùng" });
+//     }
+//     // Đăng nhập thành công, thực hiện lưu thông tin user vào session
+//     req.logIn(user, (err) => {
+//       if (err) {
+//         return res
+//           .status(500)
+//           .json({ message: "Lỗi khi đăng nhập", error: err });
+//       }
+//       // Đăng ký hoặc đăng nhập thành công, trả về thông báo
+//       return res
+//         .status(200)
+//         .json({ message: "Đăng nhập Google thành công", user });
+//     });
+//   })(req, res, next);
+// });
 
 // Tuyến đường bắt đầu quá trình xác thực Facebook
 app.get(
