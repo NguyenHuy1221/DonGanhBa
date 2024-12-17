@@ -55,7 +55,15 @@ async function addToFavorites(req, res) {
             // Nếu IDYeuThich tồn tại, tìm và cập nhật YeuThich
             yeuThich = await YeuThichSchema.findById(user.IDYeuThich);
             if (!yeuThich) {
-                return res.status(404).json({ success: false, message: 'Không tìm thấy danh sách yêu thích' });
+                yeuThich = new YeuThichSchema({ sanphams: [{ IDSanPham: productId }] });
+                await yeuThich.save();
+
+                // Cập nhật IDYeuThich của người dùng
+                user.IDYeuThich = yeuThich._id;
+                await user.save();
+                if (!yeuThich) {
+                    return res.status(404).json({ success: false, message: 'Không tìm thấy danh sách yêu thích' });
+                }
             }
 
             // Kiểm tra xem sản phẩm đã tồn tại trong danh sách yêu thích chưa 
