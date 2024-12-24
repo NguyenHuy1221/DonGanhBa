@@ -1,6 +1,6 @@
 const express = require("express");
 const bannerRouter = express.Router();
-const { addBanner, getAllBanners, updateBanner, deleteBanner } = require("../controller/banner-controller");
+const { addBanner, getAllBanners, updateBanner, deleteBanner, getAllBannersAdmin } = require("../controller/banner-controller");
 const { checkPermissions, authenticateUser } = require("../middleware/index")
 const { uploadmemory } = require("../untils/index")
 
@@ -15,6 +15,9 @@ bannerRouter.delete("/deleteBanner/:id", async function (req, res) {
 });
 bannerRouter.get("/banners", async function (req, res) {
   return getAllBanners(req, res);
+});
+bannerRouter.get("/getAllBannersAdmin", async function (req, res) {
+  return getAllBannersAdmin(req, res);
 });
 
 module.exports = bannerRouter;

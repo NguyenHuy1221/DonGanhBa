@@ -135,7 +135,7 @@ async function getAllBanners(req, res) {
     idbanner = "slide"
   }
   try {
-    const banners = await Banner.find({ idbanner });
+    const banners = await Banner.find({ idbanner: idbanner });
     if (banners.length === 0) {
       return res.status(404).json({ message: "No banners found" });
     }
@@ -145,5 +145,25 @@ async function getAllBanners(req, res) {
     res.status(500).json({ message: "Error retrieving banners" });
   }
 }
+async function getAllBannersAdmin(req, res) {
+  let { idbanner } = req.params;
+  try {
+    if (idbanner) {
+      const banners = await Banner.find({ idbanner: idbanner });
+      if (banners.length === 0) {
+        return res.status(404).json({ message: "No banners found" });
+      }
+      return res.status(200).json({ message: "Banners retrieved successfully", banners });
+    }
+    const banners = await Banner.find();
+    if (banners.length === 0) {
+      return res.status(404).json({ message: "No banners found" });
+    }
+    return res.status(200).json({ message: "Banners retrieved successfully", banners });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error retrieving banners" });
+  }
+}
 
-module.exports = { addBanner, getAllBanners, updateBanner, deleteBanner };
+module.exports = { addBanner, getAllBanners, updateBanner, deleteBanner, getAllBannersAdmin };
