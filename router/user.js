@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
     cb(null, name)
   }
 })
-const { checkPermissions } = require("../middleware/index")
+const { checkPermissions, authenticateUser } = require("../middleware/index")
 
 const upload = multer({ storage: storage })
 const {
@@ -58,19 +58,6 @@ const {
   loginXacMinh,
   getHoKinhDoanhInFoNumberById,
 } = require("../controller/user-controller");
-
-userRoute.get("/showAllUser/:userId", checkPermissions("nguoidung", "xem"), function (req, res) {
-  return getAllUsers(req, res);
-});
-userRoute.get("/getHoKinhDoanhInFoNumberById/:userId", function (req, res) {
-  return getHoKinhDoanhInFoNumberById(req, res);
-});
-
-// show user
-userRoute.get("/showUserID/:userId", function (req, res) {
-  return showUserById(req, res);
-});
-
 // register user
 userRoute.post("/register", async function (req, res) {
   return RegisterUser(req, res);
@@ -103,57 +90,6 @@ userRoute.post("/CheckOtpForgotPassword", async function (req, res) {
 userRoute.post("/SendPassword", async function (req, res) {
   return SendPassword(req, res);
 });
-userRoute.post("/ResetPassword", async function (req, res) {
-  return ResetPassword(req, res);
-});
-
-//update image user
-userRoute.post("/createAnhDaiDien/:IDNguoiDung", uploadmemory.single("file", 1), async function (req, res) {
-  return createAnhDaiDien(req, res);
-});
-
-userRoute.put("/updateUser", async function (req, res) {
-  return updateUser(req, res);
-});
-
-userRoute.put("/updateUser12/:id", async function (req, res) {
-  return updateUser12(req, res);
-});
-
-// });
-userRoute.put("/updateUserDiaChi", async function (req, res) {
-  return updateUserDiaChi(req, res);
-});
-userRoute.post("/saveChat", async function (req, res) {
-  return saveChat(req, res);
-});
-
-// userRoute.post('/upload_ImageOrVideo', uploadFiles, (req, res) => {
-//   try {
-//     if (!req.files || (!req.files['image'] && !req.files['video'])) {
-//       return res.status(400).json({ message: 'File is required, thieu image hoac video' });
-//     }
-//     console.log("dulieu upload", req.files)
-//     let imageUrl = null;
-//     let videoUrl = null;
-
-//     if (req.files['image'] && req.files['image'][0].path) {
-//       imageUrl = req.files['image'][0].path.replace("public", process.env.URL_IMAGE);
-//     }
-//     if (req.files['video'] && req.files['video'][0].path) {
-//       videoUrl = req.files['video'][0].path.replace("public", process.env.URL_IMAGE);
-//     }
-
-//     // const imageUrl = req.files['image'] ? req.files['image'][0].path.replace("public", process.env.URL_IMAGE) : null;
-//     // const videoUrl = req.files['video'] ? req.files['video'][0].path.replace("public", process.env.URL_VIDEO) : null;
-//     console.log("link url", imageUrl, videoUrl)
-//     res.status(200).json({ imageUrl, videoUrl });
-//   } catch (error) {
-//     console.error('Error uploading file:', error);
-//     res.status(500).json({ message: 'An error occurred while uploading the file' });
-//   }
-// })
-
 
 const uploadFile = uploadmemory.fields([
   { name: 'image', maxCount: 1 },
@@ -211,6 +147,7 @@ userRoute.post('/upload_ImageOrVideo', uploadFile, async (req, res) => {
   }
 });
 
+
 userRoute.post("/RegisterUserGG", async function (req, res) {
   return RegisterUserGG(req, res);
 });
@@ -219,6 +156,98 @@ userRoute.post("/RegisterUserGG", async function (req, res) {
 userRoute.post("/LoginUserGG/", async function (req, res) {
   return LoginUserGG(req, res);
 });
+
+userRoute.get("/verify/:token", async function (req, res) {
+  const { token } = req.params;
+  try {
+    const yeucaurutien = await YeuCauRutTienSchema.findOne({ verificationToken: token });
+    if (!yeucaurutien) {
+      //return res.status(400).json({ message: "Bạn đã xác thực rồi" });
+      return res.render('dashboard/thankyou', { message: "Xác thực thất bại.", icon: "fa-times", info: "Rất tiếc! Yêu cầu rút tiền của bạn xác thực thất bại , vui lòng thử lại hoặc liên hệ với bên chăm sóc khách hàng của Đòn Gánh." });
+    }
+    yeucaurutien.XacThuc = true
+    // user.isVerified = true;
+    yeucaurutien.verificationToken = undefined; // Xóa mã sau khi xác nhận
+    await yeucaurutien.save();
+    return res.render('dashboard/thankyou', { message: "Xác thực thành công.", icon: "fa-check", info: "Xin chúc mừng! . Yêu cầu rút tiền của bạn đã thành công, vui lòng chờ nhân viên của chúng tôi gửi tiền , có thể mất 1 đến 2 ngày." });
+  } catch (error) {
+    console.error("Lỗi khi xác nhận tài khoản:", error);
+    return res.render('dashboard/thankyou', { message: "Lỗi xác thực.", icon: "fa-times", info: "Rất tiếc! Yêu cầu rút tiền của bạn xác thực thất bại , vui lòng thử lại hoặc liên hệ với bên chăm sóc khách hàng của Đòn Gánh." });
+  }
+});
+
+
+// api can xac thuc
+userRoute.use(authenticateUser);
+userRoute.post("/ResetPassword", async function (req, res) {
+  return ResetPassword(req, res);
+});
+
+userRoute.get("/showAllUser/:userId", checkPermissions("nguoidung", "xem"), function (req, res) {
+  return getAllUsers(req, res);
+});
+userRoute.get("/getHoKinhDoanhInFoNumberById/:userId", function (req, res) {
+  return getHoKinhDoanhInFoNumberById(req, res);
+});
+
+// show user
+userRoute.get("/showUserID/:userId", function (req, res) {
+  return showUserById(req, res);
+});
+
+
+
+
+
+//update image user
+userRoute.post("/createAnhDaiDien/:IDNguoiDung", uploadmemory.single("file", 1), async function (req, res) {
+  return createAnhDaiDien(req, res);
+});
+
+userRoute.put("/updateUser", async function (req, res) {
+  return updateUser(req, res);
+});
+
+userRoute.put("/updateUser12/:id", async function (req, res) {
+  return updateUser12(req, res);
+});
+
+// });
+userRoute.put("/updateUserDiaChi", async function (req, res) {
+  return updateUserDiaChi(req, res);
+});
+userRoute.post("/saveChat", async function (req, res) {
+  return saveChat(req, res);
+});
+
+// userRoute.post('/upload_ImageOrVideo', uploadFiles, (req, res) => {
+//   try {
+//     if (!req.files || (!req.files['image'] && !req.files['video'])) {
+//       return res.status(400).json({ message: 'File is required, thieu image hoac video' });
+//     }
+//     console.log("dulieu upload", req.files)
+//     let imageUrl = null;
+//     let videoUrl = null;
+
+//     if (req.files['image'] && req.files['image'][0].path) {
+//       imageUrl = req.files['image'][0].path.replace("public", process.env.URL_IMAGE);
+//     }
+//     if (req.files['video'] && req.files['video'][0].path) {
+//       videoUrl = req.files['video'][0].path.replace("public", process.env.URL_IMAGE);
+//     }
+
+//     // const imageUrl = req.files['image'] ? req.files['image'][0].path.replace("public", process.env.URL_IMAGE) : null;
+//     // const videoUrl = req.files['video'] ? req.files['video'][0].path.replace("public", process.env.URL_VIDEO) : null;
+//     console.log("link url", imageUrl, videoUrl)
+//     res.status(200).json({ imageUrl, videoUrl });
+//   } catch (error) {
+//     console.error('Error uploading file:', error);
+//     res.status(500).json({ message: 'An error occurred while uploading the file' });
+//   }
+// })
+
+
+
 userRoute.post("/toggleFollowUser", async function (req, res) {
   return toggleFollowUser(req, res);
 });
@@ -264,25 +293,6 @@ userRoute.post("/saveFcmTokenFireBase", async function (req, res) {
   return saveFcmTokenFireBase(req, res);
 });
 
-
-userRoute.get("/verify/:token", async function (req, res) {
-  const { token } = req.params;
-  try {
-    const yeucaurutien = await YeuCauRutTienSchema.findOne({ verificationToken: token });
-    if (!yeucaurutien) {
-      //return res.status(400).json({ message: "Bạn đã xác thực rồi" });
-      return res.render('dashboard/thankyou', { message: "Xác thực thất bại.", icon: "fa-times", info: "Rất tiếc! Yêu cầu rút tiền của bạn xác thực thất bại , vui lòng thử lại hoặc liên hệ với bên chăm sóc khách hàng của Đòn Gánh." });
-    }
-    yeucaurutien.XacThuc = true
-    // user.isVerified = true;
-    yeucaurutien.verificationToken = undefined; // Xóa mã sau khi xác nhận
-    await yeucaurutien.save();
-    return res.render('dashboard/thankyou', { message: "Xác thực thành công.", icon: "fa-check", info: "Xin chúc mừng! . Yêu cầu rút tiền của bạn đã thành công, vui lòng chờ nhân viên của chúng tôi gửi tiền , có thể mất 1 đến 2 ngày." });
-  } catch (error) {
-    console.error("Lỗi khi xác nhận tài khoản:", error);
-    return res.render('dashboard/thankyou', { message: "Lỗi xác thực.", icon: "fa-times", info: "Rất tiếc! Yêu cầu rút tiền của bạn xác thực thất bại , vui lòng thử lại hoặc liên hệ với bên chăm sóc khách hàng của Đòn Gánh." });
-  }
-});
 
 userRoute.post("/loginXacMinh/:userId", async function (req, res) {
   return loginXacMinh(req, res);

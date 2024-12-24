@@ -1,7 +1,7 @@
 const express = require('express');
 const DanhGiaRouter = express.Router();
 const { uploadmemory } = require("../untils/index")
-const { checkPermissions } = require("../middleware/index")
+const { checkPermissions, authenticateUser } = require("../middleware/index")
 
 const {
     getListDanhGiaAdmin,

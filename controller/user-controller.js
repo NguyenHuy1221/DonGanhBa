@@ -157,6 +157,11 @@ async function RegisterUserGG(req, res) {
       user = await user.save();
     }
     const token = generateToken(user, user._id, user.role);
+
+    user.tokens = user.tokens.concat({ token });
+    // Thêm token mới vào mảng 
+    // tokens 
+    await user.save();
     return res.json({ message: "Đăng nhập thành công", token });
   } catch (error) {
     console.error("Lỗi khi thêm người dùng:", error);
@@ -253,8 +258,11 @@ async function loginUser(req, res) {
     //   user.IDYeuThich = yeuThich._id;
     //   await user.save();
     // }
-
     const token = generateToken(user._id, user.role);
+    user.tokens = user.tokens.concat({ token });
+    // Thêm token mới vào mảng 
+    // tokens 
+    await user.save();
     return res.json({ message: "Đăng nhập thành công", token });
   } catch (error) {
     console.error("Lỗi khi đăng nhập:", error);

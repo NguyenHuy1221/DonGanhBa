@@ -69,24 +69,33 @@ function convertToVietnamTimezone(schema) {
   };
 }
 
-const authenticateUser = async (req, res, next) => {
-  const token = req.header('Authorization').replace('Bearer ', '');
-  try {
-    const UserModel = require("../models/NguoiDungSchema")
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await UserModel.findOne({ _id: decoded._id, 'tokens.token': token });
 
+const authenticateUser = async (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', ''); // Sử dụng dấu chấm hỏi để xử lý trường hợp thiếu header
+  console.log(token)
+  if (!token) {
+    return res.status(401).json({ message: 'Authorization token missing.' });
+  }
+
+  try {
+    const UserModel = require('../models/NguoiDungSchema'); // Nhập UserModel ở đầu file
+
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    const user = await UserModel.findOne({ _id: decoded.data, 'tokens.token': token });
     if (!user) {
-      throw new Error();
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
     req.user = user;
     req.token = token;
     next();
   } catch (error) {
-    return res.status(401).send({ error: 'Please authenticate.' });
+    console.error(error); // Thêm log lỗi để debug
+    return res.status(500).send({ error: 'Please authenticate.' });
   }
 };
+
+
 // const checkPermissions = (requiredRole, requiredPermissions) => {
 //   return (req, res, next) => {
 //     const { user } = req;
@@ -147,25 +156,25 @@ const authenticateUser = async (req, res, next) => {
 
 function checkPermissions(entity, action) {
   return async (req, res, next) => {
-    // const user = req.user; // User is already authenticated and verified
+    const user = req.user; // User is already authenticated and verified
     // const user = req.body.user;
-    const authHeader = req.header('Authorization');
-    console.log(authHeader)
+    // const authHeader = req.header('Authorization');
+    // console.log(authHeader)
 
-    if (!authHeader) {
-      return res.status(401).json({ message: 'No token provided' });
+    if (!user) {
+      return res.status(500).json({ message: 'Xác thực được nhưng ko thấy thông tin user' });
     }
     try {
 
 
-      const token = req.header('Authorization').replace('Bearer ', '');
-      const UserModel = require("../models/NguoiDungSchema")
-      const decoded = decodeToken((token))
-      // const user = await UserModel.findOne({ _id: decoded.data, 'tokens.token': token });
-      const user = await UserModel.findOne({ _id: decoded.data });
-      console.log(user)
+      // const token = req.header('Authorization').replace('Bearer ', '');
+      // const UserModel = require("../models/NguoiDungSchema")
+      // const decoded = decodeToken((token))
+      // // const user = await UserModel.findOne({ _id: decoded.data, 'tokens.token': token });
+      // const user = await UserModel.findOne({ _id: decoded.data });
+      // console.log(user)
 
-      console.log(decoded)
+      // console.log(decoded)
       // const user = decoded
       if (!user) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -206,4 +215,4 @@ function checkPermissions(entity, action) {
 
 
 
-module.exports = { authMiddleware, authorizationJwt, authMiddlewareView, convertToVietnamTimezone, checkPermissions };
+module.exports = { authMiddleware, authorizationJwt, authMiddlewareView, convertToVietnamTimezone, checkPermissions, authenticateUser };

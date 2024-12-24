@@ -21,22 +21,24 @@ const baivietRoute = require("../router/baiviet")
 const doanhthuRoute = require("../router/doanhthu")
 const yeucaudangkyRoute = require("../router/yeucaudangky")
 const vnpayRoute = require("../router/vnpay")
+const { authenticateUser } = require("../middleware/index")
 // const phuongthucthanhtoanRoute = require("../router/phuongthucthanhtoan")
-apiRoute.use("/vnpay", vnpayRoute);
-apiRoute.use("/yeucaudangky", yeucaudangkyRoute);
-apiRoute.use("/doanhthu", doanhthuRoute);
-apiRoute.use("/baiviet", baivietRoute);
-apiRoute.use("/admin", adminRoute);
+// apiRoute.use("/vnpay", vnpayRoute, authenticateUser);
+apiRoute.use("/yeucaudangky", authenticateUser, yeucaudangkyRoute);
+apiRoute.use("/doanhthu", authenticateUser, doanhthuRoute);
+apiRoute.use("/baiviet", authenticateUser, baivietRoute);
+apiRoute.use("/admin", authenticateUser, adminRoute);
 apiRoute.use("/user", userRoute);
-apiRoute.use("/cart", gioHangRoute);
-apiRoute.use("/banner", bannerRoutes);
-apiRoute.use("/danhgia", danhgiaRoute);
+apiRoute.use("/cart", authenticateUser, gioHangRoute);
+apiRoute.use("/banner", authenticateUser, bannerRoutes);
+apiRoute.use("/danhgia", authenticateUser, danhgiaRoute);
 apiRoute.use(
   "/sanpham",
   (req, res, next) => {
     console.log("call san pham api router");
     next();
-  },
+  }
+  , authenticateUser,
   sanphamRouter
 );
 
@@ -45,7 +47,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call thuoc tinh api router");
     next();
-  },
+  }
+  , authenticateUser,
   thuoctinhRouter
 );
 
@@ -54,7 +57,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call thuoc tinh gia tri api router");
     next();
-  },
+  }
+  , authenticateUser,
   thuoctinhgiatriRouter
 );
 
@@ -63,7 +67,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call danh muc  api router");
     next();
-  },
+  }
+  , authenticateUser,
   danhmucRoute
 );
 apiRoute.use(
@@ -71,7 +76,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call bien the api router");
     next();
-  },
+  }
+  , authenticateUser,
   bientheRoute
 );
 apiRoute.use(
@@ -79,7 +85,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call hoadon api router");
     next();
-  },
+  }
+  , authenticateUser,
   hoadonRoute
 );
 apiRoute.use(
@@ -87,7 +94,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call khuyenmai api router");
     next();
-  },
+  }
+  , authenticateUser,
   khuyenmaiRoute
 );
 apiRoute.use(
@@ -95,7 +103,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call khuyenmaimanage api router");
     next();
-  },
+  }
+  , authenticateUser,
   khuyenmaimanageRoute
 );
 apiRoute.use(
@@ -103,7 +112,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call diachi api router");
     next();
-  },
+  }
+  , authenticateUser,
   diachiRoute
 );
 apiRoute.use(
@@ -111,7 +121,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call chat socket api router");
     next();
-  },
+  }
+  , authenticateUser,
   chatsocket
 );
 apiRoute.use(
@@ -119,7 +130,8 @@ apiRoute.use(
   (req, res, next) => {
     console.log("call yeu thich api router");
     next();
-  },
+  }
+  , authenticateUser,
   yeuthichRoute
 );
 

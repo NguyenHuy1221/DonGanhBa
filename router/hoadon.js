@@ -1,6 +1,6 @@
 const express = require('express');
 const hoadonRouter = express.Router();
-const { checkPermissions } = require("../middleware/index")
+const { checkPermissions, authenticateUser } = require("../middleware/index")
 
 const { getlistHoaDon,
     getHoaDonByUserId,

@@ -32,6 +32,8 @@ const NguoiDungSchema = new Schema({
   otpExpiry: { type: Date },
   isVerified: { type: Boolean, default: false },
   googleId: { type: String, unique: true, sparse: true },
+  tokens: [{ token: { type: String, required: true } }]
+
   // facebookId: { type: String, unique: true, sparse: true },
 }, {
   timestamps: true
