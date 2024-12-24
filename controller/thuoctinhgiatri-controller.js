@@ -175,7 +175,6 @@ async function updateThuocTinhGiaTri(req, res, next) {
         if (!updatedThuocTinhGiaTri) {
             return res.status(404).json({ message: 'Không tìm thấy giá trị thuộc tính' });
         }
-
         res.status(200).json(updatedThuocTinhGiaTri);
     } catch (error) {
         console.error(error);

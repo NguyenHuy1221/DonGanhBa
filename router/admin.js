@@ -2,7 +2,7 @@ const express = require("express");
 const adminRouter = express.Router();
 const UserModel = require("../models/NguoiDungSchema");
 const admin = require('firebase-admin');
-const { checkPermissions, authenticateUser } = require("../middleware/index")
+const { checkPermissions } = require("../middleware/index")
 // const serviceAccount = require('../don-ganh-firebase-adminsdk-2ldcw-efac841716 (1).json'); // Đường dẫn tới file JSON đã tải về
 // admin.initializeApp({
 //     credential: admin.credential.cert(serviceAccount),
