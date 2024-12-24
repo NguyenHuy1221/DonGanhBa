@@ -119,8 +119,8 @@ async function updateBanner(req, res) {
 async function deleteBanner(req, res) {
   const { id } = req.params;
   try {
-    const result = await Banner.findByIdAndUpdate({ id });
-    if (result.deletedCount === 0) {
+    const result = await Banner.findByIdAndDelete(id);
+    if (!result) {
       return res.status(404).json({ message: "Banner not found" });
     }
     res.status(200).json({ message: "Banner deleted successfully" });
