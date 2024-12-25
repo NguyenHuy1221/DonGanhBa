@@ -218,7 +218,7 @@ async function VerifyOTP(req, res) {
 
 
 
-    return res.json({
+    return res.status(200).json({
       message: "Xác nhận OTP thành công, tài khoản đã được kích hoạt",
     });
   } catch (error) {
@@ -613,7 +613,7 @@ async function ResendOTP(req, res) {
         return res.status(500).json({ message: "Lỗi khi gửi lại mã OTP" });
       } else {
         console.log("Email đã được gửi:", info.response);
-        return res.json({
+        return res.status(200).json({
           message: "Mã OTP mới đã được gửi, vui lòng kiểm tra email",
         });
       }
